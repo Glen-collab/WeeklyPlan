@@ -1,7 +1,7 @@
-// foodDatabase.js - All food nutrition data and serving size conversions
+// FoodDatabase.js - All food nutrition data and serving size conversions
 
 // Main nutrition database - all values per serving
-export const foodDatabase = {
+export const FoodDatabase = {
   protein: {
     'Chicken Breast': { protein: 31, carbs: 0, fat: 3.6, sugar: 0, calories: 165 },
     'Egg Whites': { protein: 11, carbs: 1, fat: 0.2, sugar: 1, calories: 52 },
@@ -122,10 +122,10 @@ export const getServingInfo = (category, food) => {
 
 // Helper function to get all foods in a category
 export const getFoodsInCategory = (category) => {
-  return Object.keys(foodDatabase[category] || {});
+  return Object.keys(FoodDatabase[category] || {});
 };
 
 // Helper function to get all categories
 export const getAllCategories = () => {
-  return Object.keys(foodDatabase);
+  return Object.keys(FoodDatabase);
 };
