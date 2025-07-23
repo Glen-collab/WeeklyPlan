@@ -268,6 +268,50 @@ const WeeklyPlan = () => {
     return previous;
   };
 
+  // Create timeline data for the bar chart
+  const timelineData = [
+    { 
+      name: `Breakfast\n${breakfastTime}`, 
+      calories: Math.round(breakfastTotals.calories),
+      sugar: Math.round(breakfastTotals.sugar) * 10
+    },
+    { 
+      name: `Snack 1\n${firstSnackTime}`, 
+      calories: Math.round(firstSnackTotals.calories),
+      sugar: Math.round(firstSnackTotals.sugar) * 10
+    },
+    { 
+      name: `Snack 2\n${secondSnackTime}`, 
+      calories: Math.round(secondSnackTotals.calories),
+      sugar: Math.round(secondSnackTotals.sugar) * 10
+    },
+    { 
+      name: `Lunch\n${lunchTime}`, 
+      calories: Math.round(lunchTotals.calories),
+      sugar: Math.round(lunchTotals.sugar) * 10
+    },
+    { 
+      name: `Mid-Aft\n${midAfternoonTime}`, 
+      calories: Math.round(midAfternoonTotals.calories),
+      sugar: Math.round(midAfternoonTotals.sugar) * 10
+    },
+    { 
+      name: `Dinner\n${dinnerTime}`, 
+      calories: Math.round(dinnerTotals.calories),
+      sugar: Math.round(dinnerTotals.sugar) * 10
+    },
+    { 
+      name: `Late Snack\n${lateSnackTime}`, 
+      calories: Math.round(lateSnackTotals.calories),
+      sugar: Math.round(lateSnackTotals.sugar) * 10
+    },
+    { 
+      name: `Post-WO\n${postWorkoutTime}`, 
+      calories: Math.round(postWorkoutTotals.calories),
+      sugar: Math.round(postWorkoutTotals.sugar) * 10
+    }
+  ];
+
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       {/* User Profile Section */}
@@ -649,56 +693,7 @@ const WeeklyPlan = () => {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
-                data={[
-                  { 
-                    name: `Breakfast\n${breakfastTime}`, 
-                    calories: Math.round(breakfastTotals.calories),
-                    sugar: Math.round(breakfastTotals.sugar) * 10,
-                    actualSugar: Math.round(breakfastTotals.sugar)
-                  },
-                  { 
-                    name: `Snack 1\n${firstSnackTime}`, 
-                    calories: Math.round(firstSnackTotals.calories),
-                    sugar: Math.round(firstSnackTotals.sugar) * 10,
-                    actualSugar: Math.round(firstSnackTotals.sugar)
-                  },
-                  { 
-                    name: `Snack 2\n${secondSnackTime}`, 
-                    calories: Math.round(secondSnackTotals.calories),
-                    sugar: Math.round(secondSnackTotals.sugar) * 10,
-                    actualSugar: Math.round(secondSnackTotals.sugar)
-                  },
-                  { 
-                    name: `Lunch\n${lunchTime}`, 
-                    calories: Math.round(lunchTotals.calories),
-                    sugar: Math.round(lunchTotals.sugar) * 10,
-                    actualSugar: Math.round(lunchTotals.sugar)
-                  },
-                  { 
-                    name: `Mid-Aft\n${midAfternoonTime}`, 
-                    calories: Math.round(midAfternoonTotals.calories),
-                    sugar: Math.round(midAfternoonTotals.sugar) * 10,
-                    actualSugar: Math.round(midAfternoonTotals.sugar)
-                  },
-                  { 
-                    name: `Dinner\n${dinnerTime}`, 
-                    calories: Math.round(dinnerTotals.calories),
-                    sugar: Math.round(dinnerTotals.sugar) * 10,
-                    actualSugar: Math.round(dinnerTotals.sugar)
-                  },
-                  { 
-                    name: `Late Snack\n${lateSnackTime}`, 
-                    calories: Math.round(lateSnackTotals.calories),
-                    sugar: Math.round(lateSnackTotals.sugar) * 10,
-                    actualSugar: Math.round(lateSnackTotals.sugar)
-                  },
-                  { 
-                    name: `Post-WO\n${postWorkoutTime}`, 
-                    calories: Math.round(postWorkoutTotals.calories),
-                    sugar: Math.round(postWorkoutTotals.sugar) * 10,
-                    actualSugar: Math.round(postWorkoutTotals.sugar)
-                  }
-                ]}
+                data={timelineData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
