@@ -92,7 +92,7 @@ const MEAL_CONFIG = {
 };
 
 const MealTracker = ({
-  mealType,
+  mealType = 'breakfast', // Default fallback value
   time,
   setTime,
   items,
@@ -108,11 +108,30 @@ const MealTracker = ({
   onAddFoodItem,
   onRemoveFoodItem
 }) => {
+  // Additional validation and debugging
+  if (!mealType || typeof mealType !== 'string') {
+    console.warn(`MealTracker received invalid mealType: ${mealType}, defaulting to 'breakfast'`);
+    mealType = 'breakfast';
+  }
+
   const config = MEAL_CONFIG[mealType];
   
   if (!config) {
-    console.error(`Invalid meal type: ${mealType}`);
-    return null;
+    console.error(`Invalid meal type: ${mealType}. Available types: ${Object.keys(MEAL_CONFIG).join(', ')}`);
+    // Fall back to breakfast config as a safety measure
+    const fallbackConfig = MEAL_CONFIG.breakfast;
+    return (
+      <div className="mb-8 p-6 bg-red-50 rounded-lg border-2 border-red-200">
+        <h2 className="text-2xl font-bold text-red-800 mb-4 text-center">
+          ⚠️ Configuration Error
+        </h2>
+        <p className="text-red-700 text-center">
+          Invalid meal type "{mealType}". Please check your component props.
+          <br />
+          Available meal types: {Object.keys(MEAL_CONFIG).join(', ')}
+        </p>
+      </div>
+    );
   }
 
   // Generate time options based on meal type
@@ -131,41 +150,46 @@ const MealTracker = ({
 
   // Get appropriate message for this meal type
   const getMessage = () => {
-    switch(mealType) {
-      case 'breakfast':
-        return MealMessages.getBreakfastMessage(pieData, time, items, totals, userProfile);
-      case 'firstSnack':
-        return MealMessages.getFirstSnackMessage(
-          pieData, time, items, totals, 
-          previousMeals.breakfast?.time, 
-          previousMeals.breakfast?.totals, 
-          previousMeals.breakfast?.pieData, 
-          userProfile
-        );
-      case 'secondSnack':
-        return MealMessages.getSecondSnackMessage(
-          pieData, time, items, totals,
-          previousMeals.breakfast?.time,
-          previousMeals.breakfast?.totals,
-          previousMeals.breakfast?.items,
-          previousMeals.firstSnack?.time,
-          previousMeals.firstSnack?.totals,
-          previousMeals.firstSnack?.items,
-          userProfile,
-          calorieData
-        );
-      case 'lunch':
-        return MealMessages.getLunchMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-      case 'midAfternoon':
-        return MealMessages.getMidAfternoonMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-      case 'dinner':
-        return MealMessages.getDinnerMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-      case 'lateSnack':
-        return MealMessages.getLateSnackMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-      case 'postWorkout':
-        return MealMessages.getPostWorkoutMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-      default:
-        return null;
+    try {
+      switch(mealType) {
+        case 'breakfast':
+          return MealMessages.getBreakfastMessage(pieData, time, items, totals, userProfile);
+        case 'firstSnack':
+          return MealMessages.getFirstSnackMessage(
+            pieData, time, items, totals, 
+            previousMeals.breakfast?.time, 
+            previousMeals.breakfast?.totals, 
+            previousMeals.breakfast?.pieData, 
+            userProfile
+          );
+        case 'secondSnack':
+          return MealMessages.getSecondSnackMessage(
+            pieData, time, items, totals,
+            previousMeals.breakfast?.time,
+            previousMeals.breakfast?.totals,
+            previousMeals.breakfast?.items,
+            previousMeals.firstSnack?.time,
+            previousMeals.firstSnack?.totals,
+            previousMeals.firstSnack?.items,
+            userProfile,
+            calorieData
+          );
+        case 'lunch':
+          return MealMessages.getLunchMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
+        case 'midAfternoon':
+          return MealMessages.getMidAfternoonMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
+        case 'dinner':
+          return MealMessages.getDinnerMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
+        case 'lateSnack':
+          return MealMessages.getLateSnackMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
+        case 'postWorkout':
+          return MealMessages.getPostWorkoutMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error(`Error getting message for meal type ${mealType}:`, error);
+      return null;
     }
   };
 
@@ -241,7 +265,7 @@ const MealTracker = ({
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">Macros (P/C/F)</label>
           <div className="p-2 bg-white border border-gray-300 rounded-md text-sm">
-            {item.category && item.food && FoodDatabase[item.category][item.food] ? (
+            {item.category && item.food && FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
               <span className="text-gray-800">
                 {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p / 
                 {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c / 
@@ -292,8 +316,8 @@ const MealTracker = ({
             {config.title.split(' ')[1] || 'Meal'} Time:
           </label>
           <select
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
+            value={time || ''}
+            onChange={(e) => setTime && setTime(e.target.value)}
             className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
           >
             {getTimeOptions().map(timeOption => (
@@ -306,8 +330,8 @@ const MealTracker = ({
       {/* Dynamic Summary */}
       <div className="text-center mb-6">
         <div className={`text-sm font-bold ${config.textColor}`}>
-          {totals.protein > 0 || totals.carbs > 0 || totals.fat > 0 ? 
-            `Protein ${pieData[0]?.percentage || 0}% • Carbs ${pieData[1]?.percentage || 0}% • Fat ${pieData[2]?.percentage || 0}%` 
+          {totals && (totals.protein > 0 || totals.carbs > 0 || totals.fat > 0) ? 
+            `Protein ${pieData && pieData[0] ? pieData[0].percentage || 0 : 0}% • Carbs ${pieData && pieData[1] ? pieData[1].percentage || 0 : 0}% • Fat ${pieData && pieData[2] ? pieData[2].percentage || 0 : 0}%` 
             : `Start adding ${mealType === 'postWorkout' ? 'post-workout' : 'food'} items to see macro breakdown`
           }
         </div>
@@ -315,11 +339,15 @@ const MealTracker = ({
 
       {/* Food Items */}
       <div className="space-y-4 mb-6">
-        {items.map(item => renderFoodItem(item))}
+        {items && items.length > 0 ? items.map(item => renderFoodItem(item)) : (
+          <div className="p-4 text-center text-gray-500">
+            No food items added yet
+          </div>
+        )}
       </div>
 
       {/* Pie Chart (only show if there are calories) */}
-      {totals.calories > 0 && (
+      {totals && totals.calories > 0 && (
         <div className="mb-6 bg-white rounded-lg p-4 border">
           <h3 className="text-lg font-bold text-gray-800 mb-3 text-center">
             {config.title} Breakdown
@@ -336,7 +364,7 @@ const MealTracker = ({
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => (
+                  {pieData && pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
