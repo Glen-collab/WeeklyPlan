@@ -93,20 +93,20 @@ const MEAL_CONFIG = {
 
 const MealTracker = ({
   mealType = 'breakfast', // Default fallback value
-  time,
-  setTime,
-  items,
-  setItems,
-  totals,
-  pieData,
-  warnings,
-  userProfile,
-  calorieData,
+  time = '',
+  setTime = () => {},
+  items = [],
+  setItems = () => {},
+  totals = { calories: 0, protein: 0, carbs: 0, fat: 0 },
+  pieData = [],
+  warnings = [],
+  userProfile = {},
+  calorieData = {},
   previousMeals = {},
-  onOpenServingModal,
-  onUpdateFoodItem,
-  onAddFoodItem,
-  onRemoveFoodItem
+  onOpenServingModal = () => {},
+  onUpdateFoodItem = () => {},
+  onAddFoodItem = () => {},
+  onRemoveFoodItem = () => {}
 }) => {
   // Additional validation and debugging
   if (!mealType || typeof mealType !== 'string') {
@@ -150,6 +150,11 @@ const MealTracker = ({
 
   // Get appropriate message for this meal type
   const getMessage = () => {
+    // Don't try to get messages if we don't have the required data
+    if (!totals || !pieData || !items || !userProfile) {
+      return null;
+    }
+
     try {
       switch(mealType) {
         case 'breakfast':
