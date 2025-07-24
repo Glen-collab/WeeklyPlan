@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import MealTracker from './MealTracker';
+import { FoodDatabase } from './FoodDatabase.js';
+import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 
 // Sample user profile - you can customize this
 const defaultUserProfile = {
@@ -19,57 +21,8 @@ const createFoodItem = () => ({
   food: '',
   serving: 1,
   displayServing: '1',
-  displayUnit: ''
+  displayUnit: 'servings'
 });
-
-// Calculate totals for a meal
-const calculateTotals = (items, foodDatabase) => {
-  let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
-  
-  items.forEach(item => {
-    if (item.category && item.food && foodDatabase[item.category] && foodDatabase[item.category][item.food]) {
-      const food = foodDatabase[item.category][item.food];
-      totalCalories += food.calories * item.serving;
-      totalProtein += food.protein * item.serving;
-      totalCarbs += food.carbs * item.serving;
-      totalFat += food.fat * item.serving;
-    }
-  });
-  
-  return {
-    calories: totalCalories,
-    protein: totalProtein,
-    carbs: totalCarbs,
-    fat: totalFat
-  };
-};
-
-// Generate pie chart data
-const generatePieData = (totals) => {
-  const total = totals.protein + totals.carbs + totals.fat;
-  if (total === 0) return [];
-  
-  return [
-    {
-      name: 'Protein',
-      value: totals.protein,
-      percentage: Math.round((totals.protein / total) * 100),
-      color: '#FF6B6B'
-    },
-    {
-      name: 'Carbs',
-      value: totals.carbs,
-      percentage: Math.round((totals.carbs / total) * 100),
-      color: '#4ECDC4'
-    },
-    {
-      name: 'Fat',
-      value: totals.fat,
-      percentage: Math.round((totals.fat / total) * 100),
-      color: '#45B7D1'
-    }
-  ];
-};
 
 const NutritionApp = () => {
   // User profile state
@@ -118,39 +71,14 @@ const NutritionApp = () => {
     item: null
   });
 
-  // Simple food database (you can expand this)
-  const foodDatabase = {
-    proteins: {
-      'Chicken Breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
-      'Salmon': { calories: 208, protein: 22, carbs: 0, fat: 12 },
-      'Eggs': { calories: 155, protein: 13, carbs: 1, fat: 11 },
-      'Greek Yogurt': { calories: 100, protein: 17, carbs: 6, fat: 0 }
-    },
-    carbs: {
-      'Brown Rice': { calories: 216, protein: 5, carbs: 45, fat: 1.8 },
-      'Sweet Potato': { calories: 112, protein: 2, carbs: 26, fat: 0.1 },
-      'Oatmeal': { calories: 147, protein: 5, carbs: 28, fat: 2.5 },
-      'Banana': { calories: 105, protein: 1, carbs: 27, fat: 0.3 }
-    },
-    vegetables: {
-      'Broccoli': { calories: 25, protein: 3, carbs: 5, fat: 0.3 },
-      'Spinach': { calories: 7, protein: 1, carbs: 1, fat: 0.1 },
-      'Bell Peppers': { calories: 20, protein: 1, carbs: 5, fat: 0.2 },
-      'Carrots': { calories: 25, protein: 1, carbs: 6, fat: 0.1 }
-    },
-    fats: {
-      'Avocado': { calories: 160, protein: 2, carbs: 9, fat: 15 },
-      'Almonds': { calories: 161, protein: 6, carbs: 6, fat: 14 },
-      'Olive Oil': { calories: 884, protein: 0, carbs: 0, fat: 100 },
-      'Peanut Butter': { calories: 588, protein: 25, carbs: 20, fat: 50 }
-    }
-  };
+  // Calculate TDEE data using external function
+  const calorieData = calculateTDEE(userProfile);
 
-  // Calculate totals and pie data for each meal
+  // Calculate totals for a meal using external function
   const getMealData = (mealType) => {
     const meal = meals[mealType];
-    const totals = calculateTotals(meal.items, foodDatabase);
-    const pieData = generatePieData(totals);
+    const totals = calculateTotals(meal.items);
+    const pieData = preparePieData(totals);
     return { totals, pieData };
   };
 
@@ -244,7 +172,7 @@ const NutritionApp = () => {
                 pieData={pieData}
                 warnings={[]} // You can add warning logic here
                 userProfile={userProfile}
-                calorieData={{}} // You can add calorie goal logic here
+                calorieData={calorieData || {}} // You can add calorie goal logic here
                 previousMeals={meals}
                 onOpenServingModal={handleOpenServingModal}
                 onUpdateFoodItem={handleUpdateFoodItem}
