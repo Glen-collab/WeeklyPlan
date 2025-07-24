@@ -156,6 +156,10 @@ const NutritionApp = () => {
           </p>
         </div>
 
+        <p style={{backgroundColor: 'yellow', padding: '10px', textAlign: 'center', fontSize: '20px'}}>
+          DEBUG: App is rendering with {Object.keys(meals).length} meals
+        </p>
+
         {/* Meal Trackers */}
         <div className="space-y-6">
           {Object.keys(meals).map(mealType => {
