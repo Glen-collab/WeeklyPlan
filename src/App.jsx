@@ -444,7 +444,7 @@ const NutritionApp = () => {
                           strokeWidth={3}
                           dot={(props) => {
                             if (props.payload.isGap) {
-                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#FF6B6B" stroke="#FF6B6B" strokeWidth={2} />;
+                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#00BFFF" stroke="#00BFFF" strokeWidth={2} />;
                             }
                             return <circle cx={props.cx} cy={props.cy} r={4} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />;
                           }}
@@ -458,7 +458,7 @@ const NutritionApp = () => {
                           strokeWidth={3}
                           dot={(props) => {
                             if (props.payload.isGap) {
-                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#FF6B6B" stroke="#FF6B6B" strokeWidth={2} />;
+                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#00BFFF" stroke="#00BFFF" strokeWidth={2} />;
                             }
                             return <circle cx={props.cx} cy={props.cy} r={4} fill="#EF4444" stroke="#EF4444" strokeWidth={2} />;
                           }}
@@ -480,12 +480,12 @@ const NutritionApp = () => {
                         <span>Sugar Trend {!isMobile && '(scaled x10)'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                        <div className="w-4 h-4 bg-cyan-400 rounded-full"></div>
                         <span>5+ Hour Gaps</span>
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      📈 Only shows meals with food • Orange dots show 5+ hour gaps where you should eat!
+                      📈 Only shows meals with food • Cyan dots show 5+ hour gaps where you should eat!
                     </div>
                   </div>
                 </div>
