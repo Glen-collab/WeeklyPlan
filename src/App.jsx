@@ -1,5 +1,4 @@
-// CARD VIEW - Perfect for Mobile
-            if (viewMode === 'cards') {import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Scale, Coffee, Hand } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts';
 import MealTracker from './MealTracker.jsx';
@@ -434,6 +433,9 @@ const NutritionApp = () => {
                 </div>
               );
             }
+
+            // CARD VIEW - Perfect for Mobile
+            if (viewMode === 'cards') {
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {timelineData.map((meal, index) => (
