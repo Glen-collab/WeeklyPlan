@@ -1,4 +1,4 @@
-// MealTracker.js - Universal reusable meal tracking component with streamlined food selection
+// Updated MealTracker.jsx - Universal reusable meal tracking component with food modal
 import React from 'react';
 import { Plus, Minus, Scale } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -104,6 +104,7 @@ const MealTracker = ({
   calorieData = {},
   previousMeals = {},
   onOpenServingModal = () => {},
+  onOpenFoodModal = () => {}, // NEW PROP
   onUpdateFoodItem = () => {},
   onAddFoodItem = () => {},
   onRemoveFoodItem = () => {}
@@ -195,23 +196,13 @@ const MealTracker = ({
     }
   };
 
-  // Handle food selection - streamlined version
-  const handleFoodSelect = (item, selectedFood) => {
-    // Update the food selection
-    onUpdateFoodItem(mealType, item.id, 'food', selectedFood);
-    
-    // Automatically open serving modal
-    const updatedItem = { ...item, food: selectedFood };
-    onOpenServingModal(mealType, updatedItem);
-  };
-
   // Toggle food item expanded/collapsed state
   const toggleFoodItemExpanded = (item) => {
     const newExpandedState = !item.isExpanded;
     onUpdateFoodItem(mealType, item.id, 'isExpanded', newExpandedState);
   };
 
-  // Render individual food item - STREAMLINED VERSION WITH COLLAPSE
+  // Render individual food item - UPDATED VERSION WITH MODAL
   const renderFoodItem = (item) => {
     const warningData = warnings?.find(w => w.id === item.id);
     const isExpanded = item.isExpanded !== false; // Default to expanded if not set
@@ -281,7 +272,7 @@ const MealTracker = ({
           </div>
         )}
 
-        {/* EXPANDED VIEW - Full selection interface */}
+        {/* EXPANDED VIEW - Category selector only (no inline food grid) */}
         {(!hasSelectedFood || isExpanded) && (
           <>
             {/* Category Dropdown */}
@@ -289,7 +280,14 @@ const MealTracker = ({
               <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
               <select
                 value={item.category}
-                onChange={(e) => onUpdateFoodItem(mealType, item.id, 'category', e.target.value)}
+                onChange={(e) => {
+                  const selectedCategory = e.target.value;
+                  onUpdateFoodItem(mealType, item.id, 'category', selectedCategory);
+                  if (selectedCategory) {
+                    // Open food modal when category is selected
+                    onOpenFoodModal(mealType, item, selectedCategory);
+                  }
+                }}
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Choose a food category...</option>
@@ -300,36 +298,6 @@ const MealTracker = ({
                 ))}
               </select>
             </div>
-
-            {/* Food Selection Grid - Shows automatically when category is selected */}
-            {item.category && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Food from {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-2">
-                  {getFoodsInCategory(item.category).map(food => (
-                    <button
-                      key={food}
-                      onClick={() => {
-                        handleFoodSelect(item, food);
-                        // Auto-collapse after selection
-                        setTimeout(() => {
-                          onUpdateFoodItem(mealType, item.id, 'isExpanded', false);
-                        }, 100);
-                      }}
-                      className={`p-2 text-left rounded-md text-sm transition-colors ${
-                        item.food === food
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300'
-                      }`}
-                    >
-                      {food}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Current Selection Display (in expanded view) */}
             {item.food && (
