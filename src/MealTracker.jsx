@@ -205,89 +205,67 @@ const MealTracker = ({
     onOpenServingModal(mealType, updatedItem);
   };
 
-  // Render individual food item - STREAMLINED VERSION
+  // Toggle food item expanded/collapsed state
+  const toggleFoodItemExpanded = (item) => {
+    const newExpandedState = !item.isExpanded;
+    onUpdateFoodItem(mealType, item.id, 'isExpanded', newExpandedState);
+  };
+
+  // Render individual food item - STREAMLINED VERSION WITH COLLAPSE
   const renderFoodItem = (item) => {
     const warningData = warnings?.find(w => w.id === item.id);
+    const isExpanded = item.isExpanded !== false; // Default to expanded if not set
+    const hasSelectedFood = item.food && item.category;
     
     return (
       <div key={item.id} className="border rounded-lg bg-gray-50 p-4">
-        {/* Category Dropdown */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
-          <select
-            value={item.category}
-            onChange={(e) => onUpdateFoodItem(mealType, item.id, 'category', e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        
+        {/* COLLAPSED VIEW - Clean selected food display */}
+        {hasSelectedFood && !isExpanded && (
+          <div 
+            onClick={() => toggleFoodItemExpanded(item)}
+            className="cursor-pointer hover:bg-blue-50 transition-colors rounded-md p-3 border border-blue-200"
           >
-            <option value="">Choose a food category...</option>
-            {getAllCategories().map(category => (
-              <option key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Food Selection Grid - Shows automatically when category is selected */}
-        {item.category && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Food from {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-2">
-              {getFoodsInCategory(item.category).map(food => (
-                <button
-                  key={food}
-                  onClick={() => handleFoodSelect(item, food)}
-                  className={`p-2 text-left rounded-md text-sm transition-colors ${
-                    item.food === food
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300'
-                  }`}
-                >
-                  {food}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Current Selection Display */}
-        {item.food && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
             <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-blue-800">{item.food}</div>
-                <div className="text-sm text-blue-600">
-                  {item.displayServing} {item.displayUnit}
+              <div className="flex-1">
+                <div className="font-medium text-blue-800 text-lg">{item.food}</div>
+                <div className="text-sm text-blue-600 mb-2">
+                  {item.displayServing} {item.displayUnit} • {item.category}
+                </div>
+                
+                {/* Compact Macros Display */}
+                <div className="text-sm text-blue-700">
+                  {FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
+                    <span className="font-medium">
+                      {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p • 
+                      {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c • 
+                      {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f • 
+                      {Math.round(FoodDatabase[item.category][item.food].calories * item.serving)} cal
+                    </span>
+                  ) : (
+                    <span>Select food to see nutrition</span>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={() => onOpenServingModal(mealType, item)}
-                className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
-              >
-                <Scale size={14} />
-                Adjust
-              </button>
-            </div>
-            
-            {/* Macros Display */}
-            <div className="mt-2 text-sm text-blue-700">
-              {FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
-                <span>
-                  {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p / 
-                  {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c / 
-                  {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f / 
-                  {Math.round(FoodDatabase[item.category][item.food].calories * item.serving)} cal
-                </span>
-              ) : (
-                <span>Select food to see nutrition</span>
-              )}
+              
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenServingModal(mealType, item);
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
+                >
+                  <Scale size={14} />
+                  Adjust
+                </button>
+                <div className="text-xs text-gray-500">Click to change</div>
+              </div>
             </div>
 
             {/* Warning for ridiculous servings */}
             {warningData && warningData.showWarning && (
-              <div className="mt-2 bg-red-100 border border-red-300 rounded-md p-2">
+              <div className="mt-3 bg-red-100 border border-red-300 rounded-md p-2">
                 <div className="text-red-700 text-sm font-medium">
                   {userProfile.firstName}, don't be ridiculous, that's {warningData.totalCalories} calories! 😱
                 </div>
@@ -296,8 +274,112 @@ const MealTracker = ({
           </div>
         )}
 
+        {/* EXPANDED VIEW - Full selection interface */}
+        {(!hasSelectedFood || isExpanded) && (
+          <>
+            {/* Category Dropdown */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
+              <select
+                value={item.category}
+                onChange={(e) => onUpdateFoodItem(mealType, item.id, 'category', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Choose a food category...</option>
+                {getAllCategories().map(category => (
+                  <option key={category} value={category}>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Food Selection Grid - Shows automatically when category is selected */}
+            {item.category && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Food from {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-2">
+                  {getFoodsInCategory(item.category).map(food => (
+                    <button
+                      key={food}
+                      onClick={() => {
+                        handleFoodSelect(item, food);
+                        // Auto-collapse after selection
+                        setTimeout(() => {
+                          onUpdateFoodItem(mealType, item.id, 'isExpanded', false);
+                        }, 100);
+                      }}
+                      className={`p-2 text-left rounded-md text-sm transition-colors ${
+                        item.food === food
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {food}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Current Selection Display (in expanded view) */}
+            {item.food && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-blue-800">{item.food}</div>
+                    <div className="text-sm text-blue-600">
+                      {item.displayServing} {item.displayUnit}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onOpenServingModal(mealType, item)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <Scale size={14} />
+                      Adjust
+                    </button>
+                    <button
+                      onClick={() => toggleFoodItemExpanded(item)}
+                      className="bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600 transition-colors"
+                    >
+                      ✓ Done
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Macros Display */}
+                <div className="mt-2 text-sm text-blue-700">
+                  {FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
+                    <span>
+                      {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p / 
+                      {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c / 
+                      {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f / 
+                      {Math.round(FoodDatabase[item.category][item.food].calories * item.serving)} cal
+                    </span>
+                  ) : (
+                    <span>Select food to see nutrition</span>
+                  )}
+                </div>
+
+                {/* Warning for ridiculous servings */}
+                {warningData && warningData.showWarning && (
+                  <div className="mt-2 bg-red-100 border border-red-300 rounded-md p-2">
+                    <div className="text-red-700 text-sm font-medium">
+                      {userProfile.firstName}, don't be ridiculous, that's {warningData.totalCalories} calories! 😱
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
         {/* Add/Remove Buttons */}
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 mt-4">
           {items.length < config.maxItems && (
             <button
               onClick={() => onAddFoodItem(mealType)}
