@@ -347,10 +347,13 @@ const NutritionApp = () => {
               };
             });
 
+            // Sort meals by actual time (chronological order)
+            const chronologicalData = [...basicTimelineData].sort((a, b) => a.timeHours - b.timeHours);
+
             // For line chart: create smart timeline with gap detection
             const createSmartLineData = () => {
-              // Filter out meals with no calories
-              const mealsWithFood = basicTimelineData.filter(meal => meal.calories > 0);
+              // Start with chronologically sorted meals that have food
+              const mealsWithFood = chronologicalData.filter(meal => meal.calories > 0);
               
               if (mealsWithFood.length <= 1) return mealsWithFood;
               
@@ -391,7 +394,7 @@ const NutritionApp = () => {
               return smartData;
             };
 
-            const timelineData = basicTimelineData;
+            const timelineData = chronologicalData; // Now chronologically sorted!
             const smartLineData = createSmartLineData();
 
             if (viewMode === 'line') {
