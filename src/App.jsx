@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Scale, Coffee, Hand } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import MealTracker from './MealTracker.jsx';
@@ -29,6 +29,21 @@ const createFoodItem = () => ({
 const NutritionApp = () => {
   // User profile state
   const [userProfile] = useState(defaultUserProfile);
+  
+  // Mobile detection state
+  const [isMobile, setIsMobile] = useState(false);
+  const [viewMode, setViewMode] = useState('chart'); // 'chart' or 'cards'
+  
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // State for each meal type
   const [meals, setMeals] = useState({
@@ -274,11 +289,40 @@ const NutritionApp = () => {
           })()}
         </div>
 
-        {/* Daily Timeline Bar Chart */}
+        {/* Daily Timeline - Mobile Responsive */}
         <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Daily Timeline: Calories vs Sugar by Meal</h3>
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-2 sm:mb-0">
+              📊 Daily Timeline: Calories & Sugar
+            </h3>
+            
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('chart')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'chart' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                📊 Chart
+              </button>
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'cards' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                📋 Cards
+              </button>
+            </div>
+          </div>
+
           {(() => {
-            // Create timeline data for the bar chart
+            // Create timeline data
             const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
             const mealLabels = {
               breakfast: 'Breakfast',
@@ -294,50 +338,139 @@ const NutritionApp = () => {
             const timelineData = mealOrder.map(mealType => {
               const { totals } = getMealData(mealType);
               return {
-                name: `${mealLabels[mealType]}\n${meals[mealType].time}`,
+                name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
+                fullName: mealLabels[mealType],
+                time: meals[mealType].time,
                 calories: Math.round(totals.calories),
-                sugar: Math.round(totals.sugar) * 10 // Scale sugar by 10 for visibility
+                sugar: Math.round(totals.sugar),
+                sugarScaled: Math.round(totals.sugar) * 10 // For chart visibility
               };
             });
 
+            // CARD VIEW - Perfect for Mobile
+            if (viewMode === 'cards') {
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {timelineData.map((meal, index) => (
+                    <div key={index} className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                      <div className="text-center">
+                        <div className="font-bold text-gray-800 text-sm mb-1">
+                          {meal.fullName}
+                        </div>
+                        <div className="text-xs text-gray-600 mb-3">
+                          {meal.time}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">Calories:</span>
+                            <span className="font-bold text-purple-600 text-lg">
+                              {meal.calories}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">Sugar:</span>
+                            <span className="font-bold text-red-500 text-lg">
+                              {meal.sugar}g
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Mini progress bars */}
+                        <div className="mt-3 space-y-1">
+                          <div className="bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min((meal.calories / 800) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min((meal.sugar / 25) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            // CHART VIEW - Responsive for Mobile and Desktop
             return (
               <div>
-                <div className="h-80">
+                <div className={isMobile ? "h-96" : "h-80"}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart 
                       data={timelineData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      layout={isMobile ? "horizontal" : "vertical"}
+                      margin={isMobile 
+                        ? { top: 20, right: 30, left: 60, bottom: 20 }
+                        : { top: 20, right: 30, left: 20, bottom: 60 }
+                      }
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fontSize: 10 }}
-                        interval={0}
-                      />
-                      <YAxis 
-                        label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
-                      />
+                      
+                      {isMobile ? (
+                        // Mobile: Horizontal bars
+                        <>
+                          <XAxis type="number" />
+                          <YAxis 
+                            type="category" 
+                            dataKey="name" 
+                            tick={{ fontSize: 12 }}
+                            width={50}
+                          />
+                        </>
+                      ) : (
+                        // Desktop: Vertical bars  
+                        <>
+                          <XAxis 
+                            dataKey="name" 
+                            tick={{ fontSize: 10 }}
+                            interval={0}
+                          />
+                          <YAxis 
+                            label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                          />
+                        </>
+                      )}
+                      
                       <Tooltip 
-                        formatter={(value, name) => {
-                          if (name === 'sugar') {
-                            return [`${Math.round(value / 10)}g (scaled x10 for visibility)`, 'Sugar'];
+                        formatter={(value, name, props) => {
+                          if (name === 'sugarScaled') {
+                            return [`${props.payload.sugar}g`, 'Sugar'];
                           }
                           return [value, name === 'calories' ? 'Calories' : name];
                         }}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload[0]) {
+                            return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
+                          }
+                          return label;
+                        }}
                       />
+                      
                       <Bar 
                         dataKey="calories" 
                         fill="#8B5CF6" 
                         name="calories"
+                        radius={2}
                       />
                       <Bar 
-                        dataKey="sugar" 
+                        dataKey="sugarScaled" 
                         fill="#EF4444" 
-                        name="sugar"
+                        name="sugarScaled"
+                        radius={2}
                       />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+                
+                {/* Legend */}
                 <div className="mt-4 text-center">
                   <div className="flex items-center justify-center gap-6 text-sm">
                     <div className="flex items-center gap-2">
@@ -346,12 +479,14 @@ const NutritionApp = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-red-500 rounded"></div>
-                      <span>Sugar (scaled x10 for visibility)</span>
+                      <span>Sugar {!isMobile && '(scaled x10 for visibility)'}</span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    💡 Sugar bars are scaled 10x larger to make high sugar content more visible!
-                  </div>
+                  {!isMobile && (
+                    <div className="text-xs text-gray-500 mt-2">
+                      💡 Sugar bars are scaled 10x larger to make high sugar content more visible!
+                    </div>
+                  )}
                 </div>
               </div>
             );
