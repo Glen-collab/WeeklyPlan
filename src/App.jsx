@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// CARD VIEW - Perfect for Mobile
+            if (viewMode === 'cards') {import React, { useState, useEffect } from 'react';
 import { X, Scale, Coffee, Hand } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts';
 import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
@@ -32,7 +33,7 @@ const NutritionApp = () => {
   
   // Mobile detection state
   const [isMobile, setIsMobile] = useState(false);
-  const [viewMode, setViewMode] = useState('chart'); // 'chart' or 'cards'
+  const [viewMode, setViewMode] = useState('cards'); // 'chart', 'cards', or 'line'
   
   // Detect mobile screen size
   useEffect(() => {
@@ -299,16 +300,6 @@ const NutritionApp = () => {
             {/* View Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
-                onClick={() => setViewMode('chart')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'chart' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                📊 Chart
-              </button>
-              <button
                 onClick={() => setViewMode('cards')}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === 'cards' 
@@ -317,6 +308,26 @@ const NutritionApp = () => {
                 }`}
               >
                 📋 Cards
+              </button>
+              <button
+                onClick={() => setViewMode('line')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'line' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                📈 Trends
+              </button>
+              <button
+                onClick={() => setViewMode('chart')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'chart' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                📊 Bars
               </button>
             </div>
           </div>
@@ -335,20 +346,94 @@ const NutritionApp = () => {
               postWorkout: 'Post-WO'
             };
 
-            const timelineData = mealOrder.map(mealType => {
+            const timelineData = mealOrder.map((mealType, index) => {
               const { totals } = getMealData(mealType);
               return {
                 name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
+                shortName: mealLabels[mealType],
                 fullName: mealLabels[mealType],
                 time: meals[mealType].time,
                 calories: Math.round(totals.calories),
                 sugar: Math.round(totals.sugar),
-                sugarScaled: Math.round(totals.sugar) * 10 // For chart visibility
+                sugarScaled: Math.round(totals.sugar) * 10, // For chart visibility
+                order: index // For line chart ordering
               };
             });
 
-            // CARD VIEW - Perfect for Mobile
-            if (viewMode === 'cards') {
+            // LINE CHART VIEW - Great for seeing trends!
+            if (viewMode === 'line') {
+              return (
+                <div>
+                  <div className={isMobile ? "h-96" : "h-80"}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={timelineData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="shortName" 
+                          tick={{ fontSize: isMobile ? 10 : 12 }}
+                          angle={isMobile ? -45 : 0}
+                          textAnchor={isMobile ? 'end' : 'middle'}
+                          height={isMobile ? 80 : 60}
+                        />
+                        <YAxis 
+                          label={{ value: 'Values', angle: -90, position: 'insideLeft' }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => {
+                            if (name === 'sugarScaled') {
+                              return [`${props.payload.sugar}g`, 'Sugar'];
+                            }
+                            return [value, name === 'calories' ? 'Calories' : name];
+                          }}
+                          labelFormatter={(label, payload) => {
+                            if (payload && payload[0]) {
+                              return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
+                            }
+                            return label;
+                          }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="calories" 
+                          stroke="#8B5CF6" 
+                          strokeWidth={3}
+                          dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
+                          name="calories"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="sugarScaled" 
+                          stroke="#EF4444" 
+                          strokeWidth={3}
+                          dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
+                          name="sugarScaled"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="mt-4 text-center">
+                    <div className="flex items-center justify-center gap-6 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+                        <span>Calories Trend</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                        <span>Sugar Trend {!isMobile && '(scaled x10)'}</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      📈 See how your calories and sugar intake changes throughout the day!
+                    </div>
+                  </div>
+                </div>
+              );
+            }
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {timelineData.map((meal, index) => (
@@ -399,30 +484,33 @@ const NutritionApp = () => {
               );
             }
 
-            // CHART VIEW - Responsive for Mobile and Desktop
+            // CHART VIEW - Fixed Responsive Bar Chart
             return (
               <div>
                 <div className={isMobile ? "h-96" : "h-80"}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart 
                       data={timelineData}
-                      layout={isMobile ? "horizontal" : "vertical"}
+                      layout={isMobile ? "horizontal" : undefined}
                       margin={isMobile 
-                        ? { top: 20, right: 30, left: 60, bottom: 20 }
+                        ? { top: 20, right: 30, left: 80, bottom: 20 }
                         : { top: 20, right: 30, left: 20, bottom: 60 }
                       }
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       
                       {isMobile ? (
-                        // Mobile: Horizontal bars
+                        // Mobile: Horizontal bars (FIXED)
                         <>
-                          <XAxis type="number" />
+                          <XAxis 
+                            type="number" 
+                            domain={[0, 'dataMax + 100']}
+                          />
                           <YAxis 
                             type="category" 
-                            dataKey="name" 
-                            tick={{ fontSize: 12 }}
-                            width={50}
+                            dataKey="shortName" 
+                            tick={{ fontSize: 11 }}
+                            width={70}
                           />
                         </>
                       ) : (
