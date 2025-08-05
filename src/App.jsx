@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { X, Scale, Coffee, Hand } from 'lucide-react';
 import MealTracker from './MealTracker.jsx';
-import { FoodDatabase } from './FoodDatabase.js';
+import { FoodDatabase, servingSizeConversions, getServingInfo } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 
 // Sample user profile - you can customize this
@@ -64,11 +65,17 @@ const NutritionApp = () => {
     }
   });
 
-  // Serving modal state
+  // Serving modal state - FIXED VERSION
   const [servingModal, setServingModal] = useState({
     isOpen: false,
     mealType: '',
     item: null
+  });
+
+  // NEW: Custom serving state for the modal
+  const [customServing, setCustomServing] = useState({ 
+    amount: 1, 
+    unit: 'servings' 
   });
 
   // Calculate TDEE data using external function
@@ -127,20 +134,66 @@ const NutritionApp = () => {
     }));
   };
 
+  // FIXED: Open serving modal with proper initialization
   const handleOpenServingModal = (mealType, item) => {
     setServingModal({
       isOpen: true,
       mealType,
       item
     });
+    // Initialize the custom serving with the current item's values
+    setCustomServing({ 
+      amount: parseFloat(item.displayServing) || 1, 
+      unit: item.displayUnit || 'servings' 
+    });
   };
 
+  // FIXED: Close serving modal
   const handleCloseServingModal = () => {
     setServingModal({
       isOpen: false,
       mealType: '',
       item: null
     });
+  };
+
+  // NEW: Apply the custom serving size changes
+  const handleApplyCustomServing = () => {
+    if (servingModal.item && servingModal.mealType) {
+      let finalServing = customServing.amount;
+      
+      // Convert different units to serving multiplier
+      if (customServing.unit === 'grams' && servingModal.item.category && servingModal.item.food) {
+        const baseGrams = servingSizeConversions[servingModal.item.category]?.[servingModal.item.food]?.grams || 100;
+        finalServing = customServing.amount / baseGrams;
+      } else if (customServing.unit === 'ounces' && servingModal.item.category && servingModal.item.food) {
+        const baseOunces = servingSizeConversions[servingModal.item.category]?.[servingModal.item.food]?.ounces || 3.5;
+        finalServing = customServing.amount / baseOunces;
+      } else if (customServing.unit === 'cups' && servingModal.item.category && servingModal.item.food) {
+        const baseCups = servingSizeConversions[servingModal.item.category]?.[servingModal.item.food]?.cups || 0.5;
+        finalServing = customServing.amount / baseCups;
+      }
+
+      // Update the meal with the new serving size
+      setMeals(prev => ({
+        ...prev,
+        [servingModal.mealType]: {
+          ...prev[servingModal.mealType],
+          items: prev[servingModal.mealType].items.map(item => 
+            item.id === servingModal.item.id 
+              ? { 
+                  ...item, 
+                  serving: finalServing,
+                  displayServing: customServing.amount.toString(),
+                  displayUnit: customServing.unit
+                }
+              : item
+          )
+        }
+      }));
+      
+      handleCloseServingModal();
+    }
   };
 
   return (
@@ -155,10 +208,6 @@ const NutritionApp = () => {
             Welcome back, {userProfile.firstName}! Track your daily nutrition goals.
           </p>
         </div>
-
-        <p style={{backgroundColor: 'yellow', padding: '10px', textAlign: 'center', fontSize: '20px'}}>
-          DEBUG: App is rendering with {Object.keys(meals).length} meals
-        </p>
 
         {/* Meal Trackers */}
         <div className="space-y-6">
@@ -224,22 +273,94 @@ const NutritionApp = () => {
           })()}
         </div>
 
-        {/* Simple Serving Modal */}
-        {servingModal.isOpen && (
+        {/* FIXED: Fully Functional Serving Modal */}
+        {servingModal.isOpen && servingModal.item && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-bold mb-4">Adjust Serving Size</h3>
-              <p className="mb-4">
-                Current serving: {servingModal.item?.displayServing} {servingModal.item?.displayUnit}
-              </p>
-              {/* You can add serving adjustment controls here */}
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">
+                  Serving Size - {servingModal.item.food || 'Food Item'}
+                </h3>
                 <button
                   onClick={handleCloseServingModal}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  Close
+                  <X size={24} />
                 </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={customServing.amount}
+                    onChange={(e) => setCustomServing({ 
+                      ...customServing, 
+                      amount: parseFloat(e.target.value) || 0 
+                    })}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unit
+                  </label>
+                  <select
+                    value={customServing.unit}
+                    onChange={(e) => setCustomServing({ 
+                      ...customServing, 
+                      unit: e.target.value 
+                    })}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="servings">Servings</option>
+                    <option value="grams">Grams</option>
+                    <option value="ounces">Ounces</option>
+                    <option value="cups">Cups</option>
+                  </select>
+                </div>
+
+                {/* Reference serving size info */}
+                {servingModal.item.category && servingModal.item.food && (
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Reference Serving Size:</h4>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Scale size={14} />
+                        <span>{getServingInfo(servingModal.item.category, servingModal.item.food).grams}g</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Coffee size={14} />
+                        <span>{getServingInfo(servingModal.item.category, servingModal.item.food).ounces} oz / {getServingInfo(servingModal.item.category, servingModal.item.food).cups} cups</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Hand size={14} />
+                        <span>{getServingInfo(servingModal.item.category, servingModal.item.food).palm}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={handleApplyCustomServing}
+                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={handleCloseServingModal}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           </div>
