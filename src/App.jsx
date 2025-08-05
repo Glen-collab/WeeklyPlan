@@ -320,19 +320,79 @@ const NutritionApp = () => {
               postWorkout: 'Post-WO'
             };
 
-            const timelineData = mealOrder.map((mealType, index) => {
+            // Helper function to convert time to hours (24-hour format)
+            const timeToHours = (timeStr) => {
+              const [time, period] = timeStr.split(' ');
+              const [hours, minutes] = time.split(':').map(Number);
+              let hour24 = hours;
+              if (period === 'PM' && hours !== 12) hour24 += 12;
+              if (period === 'AM' && hours === 12) hour24 = 0;
+              return hour24 + minutes / 60;
+            };
+
+            // Create basic timeline data
+            const basicTimelineData = mealOrder.map((mealType, index) => {
               const { totals } = getMealData(mealType);
               return {
                 name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
                 shortName: mealLabels[mealType],
                 fullName: mealLabels[mealType],
                 time: meals[mealType].time,
+                timeHours: timeToHours(meals[mealType].time),
                 calories: Math.round(totals.calories),
                 sugar: Math.round(totals.sugar),
                 sugarScaled: Math.round(totals.sugar) * 10,
-                order: index
+                order: index,
+                mealType: mealType
               };
             });
+
+            // For line chart: create smart timeline with gap detection
+            const createSmartLineData = () => {
+              // Filter out meals with no calories
+              const mealsWithFood = basicTimelineData.filter(meal => meal.calories > 0);
+              
+              if (mealsWithFood.length <= 1) return mealsWithFood;
+              
+              const smartData = [];
+              
+              for (let i = 0; i < mealsWithFood.length; i++) {
+                const currentMeal = mealsWithFood[i];
+                smartData.push(currentMeal);
+                
+                // Check gap to next meal
+                if (i < mealsWithFood.length - 1) {
+                  const nextMeal = mealsWithFood[i + 1];
+                  const hourGap = nextMeal.timeHours - currentMeal.timeHours;
+                  
+                  // If 5+ hour gap, add zero points to show they need to eat
+                  if (hourGap >= 5) {
+                    const gapMidTime = currentMeal.timeHours + (hourGap / 2);
+                    const gapHour = Math.floor(gapMidTime);
+                    const gapMinute = Math.round((gapMidTime % 1) * 60);
+                    const gapTimeStr = `${gapHour > 12 ? gapHour - 12 : gapHour === 0 ? 12 : gapHour}:${gapMinute.toString().padStart(2, '0')} ${gapHour >= 12 ? 'PM' : 'AM'}`;
+                    
+                    smartData.push({
+                      name: `Gap`,
+                      shortName: `${Math.round(hourGap)}h gap`,
+                      fullName: `${Math.round(hourGap)} hour gap`,
+                      time: gapTimeStr,
+                      timeHours: gapMidTime,
+                      calories: 0,
+                      sugar: 0,
+                      sugarScaled: 0,
+                      order: currentMeal.order + 0.5,
+                      isGap: true
+                    });
+                  }
+                }
+              }
+              
+              return smartData;
+            };
+
+            const timelineData = basicTimelineData;
+            const smartLineData = createSmartLineData();
 
             if (viewMode === 'line') {
               return (
@@ -340,22 +400,25 @@ const NutritionApp = () => {
                   <div className={isMobile ? "h-96" : "h-80"}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
-                        data={timelineData}
+                        data={smartLineData}
                         margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="shortName" 
-                          tick={{ fontSize: isMobile ? 10 : 12 }}
-                          angle={isMobile ? -45 : 0}
-                          textAnchor={isMobile ? 'end' : 'middle'}
-                          height={isMobile ? 80 : 60}
+                          tick={{ fontSize: isMobile ? 9 : 11 }}
+                          angle={isMobile ? -45 : -30}
+                          textAnchor="end"
+                          height={isMobile ? 80 : 70}
                         />
                         <YAxis 
                           label={{ value: 'Values', angle: -90, position: 'insideLeft' }}
                         />
                         <Tooltip 
                           formatter={(value, name, props) => {
+                            if (props.payload.isGap) {
+                              return ['Long gap - time to eat!', 'Warning'];
+                            }
                             if (name === 'sugarScaled') {
                               return [`${props.payload.sugar}g`, 'Sugar'];
                             }
@@ -363,6 +426,9 @@ const NutritionApp = () => {
                           }}
                           labelFormatter={(label, payload) => {
                             if (payload && payload[0]) {
+                              if (payload[0].payload.isGap) {
+                                return `${payload[0].payload.fullName} - Consider a healthy snack!`;
+                              }
                               return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
                             }
                             return label;
@@ -373,23 +439,35 @@ const NutritionApp = () => {
                           dataKey="calories" 
                           stroke="#8B5CF6" 
                           strokeWidth={3}
-                          dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
+                          dot={(props) => {
+                            if (props.payload.isGap) {
+                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#FF6B6B" stroke="#FF6B6B" strokeWidth={2} />;
+                            }
+                            return <circle cx={props.cx} cy={props.cy} r={4} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />;
+                          }}
                           name="calories"
+                          connectNulls={false}
                         />
                         <Line 
                           type="monotone" 
                           dataKey="sugarScaled" 
                           stroke="#EF4444" 
                           strokeWidth={3}
-                          dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
+                          dot={(props) => {
+                            if (props.payload.isGap) {
+                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#FF6B6B" stroke="#FF6B6B" strokeWidth={2} />;
+                            }
+                            return <circle cx={props.cx} cy={props.cy} r={4} fill="#EF4444" stroke="#EF4444" strokeWidth={2} />;
+                          }}
                           name="sugarScaled"
+                          connectNulls={false}
                         />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                   
                   <div className="mt-4 text-center">
-                    <div className="flex items-center justify-center gap-6 text-sm">
+                    <div className="flex items-center justify-center gap-6 text-sm flex-wrap">
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
                         <span>Calories Trend</span>
@@ -398,9 +476,13 @@ const NutritionApp = () => {
                         <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                         <span>Sugar Trend {!isMobile && '(scaled x10)'}</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                        <span>5+ Hour Gaps</span>
+                      </div>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      📈 See how your calories and sugar intake changes throughout the day!
+                      📈 Only shows meals with food • Orange dots show 5+ hour gaps where you should eat!
                     </div>
                   </div>
                 </div>
@@ -461,70 +543,71 @@ const NutritionApp = () => {
               <div>
                 <div className={isMobile ? "h-96" : "h-80"}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={timelineData}
-                      layout={isMobile ? "horizontal" : undefined}
-                      margin={isMobile 
-                        ? { top: 20, right: 30, left: 80, bottom: 20 }
-                        : { top: 20, right: 30, left: 20, bottom: 60 }
-                      }
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      
-                      {isMobile ? (
-                        <>
-                          <XAxis 
-                            type="number" 
-                            domain={[0, 'dataMax + 100']}
-                          />
-                          <YAxis 
-                            type="category" 
-                            dataKey="shortName" 
-                            tick={{ fontSize: 11 }}
-                            width={70}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <XAxis 
-                            dataKey="name" 
-                            tick={{ fontSize: 10 }}
-                            interval={0}
-                          />
-                          <YAxis 
-                            label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
-                          />
-                        </>
-                      )}
-                      
-                      <Tooltip 
-                        formatter={(value, name, props) => {
-                          if (name === 'sugarScaled') {
-                            return [`${props.payload.sugar}g`, 'Sugar'];
-                          }
-                          return [value, name === 'calories' ? 'Calories' : name];
-                        }}
-                        labelFormatter={(label, payload) => {
-                          if (payload && payload[0]) {
-                            return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
-                          }
-                          return label;
-                        }}
-                      />
-                      
-                      <Bar 
-                        dataKey="calories" 
-                        fill="#8B5CF6" 
-                        name="calories"
-                        radius={2}
-                      />
-                      <Bar 
-                        dataKey="sugarScaled" 
-                        fill="#EF4444" 
-                        name="sugarScaled"
-                        radius={2}
-                      />
-                    </BarChart>
+                    {isMobile ? (
+                      // Mobile: Use horizontal bars (FIXED)
+                      <BarChart 
+                        data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
+                        layout="horizontal"
+                        margin={{ top: 20, right: 30, left: 90, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis 
+                          type="category" 
+                          dataKey="shortName" 
+                          tick={{ fontSize: 11 }}
+                          width={80}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => {
+                            if (name === 'sugarScaled') {
+                              return [`${props.payload.sugar}g`, 'Sugar'];
+                            }
+                            return [value, name === 'calories' ? 'Calories' : name];
+                          }}
+                          labelFormatter={(label, payload) => {
+                            if (payload && payload[0]) {
+                              return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
+                            }
+                            return label;
+                          }}
+                        />
+                        <Bar dataKey="calories" fill="#8B5CF6" name="calories" />
+                        <Bar dataKey="sugarScaled" fill="#EF4444" name="sugarScaled" />
+                      </BarChart>
+                    ) : (
+                      // Desktop: Use vertical bars
+                      <BarChart 
+                        data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          tick={{ fontSize: 10 }}
+                          interval={0}
+                        />
+                        <YAxis 
+                          label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => {
+                            if (name === 'sugarScaled') {
+                              return [`${props.payload.sugar}g`, 'Sugar'];
+                            }
+                            return [value, name === 'calories' ? 'Calories' : name];
+                          }}
+                          labelFormatter={(label, payload) => {
+                            if (payload && payload[0]) {
+                              return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
+                            }
+                            return label;
+                          }}
+                        />
+                        <Bar dataKey="calories" fill="#8B5CF6" name="calories" radius={2} />
+                        <Bar dataKey="sugarScaled" fill="#EF4444" name="sugarScaled" radius={2} />
+                      </BarChart>
+                    )}
                   </ResponsiveContainer>
                 </div>
                 
@@ -539,11 +622,9 @@ const NutritionApp = () => {
                       <span>Sugar {!isMobile && '(scaled x10 for visibility)'}</span>
                     </div>
                   </div>
-                  {!isMobile && (
-                    <div className="text-xs text-gray-500 mt-2">
-                      💡 Sugar bars are scaled 10x larger to make high sugar content more visible!
-                    </div>
-                  )}
+                  <div className="text-xs text-gray-500 mt-2">
+                    📊 Only shows meals with food • {isMobile ? 'Horizontal bars for easy mobile viewing' : 'Sugar bars are scaled 10x larger to make high sugar content more visible!'}
+                  </div>
                 </div>
               </div>
             );
