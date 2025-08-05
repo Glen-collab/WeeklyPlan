@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Scale, Coffee, Hand } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
@@ -268,6 +269,90 @@ const NutritionApp = () => {
                     : "Perfect! You've hit your calorie target!"
                   }
                 </p>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Daily Timeline Bar Chart */}
+        <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Daily Timeline: Calories vs Sugar by Meal</h3>
+          {(() => {
+            // Create timeline data for the bar chart
+            const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+            const mealLabels = {
+              breakfast: 'Breakfast',
+              firstSnack: 'Snack 1', 
+              secondSnack: 'Snack 2',
+              lunch: 'Lunch',
+              midAfternoon: 'Mid-Aft',
+              dinner: 'Dinner',
+              lateSnack: 'Late Snack',
+              postWorkout: 'Post-WO'
+            };
+
+            const timelineData = mealOrder.map(mealType => {
+              const { totals } = getMealData(mealType);
+              return {
+                name: `${mealLabels[mealType]}\n${meals[mealType].time}`,
+                calories: Math.round(totals.calories),
+                sugar: Math.round(totals.sugar) * 10 // Scale sugar by 10 for visibility
+              };
+            });
+
+            return (
+              <div>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart 
+                      data={timelineData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 10 }}
+                        interval={0}
+                      />
+                      <YAxis 
+                        label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          if (name === 'sugar') {
+                            return [`${Math.round(value / 10)}g (scaled x10 for visibility)`, 'Sugar'];
+                          }
+                          return [value, name === 'calories' ? 'Calories' : name];
+                        }}
+                      />
+                      <Bar 
+                        dataKey="calories" 
+                        fill="#8B5CF6" 
+                        name="calories"
+                      />
+                      <Bar 
+                        dataKey="sugar" 
+                        fill="#EF4444" 
+                        name="sugar"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 text-center">
+                  <div className="flex items-center justify-center gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                      <span>Calories</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500 rounded"></div>
+                      <span>Sugar (scaled x10 for visibility)</span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    💡 Sugar bars are scaled 10x larger to make high sugar content more visible!
+                  </div>
+                </div>
               </div>
             );
           })()}
