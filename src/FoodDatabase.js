@@ -63,6 +63,10 @@ export const FoodDatabase = {
     'EAS Protein': { protein: 23, carbs: 3, fat: 2, sugar: 2, calories: 130 },
     'ON Gold Standard': { protein: 24, carbs: 1, fat: 1, sugar: 1, calories: 110 },
     'Collagen Protein': { protein: 20, carbs: 0, fat: 0, sugar: 0, calories: 80 },
+    'AdvoCare Body Lean 25': { protein: 25, carbs: 6, fat: 1.5, sugar: 4, calories: 138 },
+    
+    // Meal Replacements
+    'AdvoCare Meal Replacement': { protein: 24, carbs: 24, fat: 2, sugar: 6, calories: 210 },
     
     // Protein Bars
     'Protein Bar (generic)': { protein: 20, carbs: 15, fat: 6, sugar: 8, calories: 190 },
@@ -89,6 +93,10 @@ export const FoodDatabase = {
     'EAS Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
     'ON Gold Standard': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
     'Collagen Protein': { grams: 20, ounces: 0.7, cups: 0.1, palm: '1 scoop' },
+    'AdvoCare Body Lean 25': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    
+    // Meal Replacements
+    'AdvoCare Meal Replacement': { grams: 35, ounces: 1.2, cups: 0.15, palm: '1 scoop' },
     
     // Protein Bars
     'Protein Bar (generic)': { grams: 60, ounces: 2, cups: 0.25, palm: '1 bar' },
