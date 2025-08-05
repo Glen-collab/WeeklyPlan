@@ -5,7 +5,6 @@ import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 
-// Sample user profile - you can customize this
 const defaultUserProfile = {
   firstName: "Glen",
   weight: 180,
@@ -13,10 +12,8 @@ const defaultUserProfile = {
   activityLevel: "moderate"
 };
 
-// Utility function to generate unique IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Initial food item structure
 const createFoodItem = () => ({
   id: generateId(),
   category: '',
@@ -27,14 +24,10 @@ const createFoodItem = () => ({
 });
 
 const NutritionApp = () => {
-  // User profile state
   const [userProfile] = useState(defaultUserProfile);
-  
-  // Mobile detection state
   const [isMobile, setIsMobile] = useState(false);
-  const [viewMode, setViewMode] = useState('cards'); // 'chart', 'cards', or 'line'
+  const [viewMode, setViewMode] = useState('cards');
   
-  // Detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -45,7 +38,6 @@ const NutritionApp = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // State for each meal type
   const [meals, setMeals] = useState({
     breakfast: {
       time: '7:00 AM',
@@ -81,23 +73,19 @@ const NutritionApp = () => {
     }
   });
 
-  // Serving modal state - FIXED VERSION
   const [servingModal, setServingModal] = useState({
     isOpen: false,
     mealType: '',
     item: null
   });
 
-  // NEW: Custom serving state for the modal
   const [customServing, setCustomServing] = useState({ 
     amount: 1, 
     unit: 'servings' 
   });
 
-  // Calculate TDEE data using external function
   const calorieData = calculateTDEE(userProfile);
 
-  // Calculate totals for a meal using external function
   const getMealData = (mealType) => {
     const meal = meals[mealType];
     const totals = calculateTotals(meal.items);
@@ -105,7 +93,6 @@ const NutritionApp = () => {
     return { totals, pieData };
   };
 
-  // Handler functions
   const handleTimeChange = (mealType, newTime) => {
     setMeals(prev => ({
       ...prev,
@@ -150,21 +137,18 @@ const NutritionApp = () => {
     }));
   };
 
-  // FIXED: Open serving modal with proper initialization
   const handleOpenServingModal = (mealType, item) => {
     setServingModal({
       isOpen: true,
       mealType,
       item
     });
-    // Initialize the custom serving with the current item's values
     setCustomServing({ 
       amount: parseFloat(item.displayServing) || 1, 
       unit: item.displayUnit || 'servings' 
     });
   };
 
-  // FIXED: Close serving modal
   const handleCloseServingModal = () => {
     setServingModal({
       isOpen: false,
@@ -173,12 +157,10 @@ const NutritionApp = () => {
     });
   };
 
-  // NEW: Apply the custom serving size changes
   const handleApplyCustomServing = () => {
     if (servingModal.item && servingModal.mealType) {
       let finalServing = customServing.amount;
       
-      // Convert different units to serving multiplier
       if (customServing.unit === 'grams' && servingModal.item.category && servingModal.item.food) {
         const baseGrams = servingSizeConversions[servingModal.item.category]?.[servingModal.item.food]?.grams || 100;
         finalServing = customServing.amount / baseGrams;
@@ -190,7 +172,6 @@ const NutritionApp = () => {
         finalServing = customServing.amount / baseCups;
       }
 
-      // Update the meal with the new serving size
       setMeals(prev => ({
         ...prev,
         [servingModal.mealType]: {
@@ -215,7 +196,6 @@ const NutritionApp = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="container mx-auto px-4">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
             🥗 Nutrition Tracker
@@ -225,7 +205,6 @@ const NutritionApp = () => {
           </p>
         </div>
 
-        {/* Meal Trackers */}
         <div className="space-y-6">
           {Object.keys(meals).map(mealType => {
             const { totals, pieData } = getMealData(mealType);
@@ -239,9 +218,9 @@ const NutritionApp = () => {
                 items={meals[mealType].items}
                 totals={totals}
                 pieData={pieData}
-                warnings={[]} // You can add warning logic here
+                warnings={[]}
                 userProfile={userProfile}
-                calorieData={calorieData || {}} // You can add calorie goal logic here
+                calorieData={calorieData || {}}
                 previousMeals={meals}
                 onOpenServingModal={handleOpenServingModal}
                 onUpdateFoodItem={handleUpdateFoodItem}
@@ -252,7 +231,6 @@ const NutritionApp = () => {
           })}
         </div>
 
-        {/* Daily Summary */}
         <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
             📊 Daily Summary
@@ -289,14 +267,12 @@ const NutritionApp = () => {
           })()}
         </div>
 
-        {/* Daily Timeline - Mobile Responsive */}
         <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-gray-800 mb-2 sm:mb-0">
               📊 Daily Timeline: Calories & Sugar
             </h3>
             
-            {/* View Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('cards')}
@@ -332,7 +308,6 @@ const NutritionApp = () => {
           </div>
 
           {(() => {
-            // Create timeline data
             const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
             const mealLabels = {
               breakfast: 'Breakfast',
@@ -354,12 +329,11 @@ const NutritionApp = () => {
                 time: meals[mealType].time,
                 calories: Math.round(totals.calories),
                 sugar: Math.round(totals.sugar),
-                sugarScaled: Math.round(totals.sugar) * 10, // For chart visibility
-                order: index // For line chart ordering
+                sugarScaled: Math.round(totals.sugar) * 10,
+                order: index
               };
             });
 
-            // LINE CHART VIEW - Great for seeing trends!
             if (viewMode === 'line') {
               return (
                 <div>
@@ -414,7 +388,6 @@ const NutritionApp = () => {
                     </ResponsiveContainer>
                   </div>
                   
-                  {/* Legend */}
                   <div className="mt-4 text-center">
                     <div className="flex items-center justify-center gap-6 text-sm">
                       <div className="flex items-center gap-2">
@@ -434,7 +407,6 @@ const NutritionApp = () => {
               );
             }
 
-            // CARD VIEW - Perfect for Mobile
             if (viewMode === 'cards') {
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -464,7 +436,6 @@ const NutritionApp = () => {
                           </div>
                         </div>
                         
-                        {/* Mini progress bars */}
                         <div className="mt-3 space-y-1">
                           <div className="bg-gray-200 rounded-full h-2">
                             <div 
@@ -486,7 +457,6 @@ const NutritionApp = () => {
               );
             }
 
-            // CHART VIEW - Fixed Responsive Bar Chart
             return (
               <div>
                 <div className={isMobile ? "h-96" : "h-80"}>
@@ -502,7 +472,6 @@ const NutritionApp = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       
                       {isMobile ? (
-                        // Mobile: Horizontal bars (FIXED)
                         <>
                           <XAxis 
                             type="number" 
@@ -516,7 +485,6 @@ const NutritionApp = () => {
                           />
                         </>
                       ) : (
-                        // Desktop: Vertical bars  
                         <>
                           <XAxis 
                             dataKey="name" 
@@ -560,7 +528,6 @@ const NutritionApp = () => {
                   </ResponsiveContainer>
                 </div>
                 
-                {/* Legend */}
                 <div className="mt-4 text-center">
                   <div className="flex items-center justify-center gap-6 text-sm">
                     <div className="flex items-center gap-2">
@@ -583,7 +550,6 @@ const NutritionApp = () => {
           })()}
         </div>
 
-        {/* FIXED: Fully Functional Serving Modal */}
         {servingModal.isOpen && servingModal.item && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -636,7 +602,6 @@ const NutritionApp = () => {
                   </select>
                 </div>
 
-                {/* Reference serving size info */}
                 {servingModal.item.category && servingModal.item.food && (
                   <div className="bg-gray-50 p-3 rounded-md">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Reference Serving Size:</h4>
