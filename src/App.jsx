@@ -546,71 +546,52 @@ const NutritionApp = () => {
               <div>
                 <div className={isMobile ? "h-96" : "h-80"}>
                   <ResponsiveContainer width="100%" height="100%">
-                    {isMobile ? (
-                      // Mobile: Use horizontal bars (FIXED)
-                      <BarChart 
-                        data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
-                        layout="horizontal"
-                        margin={{ top: 20, right: 30, left: 90, bottom: 20 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis 
-                          type="category" 
-                          dataKey="shortName" 
-                          tick={{ fontSize: 11 }}
-                          width={80}
-                        />
-                        <Tooltip 
-                          formatter={(value, name, props) => {
-                            if (name === 'sugarScaled') {
-                              return [`${props.payload.sugar}g`, 'Sugar'];
-                            }
-                            return [value, name === 'calories' ? 'Calories' : name];
-                          }}
-                          labelFormatter={(label, payload) => {
-                            if (payload && payload[0]) {
-                              return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
-                            }
-                            return label;
-                          }}
-                        />
-                        <Bar dataKey="calories" fill="#8B5CF6" name="calories" />
-                        <Bar dataKey="sugarScaled" fill="#EF4444" name="sugarScaled" />
-                      </BarChart>
-                    ) : (
-                      // Desktop: Use vertical bars
-                      <BarChart 
-                        data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
-                          tick={{ fontSize: 10 }}
-                          interval={0}
-                        />
-                        <YAxis 
-                          label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
-                        />
-                        <Tooltip 
-                          formatter={(value, name, props) => {
-                            if (name === 'sugarScaled') {
-                              return [`${props.payload.sugar}g`, 'Sugar'];
-                            }
-                            return [value, name === 'calories' ? 'Calories' : name];
-                          }}
-                          labelFormatter={(label, payload) => {
-                            if (payload && payload[0]) {
-                              return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
-                            }
-                            return label;
-                          }}
-                        />
-                        <Bar dataKey="calories" fill="#8B5CF6" name="calories" radius={2} />
-                        <Bar dataKey="sugarScaled" fill="#EF4444" name="sugarScaled" radius={2} />
-                      </BarChart>
-                    )}
+                    <BarChart 
+                      data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
+                      margin={isMobile 
+                        ? { top: 20, right: 20, left: 20, bottom: 80 }
+                        : { top: 20, right: 30, left: 20, bottom: 60 }
+                      }
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey={isMobile ? "shortName" : "name"}
+                        tick={{ fontSize: isMobile ? 9 : 10 }}
+                        angle={isMobile ? -45 : 0}
+                        textAnchor={isMobile ? "end" : "middle"}
+                        height={isMobile ? 70 : 50}
+                        interval={0}
+                      />
+                      <YAxis 
+                        label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                      />
+                      <Tooltip 
+                        formatter={(value, name, props) => {
+                          if (name === 'sugarScaled') {
+                            return [`${props.payload.sugar}g`, 'Sugar'];
+                          }
+                          return [value, name === 'calories' ? 'Calories' : name];
+                        }}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload[0]) {
+                            return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
+                          }
+                          return label;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="calories" 
+                        fill="#8B5CF6" 
+                        name="calories" 
+                        radius={2}
+                      />
+                      <Bar 
+                        dataKey="sugarScaled" 
+                        fill="#EF4444" 
+                        name="sugarScaled" 
+                        radius={2}
+                      />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
                 
@@ -626,7 +607,7 @@ const NutritionApp = () => {
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 mt-2">
-                    📊 Only shows meals with food • {isMobile ? 'Horizontal bars for easy mobile viewing' : 'Sugar bars are scaled 10x larger to make high sugar content more visible!'}
+                    📊 Only shows meals with food • {isMobile ? 'Angled labels for mobile viewing' : 'Sugar bars are scaled 10x larger to make high sugar content more visible!'}
                   </div>
                 </div>
               </div>
