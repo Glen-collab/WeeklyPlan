@@ -1,4 +1,4 @@
-// MealTracker.js - Universal reusable meal tracking component
+// MealTracker.js - Universal reusable meal tracking component with streamlined food selection
 import React from 'react';
 import { Plus, Minus, Scale } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -92,7 +92,7 @@ const MEAL_CONFIG = {
 };
 
 const MealTracker = ({
-  mealType = 'breakfast', // Default fallback value
+  mealType = 'breakfast',
   time = '',
   setTime = () => {},
   items = [],
@@ -118,8 +118,6 @@ const MealTracker = ({
   
   if (!config) {
     console.error(`Invalid meal type: ${mealType}. Available types: ${Object.keys(MEAL_CONFIG).join(', ')}`);
-    // Fall back to breakfast config as a safety measure
-    const fallbackConfig = MEAL_CONFIG.breakfast;
     return (
       <div className="mb-8 p-6 bg-red-50 rounded-lg border-2 border-red-200">
         <h2 className="text-2xl font-bold text-red-800 mb-4 text-center">
@@ -150,7 +148,6 @@ const MealTracker = ({
 
   // Get appropriate message for this meal type
   const getMessage = () => {
-    // Don't try to get messages if we don't have the required data
     if (!totals || !pieData || !items || !userProfile) {
       return null;
     }
@@ -198,21 +195,31 @@ const MealTracker = ({
     }
   };
 
-  // Render individual food item
+  // Handle food selection - streamlined version
+  const handleFoodSelect = (item, selectedFood) => {
+    // Update the food selection
+    onUpdateFoodItem(mealType, item.id, 'food', selectedFood);
+    
+    // Automatically open serving modal
+    const updatedItem = { ...item, food: selectedFood };
+    onOpenServingModal(mealType, updatedItem);
+  };
+
+  // Render individual food item - STREAMLINED VERSION
   const renderFoodItem = (item) => {
     const warningData = warnings?.find(w => w.id === item.id);
     
     return (
-      <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+      <div key={item.id} className="border rounded-lg bg-gray-50 p-4">
         {/* Category Dropdown */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
           <select
             value={item.category}
             onChange={(e) => onUpdateFoodItem(mealType, item.id, 'category', e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">Select category</option>
+            <option value="">Choose a food category...</option>
             {getAllCategories().map(category => (
               <option key={category} value={category}>
                 {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -221,85 +228,94 @@ const MealTracker = ({
           </select>
         </div>
 
-        {/* Food Dropdown */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Food</label>
-          <select
-            value={item.food}
-            onChange={(e) => onUpdateFoodItem(mealType, item.id, 'food', e.target.value)}
-            disabled={!item.category}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-          >
-            <option value="">Select food</option>
-            {item.category && getFoodsInCategory(item.category).map(food => (
-              <option key={food} value={food}>{food}</option>
-            ))}
-          </select>
-        </div>
+        {/* Food Selection Grid - Shows automatically when category is selected */}
+        {item.category && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Food from {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-2">
+              {getFoodsInCategory(item.category).map(food => (
+                <button
+                  key={food}
+                  onClick={() => handleFoodSelect(item, food)}
+                  className={`p-2 text-left rounded-md text-sm transition-colors ${
+                    item.food === food
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  {food}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Serving Button */}
-        <div className="flex-1 relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Servings</label>
-          <div className="relative">
-            <button
-              onClick={() => onOpenServingModal(mealType, item)}
-              disabled={!item.category || !item.food}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed bg-blue-50 hover:bg-blue-100 transition-colors text-left"
-            >
-              <div className="flex items-center justify-between">
-                <span>{item.displayServing} {item.displayUnit}</span>
-                <Scale size={16} className="text-blue-500" />
+        {/* Current Selection Display */}
+        {item.food && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-blue-800">{item.food}</div>
+                <div className="text-sm text-blue-600">
+                  {item.displayServing} {item.displayUnit}
+                </div>
               </div>
-            </button>
+              <button
+                onClick={() => onOpenServingModal(mealType, item)}
+                className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
+              >
+                <Scale size={14} />
+                Adjust
+              </button>
+            </div>
             
-            {/* Ridiculous Serving Warning */}
+            {/* Macros Display */}
+            <div className="mt-2 text-sm text-blue-700">
+              {FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
+                <span>
+                  {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p / 
+                  {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c / 
+                  {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f / 
+                  {Math.round(FoodDatabase[item.category][item.food].calories * item.serving)} cal
+                </span>
+              ) : (
+                <span>Select food to see nutrition</span>
+              )}
+            </div>
+
+            {/* Warning for ridiculous servings */}
             {warningData && warningData.showWarning && (
-              <div className="absolute -top-12 -right-34 z-20">
-                <div className="relative">
-                  <div className="absolute top-8 left-12 w-3 h-3 bg-red-500 transform rotate-45"></div>
-                  <div className="bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
-                    {userProfile.firstName}, don't be ridiculous, that's {warningData.totalCalories} calories! 😱
-                  </div>
+              <div className="mt-2 bg-red-100 border border-red-300 rounded-md p-2">
+                <div className="text-red-700 text-sm font-medium">
+                  {userProfile.firstName}, don't be ridiculous, that's {warningData.totalCalories} calories! 😱
                 </div>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Macros Display */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Macros (P/C/F)</label>
-          <div className="p-2 bg-white border border-gray-300 rounded-md text-sm">
-            {item.category && item.food && FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
-              <span className="text-gray-800">
-                {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p / 
-                {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c / 
-                {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f
-              </span>
-            ) : (
-              <span className="text-gray-400">-p / -c / -f</span>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Add/Remove Buttons */}
-        <div className="flex flex-col gap-2">
+        <div className="flex justify-end gap-2">
           {items.length < config.maxItems && (
             <button
               onClick={() => onAddFoodItem(mealType)}
-              className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+              className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-1"
               title="Add food item"
             >
               <Plus size={16} />
+              Add Food
             </button>
           )}
           <button
             onClick={() => onRemoveFoodItem(mealType, item.id)}
             disabled={items.length === 1}
-            className="p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-1"
             title="Remove food item"
           >
             <Minus size={16} />
+            Remove
           </button>
         </div>
       </div>
@@ -337,12 +353,12 @@ const MealTracker = ({
         <div className={`text-sm font-bold ${config.textColor}`}>
           {totals && (totals.protein > 0 || totals.carbs > 0 || totals.fat > 0) ? 
             `Protein ${pieData && pieData[0] ? pieData[0].percentage || 0 : 0}% • Carbs ${pieData && pieData[1] ? pieData[1].percentage || 0 : 0}% • Fat ${pieData && pieData[2] ? pieData[2].percentage || 0 : 0}%` 
-            : `Start adding ${mealType === 'postWorkout' ? 'post-workout' : 'food'} items to see macro breakdown`
+            : `Start selecting foods to see macro breakdown`
           }
         </div>
       </div>
 
-      {/* Food Items */}
+      {/* Food Items - STREAMLINED */}
       <div className="space-y-4 mb-6">
         {items && items.length > 0 ? items.map(item => renderFoodItem(item)) : (
           <div className="p-4 text-center text-gray-500">
