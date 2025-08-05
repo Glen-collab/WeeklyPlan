@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Scale, Coffee, Hand } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts';
 import MealTracker from './MealTracker.jsx';
-import { FoodDatabase, servingSizeConversions, getServingInfo } from './FoodDatabase.js';
+import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories, getFoodsInCategory } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 
 const defaultUserProfile = {
@@ -77,6 +77,14 @@ const NutritionApp = () => {
     isOpen: false,
     mealType: '',
     item: null
+  });
+
+  // NEW: Food selection modal state
+  const [foodModal, setFoodModal] = useState({
+    isOpen: false,
+    mealType: '',
+    item: null,
+    category: ''
   });
 
   const [customServing, setCustomServing] = useState({ 
@@ -157,6 +165,41 @@ const NutritionApp = () => {
     });
   };
 
+  // NEW: Food modal handlers
+  const handleOpenFoodModal = (mealType, item, category) => {
+    setFoodModal({
+      isOpen: true,
+      mealType,
+      item,
+      category
+    });
+  };
+
+  const handleCloseFoodModal = () => {
+    setFoodModal({
+      isOpen: false,
+      mealType: '',
+      item: null,
+      category: ''
+    });
+  };
+
+  const handleSelectFood = (selectedFood) => {
+    if (foodModal.item && foodModal.mealType) {
+      // Update the food selection
+      handleUpdateFoodItem(foodModal.mealType, foodModal.item.id, 'food', selectedFood);
+      
+      // Close food modal
+      handleCloseFoodModal();
+      
+      // Automatically open serving modal
+      const updatedItem = { ...foodModal.item, food: selectedFood, category: foodModal.category };
+      setTimeout(() => {
+        handleOpenServingModal(foodModal.mealType, updatedItem);
+      }, 100);
+    }
+  };
+
   const handleApplyCustomServing = () => {
     if (servingModal.item && servingModal.mealType) {
       let finalServing = customServing.amount;
@@ -194,18 +237,18 @@ const NutritionApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+    <div className={`min-h-screen bg-gray-100 ${isMobile ? 'py-4' : 'py-8'}`}>
+      <div className={`container mx-auto ${isMobile ? 'px-3' : 'px-4'}`}>
+        <div className={`text-center ${isMobile ? 'mb-6' : 'mb-8'}`}>
+          <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold text-gray-800 mb-2`}>
             🥗 Nutrition Tracker
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className={`${isMobile ? 'text-base' : 'text-lg'} text-gray-600`}>
             Welcome back, {userProfile.firstName}! Track your daily nutrition goals.
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className={`space-y-${isMobile ? '3' : '6'}`}>
           {Object.keys(meals).map(mealType => {
             const { totals, pieData } = getMealData(mealType);
             
@@ -223,16 +266,18 @@ const NutritionApp = () => {
                 calorieData={calorieData || {}}
                 previousMeals={meals}
                 onOpenServingModal={handleOpenServingModal}
+                onOpenFoodModal={handleOpenFoodModal} // NEW PROP
                 onUpdateFoodItem={handleUpdateFoodItem}
                 onAddFoodItem={handleAddFoodItem}
                 onRemoveFoodItem={handleRemoveFoodItem}
+                isMobile={isMobile}
               />
             );
           })}
         </div>
 
-        <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+        <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
+          <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800 mb-4 text-center`}>
             📊 Daily Summary
           </h2>
           {(() => {
@@ -243,18 +288,18 @@ const NutritionApp = () => {
             
             return (
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">
+                <div className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-blue-600 mb-2`}>
                   {Math.round(totalDailyCalories)} / {userProfile.targetCalories} calories
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+                <div className={`w-full bg-gray-200 rounded-full ${isMobile ? 'h-6' : 'h-4'} mb-4`}>
                   <div 
-                    className="bg-blue-600 h-4 rounded-full" 
+                    className={`bg-blue-600 ${isMobile ? 'h-6' : 'h-4'} rounded-full transition-all duration-500`} 
                     style={{ 
                       width: `${Math.min((totalDailyCalories / userProfile.targetCalories) * 100, 100)}%` 
                     }}
                   ></div>
                 </div>
-                <p className="text-gray-600">
+                <p className={`text-gray-600 ${isMobile ? 'text-base' : 'text-sm'}`}>
                   {totalDailyCalories < userProfile.targetCalories 
                     ? `${userProfile.targetCalories - Math.round(totalDailyCalories)} calories remaining`
                     : totalDailyCalories > userProfile.targetCalories
@@ -267,42 +312,42 @@ const NutritionApp = () => {
           })()}
         </div>
 
-        <div className="mt-8 bg-white rounded-lg p-6 shadow-md">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800 mb-2 sm:mb-0">
+        <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
+          <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'flex-col sm:flex-row'} justify-between items-center mb-4`}>
+            <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 ${isMobile ? 'mb-0' : 'mb-2 sm:mb-0'}`}>
               📊 Daily Timeline: Calories & Sugar
             </h3>
             
-            <div className="flex bg-gray-100 rounded-lg p-1">
+            <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2 w-full' : 'p-1'}`}>
               <button
                 onClick={() => setViewMode('cards')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
                   viewMode === 'cards' 
                     ? 'bg-blue-500 text-white' 
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                📋 Cards
+                📋 {isMobile ? 'Cards' : 'Cards'}
               </button>
               <button
                 onClick={() => setViewMode('line')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
                   viewMode === 'line' 
                     ? 'bg-blue-500 text-white' 
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                📈 Trends
+                📈 {isMobile ? 'Trends' : 'Trends'}
               </button>
               <button
                 onClick={() => setViewMode('chart')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
                   viewMode === 'chart' 
                     ? 'bg-blue-500 text-white' 
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                📊 Bars
+                📊 {isMobile ? 'Bars' : 'Bars'}
               </button>
             </div>
           </div>
@@ -469,23 +514,23 @@ const NutritionApp = () => {
                     </ResponsiveContainer>
                   </div>
                   
-                  <div className="mt-4 text-center">
-                    <div className="flex items-center justify-center gap-6 text-sm flex-wrap">
+                  <div className={`mt-4 text-center ${isMobile ? 'px-2' : ''}`}>
+                    <div className={`flex items-center justify-center ${isMobile ? 'flex-col space-y-2' : 'gap-6'} text-sm flex-wrap`}>
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
                         <span>Calories Trend</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                        <span>Sugar Trend {!isMobile && '(scaled x10)'}</span>
+                        <span>Sugar Trend{!isMobile && ' (scaled x10)'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-cyan-400 rounded-full"></div>
-                        <span>5+ Hour Gaps</span>
+                        <span>{isMobile ? 'Long Gaps' : '5+ Hour Gaps'}</span>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
-                      📈 Only shows meals with food • Cyan dots show 5+ hour gaps where you should eat!
+                    <div className={`${isMobile ? 'text-xs mt-3' : 'text-xs mt-2'} text-gray-500`}>
+                      📈 {isMobile ? 'Shows meals with food • Cyan = 5+ hour gaps' : 'Only shows meals with food • Cyan dots show 5+ hour gaps where you should eat!'}
                     </div>
                   </div>
                 </div>
@@ -494,43 +539,43 @@ const NutritionApp = () => {
 
             if (viewMode === 'cards') {
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'}`}>
                   {timelineData.map((meal, index) => (
-                    <div key={index} className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                    <div key={index} className={`bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
                       <div className="text-center">
-                        <div className="font-bold text-gray-800 text-sm mb-1">
+                        <div className={`font-bold text-gray-800 ${isMobile ? 'text-base' : 'text-sm'} mb-1`}>
                           {meal.fullName}
                         </div>
-                        <div className="text-xs text-gray-600 mb-3">
+                        <div className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600 mb-3`}>
                           {meal.time}
                         </div>
                         
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">Calories:</span>
-                            <span className="font-bold text-purple-600 text-lg">
+                            <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Calories:</span>
+                            <span className={`font-bold text-purple-600 ${isMobile ? 'text-xl' : 'text-lg'}`}>
                               {meal.calories}
                             </span>
                           </div>
                           
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">Sugar:</span>
-                            <span className="font-bold text-red-500 text-lg">
+                            <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Sugar:</span>
+                            <span className={`font-bold text-red-500 ${isMobile ? 'text-xl' : 'text-lg'}`}>
                               {meal.sugar}g
                             </span>
                           </div>
                         </div>
                         
-                        <div className="mt-3 space-y-1">
-                          <div className="bg-gray-200 rounded-full h-2">
+                        <div className={`${isMobile ? 'mt-4' : 'mt-3'} space-y-2`}>
+                          <div className={`bg-gray-200 rounded-full ${isMobile ? 'h-3' : 'h-2'}`}>
                             <div 
-                              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                              className={`bg-purple-500 ${isMobile ? 'h-3' : 'h-2'} rounded-full transition-all duration-300`}
                               style={{ width: `${Math.min((meal.calories / 800) * 100, 100)}%` }}
                             ></div>
                           </div>
-                          <div className="bg-gray-200 rounded-full h-2">
+                          <div className={`bg-gray-200 rounded-full ${isMobile ? 'h-3' : 'h-2'}`}>
                             <div 
-                              className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                              className={`bg-red-500 ${isMobile ? 'h-3' : 'h-2'} rounded-full transition-all duration-300`}
                               style={{ width: `${Math.min((meal.sugar / 25) * 100, 100)}%` }}
                             ></div>
                           </div>
@@ -595,19 +640,19 @@ const NutritionApp = () => {
                   </ResponsiveContainer>
                 </div>
                 
-                <div className="mt-4 text-center">
-                  <div className="flex items-center justify-center gap-6 text-sm">
+                <div className={`mt-4 text-center ${isMobile ? 'px-2' : ''}`}>
+                  <div className={`flex items-center justify-center ${isMobile ? 'flex-col space-y-2' : 'gap-6'} text-sm`}>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-purple-500 rounded"></div>
                       <span>Calories</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-red-500 rounded"></div>
-                      <span>Sugar {!isMobile && '(scaled x10 for visibility)'}</span>
+                      <span>Sugar{!isMobile && ' (scaled x10 for visibility)'}</span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    📊 Only shows meals with food • {isMobile ? 'Angled labels for mobile viewing' : 'Sugar bars are scaled 10x larger to make high sugar content more visible!'}
+                  <div className={`${isMobile ? 'text-xs mt-3' : 'text-xs mt-2'} text-gray-500`}>
+                    📊 {isMobile ? 'Shows meals with food • Sugar scaled x10' : 'Only shows meals with food • Sugar bars are scaled 10x larger to make high sugar content more visible!'}
                   </div>
                 </div>
               </div>
@@ -615,24 +660,31 @@ const NutritionApp = () => {
           })()}
         </div>
 
+        {/* Serving Size Modal */}
         {servingModal.isOpen && servingModal.item && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className={`bg-white rounded-lg ${isMobile ? 'p-4 max-w-sm w-full' : 'p-6 max-w-md w-full mx-4'}`}>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">
-                  Serving Size - {servingModal.item.food || 'Food Item'}
+                <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-gray-800`}>
+                  {isMobile ? 'Serving Size' : `Serving Size - ${servingModal.item.food || 'Food Item'}`}
                 </h3>
                 <button
                   onClick={handleCloseServingModal}
-                  className="text-gray-500 hover:text-gray-700"
+                  className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-2' : ''}`}
                 >
-                  <X size={24} />
+                  <X size={isMobile ? 20 : 24} />
                 </button>
               </div>
               
+              {isMobile && servingModal.item.food && (
+                <div className="text-sm text-gray-600 mb-4 text-center font-medium">
+                  {servingModal.item.food}
+                </div>
+              )}
+              
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block ${isMobile ? 'text-sm' : 'text-sm'} font-medium text-gray-700 mb-2`}>
                     Amount
                   </label>
                   <input
@@ -644,12 +696,12 @@ const NutritionApp = () => {
                       ...customServing, 
                       amount: parseFloat(e.target.value) || 0 
                     })}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full ${isMobile ? 'p-3 text-base' : 'p-2'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block ${isMobile ? 'text-sm' : 'text-sm'} font-medium text-gray-700 mb-2`}>
                     Unit
                   </label>
                   <select
@@ -658,7 +710,7 @@ const NutritionApp = () => {
                       ...customServing, 
                       unit: e.target.value 
                     })}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full ${isMobile ? 'p-3 text-base' : 'p-2'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                   >
                     <option value="servings">Servings</option>
                     <option value="grams">Grams</option>
@@ -668,9 +720,9 @@ const NutritionApp = () => {
                 </div>
 
                 {servingModal.item.category && servingModal.item.food && (
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Reference Serving Size:</h4>
-                    <div className="text-sm text-gray-600 space-y-1">
+                  <div className={`bg-gray-50 ${isMobile ? 'p-3' : 'p-3'} rounded-md`}>
+                    <h4 className={`${isMobile ? 'text-sm' : 'text-sm'} font-medium text-gray-700 mb-2`}>Reference Serving Size:</h4>
+                    <div className={`${isMobile ? 'text-sm' : 'text-sm'} text-gray-600 space-y-1`}>
                       <div className="flex items-center gap-2">
                         <Scale size={14} />
                         <span>{getServingInfo(servingModal.item.category, servingModal.item.food).grams}g</span>
@@ -687,20 +739,62 @@ const NutritionApp = () => {
                   </div>
                 )}
 
-                <div className="flex gap-3 mt-6">
+                <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'gap-3'} mt-6`}>
                   <button
                     onClick={handleApplyCustomServing}
-                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+                    className={`${isMobile ? 'w-full py-3' : 'flex-1 py-2 px-4'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
                   >
                     Apply
                   </button>
                   <button
                     onClick={handleCloseServingModal}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                    className={`${isMobile ? 'w-full py-3' : 'flex-1 py-2 px-4'} bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors font-medium`}
                   >
                     Cancel
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NEW: Food Selection Modal */}
+        {foodModal.isOpen && foodModal.category && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className={`bg-white rounded-lg ${isMobile ? 'p-4 max-w-sm w-full max-h-[80vh]' : 'p-6 max-w-md w-full mx-4 max-h-[70vh]'} overflow-hidden flex flex-col`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-gray-800`}>
+                  Select {foodModal.category.charAt(0).toUpperCase() + foodModal.category.slice(1)}
+                </h3>
+                <button
+                  onClick={handleCloseFoodModal}
+                  className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-2' : ''}`}
+                >
+                  <X size={isMobile ? 20 : 24} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-2">
+                  {getFoodsInCategory(foodModal.category).map(food => (
+                    <button
+                      key={food}
+                      onClick={() => handleSelectFood(food)}
+                      className={`${isMobile ? 'p-4 text-base' : 'p-3 text-sm'} text-left rounded-md transition-colors bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300`}
+                    >
+                      {food}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t">
+                <button
+                  onClick={handleCloseFoodModal}
+                  className={`${isMobile ? 'w-full py-3' : 'w-full py-2 px-4'} bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors font-medium`}
+                >
+                  Go Back
+                </button>
               </div>
             </div>
           </div>
