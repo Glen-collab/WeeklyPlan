@@ -224,43 +224,50 @@ const MealTracker = ({
         {hasSelectedFood && !isExpanded && (
           <div 
             onClick={() => toggleFoodItemExpanded(item)}
-            className="cursor-pointer hover:bg-blue-50 transition-colors rounded-md p-3 border border-blue-200"
+            className="cursor-pointer hover:bg-blue-50 transition-colors rounded-md p-4 border border-blue-200"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="font-medium text-blue-800 text-lg">{item.food}</div>
-                <div className="text-sm text-blue-600 mb-2">
-                  {item.displayServing} {item.displayUnit} • {item.category}
-                </div>
-                
-                {/* Compact Macros Display */}
-                <div className="text-sm text-blue-700">
-                  {FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
-                    <span className="font-medium">
-                      {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p • 
-                      {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c • 
-                      {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f • 
-                      {Math.round(FoodDatabase[item.category][item.food].calories * item.serving)} cal
-                    </span>
-                  ) : (
-                    <span>Select food to see nutrition</span>
-                  )}
-                </div>
+            {/* Food Name - Single Line */}
+            <div className="font-medium text-blue-800 text-lg mb-3 whitespace-nowrap overflow-hidden text-ellipsis">
+              {item.food}
+            </div>
+            
+            {/* Servings and Adjust Button - Middle Row */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm text-blue-600 font-medium">
+                {item.displayServing} {item.displayUnit}
               </div>
               
-              <div className="flex items-center gap-2 ml-4">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenServingModal(mealType, item);
-                  }}
-                  className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
-                >
-                  <Scale size={14} />
-                  Adjust
-                </button>
-                <div className="text-xs text-gray-500">Click to change</div>
-              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenServingModal(mealType, item);
+                }}
+                className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
+              >
+                <Scale size={14} />
+                Adjust
+              </button>
+            </div>
+            
+            {/* Macros - Bottom Row, One Line */}
+            <div className="text-sm text-blue-700 font-medium mb-2 text-center">
+              {FoodDatabase[item.category] && FoodDatabase[item.category][item.food] ? (
+                <span>
+                  {Math.round(FoodDatabase[item.category][item.food].protein * item.serving)}p • 
+                  {Math.round(FoodDatabase[item.category][item.food].carbs * item.serving)}c • 
+                  {Math.round(FoodDatabase[item.category][item.food].fat * item.serving)}f • 
+                  {Math.round(FoodDatabase[item.category][item.food].calories * item.serving)} cal
+                </span>
+              ) : (
+                <span>Select food to see nutrition</span>
+              )}
+            </div>
+            
+            {/* Category - Bottom Center, Bold Red */}
+            <div className="text-center">
+              <span className="text-xs font-bold text-red-600 uppercase tracking-wide">
+                {item.category}
+              </span>
             </div>
 
             {/* Warning for ridiculous servings */}
