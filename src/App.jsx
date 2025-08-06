@@ -6,10 +6,13 @@ import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories,
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 
 const defaultUserProfile = {
-  firstName: "Glen",
-  weight: 180,
-  targetCalories: 2200,
-  activityLevel: "moderate"
+  firstName: '',
+  lastName: '',
+  heightFeet: '',
+  heightInches: '',
+  weight: '',
+  exerciseLevel: '',
+  goal: ''
 };
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -24,7 +27,7 @@ const createFoodItem = () => ({
 });
 
 const NutritionApp = () => {
-  const [userProfile] = useState(defaultUserProfile);
+  const [userProfile, setUserProfile] = useState(defaultUserProfile);
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState('cards');
   
@@ -85,6 +88,11 @@ const NutritionApp = () => {
     mealType: '',
     item: null,
     category: ''
+  });
+
+  // NEW: Profile modal state
+  const [profileModal, setProfileModal] = useState({
+    isOpen: false
   });
 
   const [customServing, setCustomServing] = useState({ 
@@ -184,6 +192,44 @@ const NutritionApp = () => {
     });
   };
 
+  // NEW: Profile modal handlers
+  const handleOpenProfileModal = () => {
+    setProfileModal({ isOpen: true });
+  };
+
+  const handleCloseProfileModal = () => {
+    setProfileModal({ isOpen: false });
+  };
+
+  const updateUserProfile = (field, value) => {
+    setUserProfile(prev => ({ ...prev, [field]: value }));
+  };
+
+  // NEW: Quick demo profile setups
+  const setDemoMaleProfile = () => {
+    setUserProfile({
+      firstName: 'John',
+      lastName: 'Doe',
+      heightFeet: '5',
+      heightInches: '10',
+      weight: '165',
+      exerciseLevel: 'moderate',
+      goal: 'maintain'
+    });
+  };
+
+  const setDemoFemaleProfile = () => {
+    setUserProfile({
+      firstName: 'Jane',
+      lastName: 'Doe',
+      heightFeet: '5',
+      heightInches: '6',
+      weight: '135',
+      exerciseLevel: 'moderate',
+      goal: 'maintain'
+    });
+  };
+
   const handleSelectFood = (selectedFood) => {
     if (foodModal.item && foodModal.mealType) {
       // Update the food selection
@@ -244,8 +290,56 @@ const NutritionApp = () => {
             🥗 Nutrition Tracker
           </h1>
           <p className={`${isMobile ? 'text-base' : 'text-lg'} text-gray-600`}>
-            Welcome back, {userProfile.firstName}! Track your daily nutrition goals.
+            Welcome back{userProfile.firstName ? `, ${userProfile.firstName}` : ''}! Track your daily nutrition goals.
           </p>
+        </div>
+
+        {/* Profile Card */}
+        <div className={`${isMobile ? 'mb-4' : 'mb-6'} bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
+            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center space-x-6'}`}>
+              <div className="text-center">
+                <div className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-blue-800`}>
+                  {userProfile.firstName ? `${userProfile.firstName}${userProfile.lastName ? ` ${userProfile.lastName}` : ''}` : 'Setup Your Profile'}
+                </div>
+                {userProfile.goal && (
+                  <div className={`${isMobile ? 'text-sm' : 'text-base'} text-blue-600 capitalize`}>
+                    Goal: {userProfile.goal.replace('-', ' ')}
+                  </div>
+                )}
+              </div>
+              
+              {calorieData && (
+                <div className={`flex ${isMobile ? 'justify-center space-x-4' : 'space-x-6'} text-center`}>
+                  <div>
+                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-green-600`}>
+                      {calorieData.bmr}
+                    </div>
+                    <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-green-700`}>BMR</div>
+                  </div>
+                  <div>
+                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-purple-600`}>
+                      {calorieData.tdee}
+                    </div>
+                    <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-purple-700`}>TDEE</div>
+                  </div>
+                  <div>
+                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-orange-600`}>
+                      {calorieData.targetCalories}
+                    </div>
+                    <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-orange-700`}>Target</div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <button
+              onClick={handleOpenProfileModal}
+              className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
+            >
+              {userProfile.firstName ? 'Edit Profile' : 'Setup Profile'}
+            </button>
+          </div>
         </div>
 
         <div className={`space-y-${isMobile ? '3' : '6'}`}>
@@ -289,23 +383,27 @@ const NutritionApp = () => {
             return (
               <div className="text-center">
                 <div className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-blue-600 mb-2`}>
-                  {Math.round(totalDailyCalories)} / {userProfile.targetCalories} calories
+                  {Math.round(totalDailyCalories)} / {calorieData?.targetCalories || 2200} calories
                 </div>
                 <div className={`w-full bg-gray-200 rounded-full ${isMobile ? 'h-6' : 'h-4'} mb-4`}>
                   <div 
                     className={`bg-blue-600 ${isMobile ? 'h-6' : 'h-4'} rounded-full transition-all duration-500`} 
                     style={{ 
-                      width: `${Math.min((totalDailyCalories / userProfile.targetCalories) * 100, 100)}%` 
+                      width: `${Math.min((totalDailyCalories / (calorieData?.targetCalories || 2200)) * 100, 100)}%` 
                     }}
                   ></div>
                 </div>
                 <p className={`text-gray-600 ${isMobile ? 'text-base' : 'text-sm'}`}>
-                  {totalDailyCalories < userProfile.targetCalories 
-                    ? `${userProfile.targetCalories - Math.round(totalDailyCalories)} calories remaining`
-                    : totalDailyCalories > userProfile.targetCalories
-                    ? `${Math.round(totalDailyCalories - userProfile.targetCalories)} calories over target`
-                    : "Perfect! You've hit your calorie target!"
-                  }
+                  {(() => {
+                    const target = calorieData?.targetCalories || 2200;
+                    if (totalDailyCalories < target) {
+                      return `${target - Math.round(totalDailyCalories)} calories remaining`;
+                    } else if (totalDailyCalories > target) {
+                      return `${Math.round(totalDailyCalories - target)} calories over target`;
+                    } else {
+                      return "Perfect! You've hit your calorie target!";
+                    }
+                  })()}
                 </p>
               </div>
             );
@@ -794,6 +892,184 @@ const NutritionApp = () => {
                   className={`${isMobile ? 'w-full py-3' : 'w-full py-2 px-4'} bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors font-medium`}
                 >
                   Go Back
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NEW: Profile Modal */}
+        {profileModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className={`bg-white rounded-lg ${isMobile ? 'p-4 w-full max-h-[90vh]' : 'p-6 max-w-2xl w-full mx-4 max-h-[80vh]'} overflow-hidden flex flex-col`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800`}>
+                  Your Profile & Goals
+                </h3>
+                <button
+                  onClick={handleCloseProfileModal}
+                  className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-2' : ''}`}
+                >
+                  <X size={isMobile ? 20 : 24} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                {/* Quick Demo Setup Buttons */}
+                <div className={`mb-6 p-4 bg-gray-50 rounded-lg border`}>
+                  <h4 className="font-semibold text-gray-700 mb-3 text-center">🚀 Quick Demo Setup</h4>
+                  <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-4 justify-center'}`}>
+                    <button
+                      onClick={setDemoMaleProfile}
+                      className={`${isMobile ? 'w-full py-3' : 'px-6 py-2'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
+                    >
+                      👨 Demo Male (John, 5'10", 165lbs)
+                    </button>
+                    <button
+                      onClick={setDemoFemaleProfile}
+                      className={`${isMobile ? 'w-full py-3' : 'px-6 py-2'} bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors font-medium`}
+                    >
+                      👩 Demo Female (Jane, 5'6", 135lbs)
+                    </button>
+                  </div>
+                  <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-500 text-center mt-2`}>
+                    Click for instant setup with realistic values • Both set to "Moderate" exercise & "Maintain" goal
+                  </p>
+                </div>
+
+                <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-3 gap-6'}`}>
+                  {/* Personal Info */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-700">Personal Info</h4>
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-3'}`}>
+                      <input
+                        type="text"
+                        placeholder="First name"
+                        value={userProfile.firstName}
+                        onChange={(e) => updateUserProfile('firstName', e.target.value)}
+                        className={`${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Last name"
+                        value={userProfile.lastName}
+                        onChange={(e) => updateUserProfile('lastName', e.target.value)}
+                        className={`${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                      />
+                    </div>
+                    
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-3 gap-2'}`}>
+                      <select
+                        value={userProfile.heightFeet}
+                        onChange={(e) => updateUserProfile('heightFeet', e.target.value)}
+                        className={`${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                      >
+                        <option value="">Feet</option>
+                        {[4, 5, 6, 7].map(feet => (
+                          <option key={feet} value={feet}>{feet} ft</option>
+                        ))}
+                      </select>
+                      <select
+                        value={userProfile.heightInches}
+                        onChange={(e) => updateUserProfile('heightInches', e.target.value)}
+                        className={`${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                      >
+                        <option value="">Inches</option>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(inches => (
+                          <option key={inches} value={inches}>{inches} in</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Weight (lbs)"
+                        value={userProfile.weight}
+                        onChange={(e) => updateUserProfile('weight', e.target.value)}
+                        className={`${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                      />
+                    </div>
+                    
+                    <select
+                      value={userProfile.exerciseLevel}
+                      onChange={(e) => updateUserProfile('exerciseLevel', e.target.value)}
+                      className={`w-full ${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                    >
+                      <option value="">Exercise Level</option>
+                      <option value="sedentary">Sedentary (little/no exercise)</option>
+                      <option value="light">Light (1-3 days/week)</option>
+                      <option value="moderate">Moderate (3-5 days/week)</option>
+                      <option value="active">Active (6-7 days/week)</option>
+                      <option value="very-active">Very Active (2x/day, intense)</option>
+                    </select>
+                  </div>
+                  
+                  {/* Goal Selection */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-700">Your Goal</h4>
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-2'}`}>
+                      {[
+                        { value: 'maintain', label: 'Maintain', color: 'bg-gray-100 hover:bg-gray-200' },
+                        { value: 'lose', label: 'Lose Weight/Fat', color: 'bg-red-100 hover:bg-red-200' },
+                        { value: 'gain-muscle', label: 'Gain Muscle', color: 'bg-blue-100 hover:bg-blue-200' },
+                        { value: 'dirty-bulk', label: 'Dirty Bulk', color: 'bg-green-100 hover:bg-green-200' }
+                      ].map((goal) => (
+                        <button
+                          key={goal.value}
+                          onClick={() => updateUserProfile('goal', goal.value)}
+                          className={`${isMobile ? 'p-4 text-base' : 'p-3 text-sm'} font-medium rounded-md border-2 transition-colors ${
+                            userProfile.goal === goal.value
+                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              : `border-gray-200 ${goal.color} text-gray-700`
+                          }`}
+                        >
+                          {goal.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* TDEE Results */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-700">Your Numbers</h4>
+                    {calorieData ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">BMR:</span>
+                          <span className="font-medium">{calorieData.bmr} cal</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">TDEE:</span>
+                          <span className="font-medium">{calorieData.tdee} cal</span>
+                        </div>
+                        <div className="flex justify-between text-sm border-t pt-2">
+                          <span className="text-gray-600 font-medium">Target:</span>
+                          <span className="font-bold text-blue-600">{calorieData.targetCalories} cal</span>
+                        </div>
+                        {userProfile.firstName && (
+                          <div className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-500 mt-2`}>
+                            Hey {userProfile.firstName}! These are your daily calorie targets.
+                          </div>
+                        )}
+                        <div className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-500 mt-3 p-2 bg-blue-50 rounded`}>
+                          <strong>BMR:</strong> Base metabolic rate - calories burned at rest<br/>
+                          <strong>TDEE:</strong> Total daily energy expenditure - BMR + activity<br/>
+                          <strong>Target:</strong> TDEE adjusted for your goal
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`${isMobile ? 'text-base' : 'text-sm'} text-gray-500`}>
+                        Fill out your info to see your personalized calorie targets
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t">
+                <button
+                  onClick={handleCloseProfileModal}
+                  className={`${isMobile ? 'w-full py-3' : 'w-full py-2 px-4'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
+                >
+                  Save Profile
                 </button>
               </div>
             </div>
