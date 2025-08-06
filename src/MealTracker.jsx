@@ -6,6 +6,19 @@ import { generateMealTimes, generateHourlyTimes } from './Utils.js';
 import { FoodDatabase, getAllCategories, getFoodsInCategory } from './FoodDatabase.js';
 import { MealMessages } from './MealMessages.js';
 
+// Define proper category order and display names
+const categoryDisplayMap = {
+  'protein': 'Proteins',
+  'carbohydrate': 'Carbohydrates', 
+  'fat': 'Fats',
+  'fruits': 'Fruits',
+  'vegetables': 'Vegetables',
+  'condiments': 'Condiments',
+  'supplements': 'Supplements'
+};
+
+const categoryOrder = ['protein', 'carbohydrate', 'fat', 'fruits', 'vegetables', 'condiments', 'supplements'];
+
 // Meal configuration - defines behavior for each meal type
 const MEAL_CONFIG = {
   breakfast: {
@@ -257,7 +270,7 @@ const MealTracker = ({
             {/* Category - Bottom Center, Bold Red */}
             <div className="text-center">
               <span className="text-xs font-bold text-red-600 uppercase tracking-wide">
-                {item.category}
+                {categoryDisplayMap[item.category] || item.category}
               </span>
             </div>
 
@@ -275,7 +288,7 @@ const MealTracker = ({
         {/* EXPANDED VIEW - Category selector only (no inline food grid) */}
         {(!hasSelectedFood || isExpanded) && (
           <>
-            {/* Category Dropdown */}
+            {/* Category Dropdown - UPDATED WITH PROPER ORDER AND PLURALIZATION */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
               <select
@@ -291,9 +304,9 @@ const MealTracker = ({
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Choose a food category...</option>
-                {getAllCategories().map(category => (
+                {categoryOrder.map(category => (
                   <option key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    {categoryDisplayMap[category]}
                   </option>
                 ))}
               </select>
