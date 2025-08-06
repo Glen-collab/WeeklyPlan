@@ -1,9 +1,9 @@
 // MealMessages.js - All smart coaching and nutrition guidance messages
 
 export const MealMessages = {
-  
+
   // ========================
-  // BREAKFAST MESSAGES
+  // BREAKFAST MESSAGES - UPDATED WITH 3-PART SYSTEM
   // ========================
   getBreakfastMessage: (pieData, selectedTime, foodItems, totals, userProfile) => {
     if (totals.calories < 50) return null;
@@ -46,8 +46,125 @@ export const MealMessages = {
       
       return message;
     }
+
+    // NEW 3-PART PERSONALIZED MESSAGE SYSTEM
+    if (userProfile.firstName) {
+      let message = "";
+      const timeHour = parseInt(selectedTime.split(':')[0]);
+      
+      // PART 1: High-Protein Praise Messages (40%+ protein)
+      if (proteinPercent >= 40) {
+        const highProteinMessages = [
+          `${userProfile.firstName}, now THAT'S how you start a day with ${proteinPercent}% protein!`,
+          `Crushing it this morning, ${userProfile.firstName}! ${proteinPercent}% protein is exactly what your muscles needed.`,
+          `${userProfile.firstName}, you're setting the tone perfectly with ${proteinPercent}% protein - your metabolism is thanking you!`,
+          `Boom! ${userProfile.firstName}, ${proteinPercent}% protein at breakfast means you're already winning the day.`,
+          `${userProfile.firstName}, I love seeing ${proteinPercent}% protein first thing - you're building lean muscle while others eat sugar.`,
+          `Smart move, ${userProfile.firstName}! ${proteinPercent}% protein keeps you satisfied and focused all morning.`,
+          `${userProfile.firstName}, ${proteinPercent}% protein at breakfast? That's champion-level nutrition right there!`,
+          `Perfect protein start, ${userProfile.firstName}! ${proteinPercent}% protein means steady energy until lunch.`,
+          `${userProfile.firstName}, you're ahead of 90% of people with ${proteinPercent}% protein at breakfast - keep it up!`,
+          `Outstanding, ${userProfile.firstName}! ${proteinPercent}% protein fuels both body and brain for peak performance.`,
+          `${userProfile.firstName}, ${proteinPercent}% protein shows you understand what real nutrition looks like!`,
+          `Impressive start, ${userProfile.firstName}! ${proteinPercent}% protein sets you up for sustained energy all day.`,
+          `${userProfile.firstName}, ${proteinPercent}% protein at breakfast is exactly how successful people eat!`,
+          `Nailed it, ${userProfile.firstName}! ${proteinPercent}% protein keeps hunger away and metabolism high.`,
+          `${userProfile.firstName}, starting with ${proteinPercent}% protein means you won't crash at 10 AM like everyone else!`,
+          `Brilliant choice, ${userProfile.firstName}! ${proteinPercent}% protein builds the foundation for a productive day.`,
+          `${userProfile.firstName}, ${proteinPercent}% protein at breakfast? You're playing in the major leagues now!`,
+          `Love this, ${userProfile.firstName}! ${proteinPercent}% protein means you're serious about your goals.`
+        ];
+        
+        message += highProteinMessages[Math.floor(Math.random() * highProteinMessages.length)];
+      } else {
+        // Standard protein messages for lower protein breakfasts
+        const standardMessages = [
+          `Good morning, ${userProfile.firstName}! Your breakfast is fueling up the day ahead.`,
+          `${userProfile.firstName}, every healthy breakfast choice moves you closer to your goals.`,
+          `Starting strong, ${userProfile.firstName}! This breakfast gives you a solid foundation.`,
+          `Nice work, ${userProfile.firstName}! You're building healthy habits one meal at a time.`,
+          `${userProfile.firstName}, this breakfast puts you on track for a successful day.`
+        ];
+        
+        message += standardMessages[Math.floor(Math.random() * standardMessages.length)];
+      }
+      
+      // PART 2: Time-Based Snack Recommendations
+      message += " ";
+      if (timeHour <= 6) {
+        const earlyMessages = [
+          "With that early start, plan a solid snack around 9 AM to maintain your energy.",
+          "Early bird! You'll want a protein-rich snack in about 3 hours to stay strong.",
+          "Starting this early means you'll need fuel around 9 AM - don't skip it!",
+          "That early morning hustle deserves a quality snack by 9 AM."
+        ];
+        message += earlyMessages[Math.floor(Math.random() * earlyMessages.length)];
+      } else if (timeHour === 7) {
+        const sevenAMMessages = [
+          "Perfect timing! Plan your first snack around 10 AM to cruise into lunch.",
+          "Great breakfast timing - a mid-morning snack will keep you satisfied until lunch.",
+          "With breakfast at 7 AM, you're set up perfectly for a 10 AM snack and strong lunch.",
+          "Classic timing! Your next fuel stop should be around 10 AM."
+        ];
+        message += sevenAMMessages[Math.floor(Math.random() * sevenAMMessages.length)];
+      } else if (timeHour === 8) {
+        const eightAMMessages = [
+          "Breakfast at 8 AM sets you up nicely - just one snack before lunch should do it.",
+          "Good timing! A light snack around 11 AM will bridge you perfectly to lunch.",
+          "Starting at 8 AM means you can probably make it to lunch with just one small snack.",
+          "Eight o'clock breakfast? You're positioned well for just one strategic snack before lunch."
+        ];
+        message += eightAMMessages[Math.floor(Math.random() * eightAMMessages.length)];
+      } else if (timeHour >= 9) {
+        const lateMessages = [
+          "With breakfast this late, you can probably skip snacks and go straight to a healthy lunch.",
+          "Late breakfast works! You're all set to cruise directly into lunch without snacking.",
+          "Perfect - with breakfast at this time, you won't need snacks before lunch.",
+          "Late breakfast advantage: you can skip the snacks and head straight to lunch!"
+        ];
+        message += lateMessages[Math.floor(Math.random() * lateMessages.length)];
+      }
+      
+      // PART 3: Balance and Adjustment Advice
+      message += " ";
+      if (proteinPercent < 25) {
+        const lowProteinAdvice = [
+          "Try adding some Greek yogurt or eggs to boost your protein for better satiety.",
+          "Consider increasing protein next time - it'll keep you fuller longer and support your goals.",
+          "A bit more protein would make this breakfast even more powerful for muscle building.",
+          "Next time, try adding a protein source to optimize this meal's staying power."
+        ];
+        message += lowProteinAdvice[Math.floor(Math.random() * lowProteinAdvice.length)];
+      } else if (carbPercent > 60) {
+        const highCarbAdvice = [
+          "Those carbs will give you energy, but adding more protein would provide better balance.",
+          "Great energy from those carbs, but consider more protein to avoid an energy crash later.",
+          "High-carb breakfast can work, but protein would help stabilize your blood sugar.",
+          "Lots of quick energy here - adding protein would make it last longer."
+        ];
+        message += highCarbAdvice[Math.floor(Math.random() * highCarbAdvice.length)];
+      } else if (fatPercent > 40) {
+        const highFatAdvice = [
+          "Those healthy fats will keep you satisfied - just watch the total calories for your goals.",
+          "Good fat content for satiety! Make sure your other meals balance out the day.",
+          "Smart fat choices for lasting energy - just keep an eye on overall daily intake.",
+          "Those fats will sustain you well, but balance them with protein throughout the day."
+        ];
+        message += highFatAdvice[Math.floor(Math.random() * highFatAdvice.length)];
+      } else {
+        const balancedAdvice = [
+          "Keep building on this foundation with consistent choices throughout the day.",
+          "This puts you on track - maintain this quality with your remaining meals.",
+          "Solid start! Carry this momentum into your snacks and lunch.",
+          "You're building great habits - keep this consistency going all day."
+        ];
+        message += balancedAdvice[Math.floor(Math.random() * balancedAdvice.length)];
+      }
+      
+      return message;
+    }
     
-    // General encouragement
+    // Fallback for users without names
     const allFoods = foodItems.filter(item => item.food).map(item => item.food);
     if (allFoods.length > 0) {
       const foodText = allFoods.length === 1 ? allFoods[0] : allFoods.join(', ');
