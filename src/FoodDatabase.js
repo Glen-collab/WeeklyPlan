@@ -55,64 +55,41 @@ export const FoodDatabase = {
     'Cuties (Mandarin)': { protein: 0.8, carbs: 13, fat: 0.3, sugar: 11, calories: 53 }
   },
   supplements: {
-    // Protein Powders (per scoop ~30g)
+    // UPDATED: Protein Powders (per scoop ~30g) - Current 2025 data
     'Whey Protein (generic)': { protein: 24, carbs: 2, fat: 1.5, sugar: 1, calories: 120 },
+    'ON Gold Standard Whey': { protein: 24, carbs: 1, fat: 1, sugar: 1, calories: 110 },
     'Ryse Protein': { protein: 25, carbs: 2, fat: 1, sugar: 1, calories: 120 },
     'Bucked Up Protein': { protein: 24, carbs: 1, fat: 1, sugar: 0, calories: 110 },
     'Raw Nutrition Protein': { protein: 25, carbs: 2, fat: 1.5, sugar: 1, calories: 125 },
     'EAS Protein': { protein: 23, carbs: 3, fat: 2, sugar: 2, calories: 130 },
-    'ON Gold Standard': { protein: 24, carbs: 1, fat: 1, sugar: 1, calories: 110 },
+    'Whey Protein Isolate': { protein: 25, carbs: 1, fat: 0.5, sugar: 0, calories: 110 },
     'Collagen Protein': { protein: 20, carbs: 0, fat: 0, sugar: 0, calories: 80 },
     'AdvoCare Body Lean 25': { protein: 25, carbs: 6, fat: 1.5, sugar: 4, calories: 138 },
     
-    // Meal Replacements
+    // UPDATED: Meal Replacements
     'AdvoCare Meal Replacement': { protein: 24, carbs: 24, fat: 2, sugar: 6, calories: 210 },
     
-    // Protein Bars
-    'Protein Bar (generic)': { protein: 20, carbs: 15, fat: 6, sugar: 8, calories: 190 },
-    'Quest Bar': { protein: 20, carbs: 15, fat: 8, sugar: 1, calories: 190 },
+    // UPDATED: Protein Bars (Current 2025 data)
+    'Quest Bar': { protein: 20, carbs: 4, fat: 8, sugar: 1, calories: 190 },
     'Pure Protein Bar': { protein: 20, carbs: 17, fat: 2, sugar: 3, calories: 180 },
     'Met-RX Big 100': { protein: 30, carbs: 22, fat: 9, sugar: 16, calories: 410 },
     'Fit Crunch Bar': { protein: 16, carbs: 25, fat: 6, sugar: 5, calories: 190 },
     'Atkins Meal Bar': { protein: 15, carbs: 19, fat: 11, sugar: 1, calories: 250 },
     'Atkins Snack Bar': { protein: 10, carbs: 15, fat: 9, sugar: 1, calories: 170 },
+    'Protein Bar (generic)': { protein: 20, carbs: 15, fat: 6, sugar: 8, calories: 190 },
     
-    // Ready-to-Drink (RTD)
+    // UPDATED: Ready-to-Drink (RTD)
     'Pure Protein RTD': { protein: 35, carbs: 5, fat: 1.5, sugar: 2, calories: 160 },
     'Atkins RTD': { protein: 15, carbs: 5, fat: 10, sugar: 1, calories: 160 },
     'Fairlife Core Power 42g': { protein: 42, carbs: 6, fat: 6, sugar: 6, calories: 230 },
     'Fairlife Core Power 26g': { protein: 26, carbs: 5, fat: 4.5, sugar: 5, calories: 150 },
-    'Fairlife Milk (8oz)': { protein: 13, carbs: 6, fat: 4.5, sugar: 6, calories: 110 }
-  },
-  supplements: {
-    // Protein Powders (per scoop)
-    'Whey Protein (generic)': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
-    'Ryse Protein': { grams: 31, ounces: 1.1, cups: 0.125, palm: '1 scoop' },
-    'Bucked Up Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
-    'Raw Nutrition Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
-    'EAS Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
-    'ON Gold Standard': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
-    'Collagen Protein': { grams: 20, ounces: 0.7, cups: 0.1, palm: '1 scoop' },
-    'AdvoCare Body Lean 25': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'Fairlife Milk (8oz)': { protein: 13, carbs: 6, fat: 4.5, sugar: 6, calories: 110 },
     
-    // Meal Replacements
-    'AdvoCare Meal Replacement': { grams: 35, ounces: 1.2, cups: 0.15, palm: '1 scoop' },
-    
-    // Protein Bars
-    'Protein Bar (generic)': { grams: 60, ounces: 2, cups: 0.25, palm: '1 bar' },
-    'Quest Bar': { grams: 60, ounces: 2, cups: 0.25, palm: '1 bar' },  
-    'Pure Protein Bar': { grams: 50, ounces: 1.8, cups: 0.2, palm: '1 bar' },
-    'Met-RX Big 100': { grams: 100, ounces: 3.5, cups: 0.4, palm: '1 large bar' },
-    'Fit Crunch Bar': { grams: 88, ounces: 3.1, cups: 0.35, palm: '1 bar' },
-    'Atkins Meal Bar': { grams: 60, ounces: 2.1, cups: 0.25, palm: '1 bar' },
-    'Atkins Snack Bar': { grams: 35, ounces: 1.2, cups: 0.15, palm: '1 small bar' },
-    
-    // Ready-to-Drink (RTD) 
-    'Pure Protein RTD': { grams: 325, ounces: 11, cups: 1.4, palm: '1 bottle' },
-    'Atkins RTD': { grams: 325, ounces: 11, cups: 1.4, palm: '1 bottle' },
-    'Fairlife Core Power 42g': { grams: 414, ounces: 14, cups: 1.75, palm: '1 bottle' },
-    'Fairlife Core Power 26g': { grams: 325, ounces: 11, cups: 1.4, palm: '1 bottle' },
-    'Fairlife Milk (8oz)': { grams: 240, ounces: 8, cups: 1, palm: '1 cup' }
+    // UPDATED: High-Protein Snacks
+    'Beef Jerky (1oz)': { protein: 9, carbs: 6, fat: 1.5, sugar: 6, calories: 80 },
+    'Turkey Jerky (1oz)': { protein: 11, carbs: 4, fat: 1, sugar: 3, calories: 70 },
+    'String Cheese': { protein: 6, carbs: 1, fat: 5, sugar: 0, calories: 70 },
+    'Hard-Boiled Egg': { protein: 6, carbs: 0.5, fat: 5, sugar: 0, calories: 70 }
   },
   fat: {
     'Avocado': { protein: 2, carbs: 9, fat: 15, sugar: 0.7, calories: 160 },
@@ -217,6 +194,43 @@ export const servingSizeConversions = {
     'Cantaloupe': { grams: 100, ounces: 3.5, cups: 0.75, palm: '1 cupped palm' },
     'Honeydew Melon': { grams: 100, ounces: 3.5, cups: 0.75, palm: '1 cupped palm' },
     'Cuties (Mandarin)': { grams: 75, ounces: 2.5, cups: 0.33, palm: '1 small' }
+  },
+  supplements: {
+    // Protein Powders (per scoop)
+    'Whey Protein (generic)': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'ON Gold Standard Whey': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'Ryse Protein': { grams: 31, ounces: 1.1, cups: 0.125, palm: '1 scoop' },
+    'Bucked Up Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'Raw Nutrition Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'EAS Protein': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'Whey Protein Isolate': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    'Collagen Protein': { grams: 20, ounces: 0.7, cups: 0.1, palm: '1 scoop' },
+    'AdvoCare Body Lean 25': { grams: 30, ounces: 1, cups: 0.125, palm: '1 scoop' },
+    
+    // Meal Replacements
+    'AdvoCare Meal Replacement': { grams: 35, ounces: 1.2, cups: 0.15, palm: '1 scoop' },
+    
+    // Protein Bars
+    'Quest Bar': { grams: 60, ounces: 2.1, cups: 0.25, palm: '1 bar' },
+    'Pure Protein Bar': { grams: 50, ounces: 1.8, cups: 0.2, palm: '1 bar' },
+    'Met-RX Big 100': { grams: 100, ounces: 3.5, cups: 0.4, palm: '1 large bar' },
+    'Fit Crunch Bar': { grams: 88, ounces: 3.1, cups: 0.35, palm: '1 bar' },
+    'Atkins Meal Bar': { grams: 60, ounces: 2.1, cups: 0.25, palm: '1 bar' },
+    'Atkins Snack Bar': { grams: 35, ounces: 1.2, cups: 0.15, palm: '1 small bar' },
+    'Protein Bar (generic)': { grams: 60, ounces: 2, cups: 0.25, palm: '1 bar' },
+    
+    // Ready-to-Drink (RTD) 
+    'Pure Protein RTD': { grams: 325, ounces: 11, cups: 1.4, palm: '1 bottle' },
+    'Atkins RTD': { grams: 325, ounces: 11, cups: 1.4, palm: '1 bottle' },
+    'Fairlife Core Power 42g': { grams: 414, ounces: 14, cups: 1.75, palm: '1 bottle' },
+    'Fairlife Core Power 26g': { grams: 325, ounces: 11, cups: 1.4, palm: '1 bottle' },
+    'Fairlife Milk (8oz)': { grams: 240, ounces: 8, cups: 1, palm: '1 cup' },
+    
+    // High-Protein Snacks
+    'Beef Jerky (1oz)': { grams: 28, ounces: 1, cups: 0.125, palm: '1 handful' },
+    'Turkey Jerky (1oz)': { grams: 28, ounces: 1, cups: 0.125, palm: '1 handful' },
+    'String Cheese': { grams: 28, ounces: 1, cups: 0.125, palm: '1 stick' },
+    'Hard-Boiled Egg': { grams: 50, ounces: 1.8, cups: 0.25, palm: '1 egg' }
   },
   fat: {
     'Avocado': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1/2 avocado' },
