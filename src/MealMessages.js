@@ -222,90 +222,339 @@ export const MealMessages = {
   },
 
   // ========================
-  // FIRST SNACK MESSAGES
+  // FIRST SNACK MESSAGES - COMPLETE 3-PART SYSTEM
   // ========================
-  getFirstSnackMessage: (pieData, selectedTime, foodItems, totals, breakfastTime, breakfastTotals, breakfastPieData, userProfile) => {
+  getFirstSnackMessage: (pieData, selectedTime, foodItems, totals, breakfastTime, breakfastTotals, breakfastPieData, userProfile, calorieData, postWorkoutTotals) => {
     if (totals.calories < 25) return null;
     
-    const breakfastHour = parseInt(breakfastTime.split(':')[0]);
-    
-    const fruitItems = ['banana', 'apple', 'berries', 'orange', 'strawberries', 'blueberries'];
-    const hasFruit = foodItems.some(item => 
-      item.food && fruitItems.some(fruit => item.food.toLowerCase().includes(fruit.toLowerCase()))
-    );
-    
-    // Fruit + timing advice
-    if (hasFruit && totals.calories >= 25 && breakfastHour <= 7) {
+    if (!userProfile.firstName) {
+      // Fallback for users without names
       const allFoods = foodItems.filter(item => item.food).map(item => item.food);
-      const foodText = allFoods.length === 1 ? allFoods[0] : allFoods.join(' and ');
-      const proteinPercent = pieData[0]?.percentage || 0;
-      const snackHour = parseInt(selectedTime.split(':')[0]);
+      if (allFoods.length > 0) {
+        const foodText = allFoods.length === 1 ? allFoods[0] : allFoods.join(', ');
+        return `Good choice on your first snack with ${foodText}! This should help bridge the gap to lunch while keeping your energy steady.`;
+      }
+      return null;
+    }
+
+    // Calculate combined morning totals (breakfast + post-workout if applicable)
+    const morningCombinedCalories = breakfastTotals.calories + (postWorkoutTotals?.calories || 0);
+    const morningCombinedProtein = breakfastTotals.protein + (postWorkoutTotals?.protein || 0);
+    
+    // Calculate totals so far including this snack
+    const totalCaloriesSoFar = morningCombinedCalories + totals.calories;
+    const totalProteinSoFar = morningCombinedProtein + totals.protein;
+    
+    // Calculate time gaps
+    const breakfastHour = parseInt(breakfastTime.split(':')[0]);
+    const snackHour = parseInt(selectedTime.split(':')[0]);
+    const hoursFromBreakfast = snackHour - breakfastHour;
+    
+    // Food quality assessment based on protein ratio
+    const breakfastProteinRatio = breakfastTotals.protein / (breakfastTotals.protein + breakfastTotals.carbs + breakfastTotals.fat);
+    const foodQuality = breakfastProteinRatio >= 0.4 ? 'high' : breakfastProteinRatio >= 0.25 ? 'medium' : 'low';
+    
+    // Goal-based protein targets
+    const proteinTarget = ['gain-muscle', 'dirty-bulk'].includes(userProfile.goal) ? 50 : 30;
+    const targetDailyCalories = calorieData?.targetCalories || 2500;
+    const targetCaloriesByNow = Math.round(targetDailyCalories * 0.3); // 30% by first snack
+    
+    let message = "";
+    
+    // ============ PART 1: ASSESSMENT/PRAISE ============
+    if (totalCaloriesSoFar >= targetCaloriesByNow && totalProteinSoFar >= proteinTarget) {
+      // Crushing it messages
+      const crusherMessages = [
+        `${userProfile.firstName}, CRUSHING IT! ${Math.round(totalCaloriesSoFar)} calories and ${Math.round(totalProteinSoFar)}g protein - you're ahead of schedule!`,
+        `Boom, ${userProfile.firstName}! ${Math.round(totalProteinSoFar)}g protein and ${Math.round(totalCaloriesSoFar)} calories puts you right on track for ${userProfile.goal} success!`,
+        `${userProfile.firstName}, this is textbook nutrition! ${Math.round(totalProteinSoFar)}g protein by snack 1 - most people don't get this much all day!`,
+        `Perfect pacing, ${userProfile.firstName}! ${Math.round(totalCaloriesSoFar)} calories and ${Math.round(totalProteinSoFar)}g protein means you understand meal timing!`
+      ];
+      message += crusherMessages[Math.floor(Math.random() * crusherMessages.length)];
       
-      let message = `Great job on the ${foodText}! I usually eat this combination with a ready to drink protein shake, beef jerky, or another protein snack because your protein is only at ${proteinPercent}%.`;
+    } else if (totalProteinSoFar >= proteinTarget) {
+      // Good protein, maybe low calories
+      const goodProteinMessages = [
+        `${userProfile.firstName}, solid protein at ${Math.round(totalProteinSoFar)}g, but only ${Math.round(totalCaloriesSoFar)} calories so far.`,
+        `Nice protein work, ${userProfile.firstName}! ${Math.round(totalProteinSoFar)}g is on point, though calories are a bit light at ${Math.round(totalCaloriesSoFar)}.`,
+        `${userProfile.firstName}, ${Math.round(totalProteinSoFar)}g protein shows you get it, but ${Math.round(totalCaloriesSoFar)} calories might not fuel your goals.`
+      ];
+      message += goodProteinMessages[Math.floor(Math.random() * goodProteinMessages.length)];
       
-      if (snackHour <= 9) {
-        message += ` Since it is ${selectedTime}, and you have ${foodText}, you will be famished in another hour. Let's add in some healthy nuts or protein to hold you over.`;
+    } else {
+      // Behind on protein
+      const behindMessages = [
+        `${userProfile.firstName}, only ${Math.round(totalProteinSoFar)}g protein by snack 1 for ${userProfile.goal}? We need to catch up!`,
+        `${userProfile.firstName}, ${Math.round(totalProteinSoFar)}g protein isn't cutting it for your goals - bodybuilders need consistent protein every 3-4 hours!`,
+        `Time to step it up, ${userProfile.firstName}! ${Math.round(totalProteinSoFar)}g protein by now puts you behind the curve.`
+      ];
+      message += behindMessages[Math.floor(Math.random() * behindMessages.length)];
+    }
+
+    message += " ";
+
+    // ============ PART 2: SPECIFIC SUPPLEMENT RECOMMENDATIONS ============
+    if (totalProteinSoFar < proteinTarget) {
+      const proteinNeeded = proteinTarget - totalProteinSoFar;
+      
+      // Smart supplement selection based on goal and protein gap
+      let recommendedSupplements = [];
+      
+      if (userProfile.goal === 'dirty-bulk') {
+        recommendedSupplements = [
+          { name: 'peanut butter sandwich', protein: 16, calories: 350, type: 'bulk' },
+          { name: 'chocolate milk + protein bar', protein: 25, calories: 320, type: 'bulk' },
+          { name: 'trail mix with jerky', protein: 12, calories: 280, type: 'bulk' }
+        ];
+      } else if (userProfile.goal === 'gain-muscle') {
+        recommendedSupplements = [
+          { name: 'lean beef jerky (2oz)', protein: 18, calories: 160, type: 'lean' },
+          { name: 'Greek yogurt with berries', protein: 20, calories: 150, type: 'lean' },
+          { name: 'whey protein with banana', protein: 25, calories: 200, type: 'lean' }
+        ];
+      } else { // maintain/lose-fat
+        recommendedSupplements = [
+          { name: 'protein shake', protein: 24, calories: 120, type: 'lean' },
+          { name: 'turkey jerky (1oz)', protein: 11, calories: 70, type: 'lean' },
+          { name: 'hard-boiled eggs (2)', protein: 12, calories: 140, type: 'lean' }
+        ];
       }
       
-      return message;
+      // Find best match for protein gap
+      let bestSupplement = recommendedSupplements.find(supp => supp.protein >= proteinNeeded) || recommendedSupplements[0];
+      
+      const newTotalProtein = Math.round(totalProteinSoFar + bestSupplement.protein);
+      const newTotalCalories = Math.round(totalCaloriesSoFar + bestSupplement.calories);
+      
+      const supplementMessages = [
+        `Add ${bestSupplement.name} to hit ${newTotalProtein}g protein (${newTotalCalories} total calories) - that's ${userProfile.goal} territory!`,
+        `I'd grab ${bestSupplement.name} right now to reach ${newTotalProtein}g protein and ${newTotalCalories} calories for optimal ${userProfile.goal} results.`,
+        `Time for ${bestSupplement.name} - brings you to ${newTotalProtein}g protein in ${newTotalCalories} total calories, perfect for your goals.`
+      ];
+      
+      message += supplementMessages[Math.floor(Math.random() * supplementMessages.length)];
+      
+    } else if (totalCaloriesSoFar < targetCaloriesByNow) {
+      // Good protein, need more calories
+      const calorieGap = targetCaloriesByNow - totalCaloriesSoFar;
+      message += `Protein is solid, but add ${Math.round(calorieGap)} more calories to stay on pace for ${targetDailyCalories} daily.`;
+    } else {
+      // Everything looks good
+      const goodMessages = [
+        "Keep this momentum going into lunch - you're setting up for a perfect day!",
+        "This pacing will have you hitting your targets perfectly by dinner time.",
+        "Exactly the kind of consistent nutrition that separates pros from amateurs!"
+      ];
+      message += goodMessages[Math.floor(Math.random() * goodMessages.length)];
     }
-    
-    // General first snack guidance
-    const allFoods = foodItems.filter(item => item.food).map(item => item.food);
-    if (allFoods.length > 0) {
-      const foodText = allFoods.length === 1 ? allFoods[0] : allFoods.join(', ');
-      return `Good choice on your first snack with ${foodText}! This should help bridge the gap to lunch while keeping your energy steady.`;
+
+    message += " ";
+
+    // ============ PART 3: ENERGY/HUNGER STATE ASSESSMENT ============
+    if (hoursFromBreakfast >= 4) {
+      if (foodQuality === 'high') {
+        const highQualityMessages = [
+          `4+ hours on high-protein breakfast? That hunger is your body burning fat efficiently - you're doing this right!`,
+          `Feeling hungry after quality protein? That's your metabolism working - embrace the fat burn or add lean fuel.`,
+          `High-quality breakfast holding you 4+ hours? Perfect! Hunger now means fat oxidation is happening.`
+        ];
+        message += highQualityMessages[Math.floor(Math.random() * highQualityMessages.length)];
+      } else if (foodQuality === 'medium') {
+        const mediumQualityMessages = [
+          `4 hours since breakfast - moderate protein kept you stable, but you're probably ready to eat now.`,
+          `That medium-protein breakfast lasted 4 hours - not bad, but more protein next time for better staying power.`,
+          `Feeling the hunger after 4 hours? Your breakfast was decent but could've used more protein for longevity.`
+        ];
+        message += mediumQualityMessages[Math.floor(Math.random() * mediumQualityMessages.length)];
+      } else {
+        const lowQualityMessages = [
+          `Feeling tired and hungry after that carb-heavy breakfast? This is exactly why protein matters!`,
+          `4 hours later feeling like garbage? That low-protein breakfast left you on a blood sugar rollercoaster.`,
+          `Tired, hungry, and irritable? Classic signs of poor breakfast choices - learn from this for tomorrow!`
+        ];
+        message += lowQualityMessages[Math.floor(Math.random() * lowQualityMessages.length)];
+      }
+    } else {
+      // Less than 4 hours
+      const shortGapMessages = [
+        `Only ${hoursFromBreakfast} hours since breakfast - this snack keeps your metabolism firing consistently.`,
+        `Smart timing at ${hoursFromBreakfast} hours - preventing any energy dips before lunch.`,
+        `${hoursFromBreakfast}-hour gap is perfect meal timing for sustained energy and muscle protein synthesis.`
+      ];
+      message += shortGapMessages[Math.floor(Math.random() * shortGapMessages.length)];
     }
-    
-    return null;
+
+    return message;
   },
 
   // ========================
-  // SECOND SNACK MESSAGES
+  // SECOND SNACK MESSAGES - COMPLETE 3-PART SYSTEM
   // ========================
-  getSecondSnackMessage: (pieData, selectedTime, foodItems, totals, breakfastTime, breakfastTotals, breakfastFoodItems, firstSnackTime, firstSnackTotals, firstSnackFoodItems, userProfile, calorieData) => {
+  getSecondSnackMessage: (pieData, selectedTime, foodItems, totals, breakfastTime, breakfastTotals, breakfastFoodItems, firstSnackTime, firstSnackTotals, firstSnackFoodItems, userProfile, calorieData, postWorkoutTotals) => {
     if (totals.calories < 25) return null;
+
+    if (!userProfile.firstName) {
+      // Fallback for users without names
+      const allFoods = foodItems.filter(item => item.food).map(item => item.food);
+      if (allFoods.length > 0) {
+        const foodText = allFoods.length === 1 ? allFoods[0] : allFoods.join(', ');
+        return `Perfect timing for your second snack with ${foodText}! This will help you cruise into lunch without any energy crashes.`;
+      }
+      return null;
+    }
 
     const snackHour = parseInt(selectedTime.split(':')[0]);
     const snackMinute = parseInt(selectedTime.split(':')[1]);
     
-    const totalCaloriesSoFar = breakfastTotals.calories + 
+    // Calculate all totals so far
+    const morningCombinedCalories = breakfastTotals.calories + (postWorkoutTotals?.calories || 0);
+    const morningCombinedProtein = breakfastTotals.protein + (postWorkoutTotals?.protein || 0);
+    
+    const totalCaloriesSoFar = morningCombinedCalories + 
                               (firstSnackTotals ? firstSnackTotals.calories : 0) + 
                               totals.calories;
     
-    const totalProteinSoFar = Math.round(breakfastTotals.protein + 
-                                        (firstSnackTotals ? firstSnackTotals.protein : 0) + 
-                                        totals.protein);
+    const totalProteinSoFar = morningCombinedProtein + 
+                             (firstSnackTotals ? firstSnackTotals.protein : 0) + 
+                             totals.protein;
 
-    // Dirty bulk specific messaging
-    if (userProfile.goal === 'dirty-bulk' && userProfile.firstName) {
-      const estimatedTDEE = calorieData?.tdee || (userProfile.weight ? Math.round(userProfile.weight * 15 + 500) : 3000);
-      
-      const dirtyBulkMessages = [
-        `${userProfile.firstName}, you're at ${Math.round(totalCaloriesSoFar)} calories so far - keep that ${totalProteinSoFar}g of protein climbing and let's hit that goal of ${estimatedTDEE} or more!`,
-        `${userProfile.firstName}, ${Math.round(totalCaloriesSoFar)} calories down, but we're not even close to done. That ${totalProteinSoFar}g protein is solid - now let's add serious volume!`
-      ];
-      return dirtyBulkMessages[Math.floor(Math.random() * dirtyBulkMessages.length)];
-    }
+    // Goal-based targets  
+    const proteinTarget = ['gain-muscle', 'dirty-bulk'].includes(userProfile.goal) ? 75 : 50; // Higher by second snack
+    const targetDailyCalories = calorieData?.targetCalories || 2500;
+    const targetCaloriesByNow = Math.round(targetDailyCalories * 0.45); // 45% by second snack
+    
+    // Time analysis
+    const lunchishTime = snackHour >= 12 || (snackHour === 11 && snackMinute >= 30);
+    
+    let message = "";
 
-    // Late snack timing check
-    if (snackHour >= 12 && snackMinute >= 30 && userProfile.firstName) {
-      return `${userProfile.firstName}, at ${selectedTime} this is looking more like lunch than a snack. Perfect timing to fuel your afternoon properly.`;
-    }
-
-    // General second snack guidance
-    const allFoods = foodItems.filter(item => item.food).map(item => item.food);
-    if (allFoods.length > 0) {
-      const foodText = allFoods.length === 1 ? allFoods[0] : allFoods.join(', ');
-      
-      if (userProfile.firstName) {
-        return `Good choice, ${userProfile.firstName}! Your second snack with ${foodText} at ${selectedTime} keeps your energy steady and supports your ${userProfile.goal} goals.`;
+    // ============ PART 1: ASSESSMENT/PRAISE ============
+    
+    // Dirty bulk specific celebration
+    if (userProfile.goal === 'dirty-bulk') {
+      if (totalCaloriesSoFar >= targetCaloriesByNow) {
+        const bulkCelebrationMessages = [
+          `${userProfile.firstName}, BEAST MODE! ${Math.round(totalCaloriesSoFar)} calories down - you're building MASS!`,
+          `${userProfile.firstName}, ${Math.round(totalCaloriesSoFar)} calories and ${Math.round(totalProteinSoFar)}g protein by snack 2? That's how you BULK!`,
+          `CRUSHING the bulk, ${userProfile.firstName}! ${Math.round(totalCaloriesSoFar)} calories - keep this pace and you'll be huge!`
+        ];
+        message += bulkCelebrationMessages[Math.floor(Math.random() * bulkCelebrationMessages.length)];
       } else {
-        return `Perfect timing for your second snack with ${foodText}! This will help you cruise into lunch without any energy crashes.`;
+        const bulkBehindMessages = [
+          `${userProfile.firstName}, only ${Math.round(totalCaloriesSoFar)} calories for a dirty bulk? Time to get SERIOUS about eating!`,
+          `${userProfile.firstName}, ${Math.round(totalCaloriesSoFar)} calories isn't going to build the mass you want - EAT MORE!`
+        ];
+        message += bulkBehindMessages[Math.floor(Math.random() * bulkBehindMessages.length)];
+      }
+    } else {
+      // Other goals
+      if (totalCaloriesSoFar >= targetCaloriesByNow && totalProteinSoFar >= proteinTarget) {
+        const excellentMessages = [
+          `${userProfile.firstName}, exceptional discipline! ${Math.round(totalCaloriesSoFar)} calories and ${Math.round(totalProteinSoFar)}g protein - textbook ${userProfile.goal} nutrition!`,
+          `Phenomenal pacing, ${userProfile.firstName}! ${Math.round(totalProteinSoFar)}g protein by snack 2 puts you in elite territory!`,
+          `${userProfile.firstName}, this is how champions eat! ${Math.round(totalCaloriesSoFar)} calories perfectly distributed for ${userProfile.goal} results!`
+        ];
+        message += excellentMessages[Math.floor(Math.random() * excellentMessages.length)];
+      } else if (totalProteinSoFar >= proteinTarget) {
+        const goodProteinMessages = [
+          `${userProfile.firstName}, protein game is strong at ${Math.round(totalProteinSoFar)}g, but calories are light at ${Math.round(totalCaloriesSoFar)}.`,
+          `Solid protein discipline, ${userProfile.firstName}! ${Math.round(totalProteinSoFar)}g is pro-level, just need more total fuel.`
+        ];
+        message += goodProteinMessages[Math.floor(Math.random() * goodProteinMessages.length)];
+      } else {
+        const catchUpMessages = [
+          `${userProfile.firstName}, ${Math.round(totalProteinSoFar)}g protein by snack 2? For ${userProfile.goal}, we need to accelerate!`,
+          `Wake up call, ${userProfile.firstName}! ${Math.round(totalProteinSoFar)}g protein by now won't cut it for serious results!`
+        ];
+        message += catchUpMessages[Math.floor(Math.random() * catchUpMessages.length)];
       }
     }
+
+    message += " ";
+
+    // ============ PART 2: SPECIFIC SUPPLEMENT RECOMMENDATIONS ============
     
-    return null;
+    if (lunchishTime) {
+      message += `At ${selectedTime}, this is basically lunch timing - perfect opportunity to make it substantial and hit your remaining macros for the day!`;
+    } else if (totalProteinSoFar < proteinTarget) {
+      const proteinNeeded = proteinTarget - totalProteinSoFar;
+      
+      // Goal-specific recommendations for second snack
+      let recommendedSupplements = [];
+      
+      if (userProfile.goal === 'dirty-bulk') {
+        recommendedSupplements = [
+          { name: 'protein shake + bagel with peanut butter', protein: 35, calories: 520, type: 'bulk' },
+          { name: 'double cheeseburger (no bun) + chocolate milk', protein: 30, calories: 450, type: 'bulk' },
+          { name: 'protein bar + banana + nuts', protein: 28, calories: 420, type: 'bulk' }
+        ];
+      } else if (userProfile.goal === 'gain-muscle') {
+        recommendedSupplements = [
+          { name: 'chicken breast strips (3oz) + rice cakes', protein: 30, calories: 240, type: 'lean' },
+          { name: 'tuna packet + crackers', protein: 25, calories: 180, type: 'lean' },
+          { name: 'protein smoothie with berries', protein: 28, calories: 220, type: 'lean' }
+        ];
+      } else { // maintain/lose-fat
+        recommendedSupplements = [
+          { name: 'protein shake + apple', protein: 26, calories: 200, type: 'lean' },
+          { name: 'Greek yogurt (large) + almonds', protein: 22, calories: 180, type: 'lean' },
+          { name: 'turkey roll-ups + string cheese', protein: 20, calories: 160, type: 'lean' }
+        ];
+      }
+      
+      const bestSupplement = recommendedSupplements.find(supp => supp.protein >= proteinNeeded) || recommendedSupplements[0];
+      const newTotalProtein = Math.round(totalProteinSoFar + bestSupplement.protein);
+      const newTotalCalories = Math.round(totalCaloriesSoFar + bestSupplement.calories);
+      
+      const lateSupplementMessages = [
+        `Second snack is crucial - grab ${bestSupplement.name} to reach ${newTotalProtein}g protein (${newTotalCalories} total calories)!`,
+        `This is your last chance before lunch - ${bestSupplement.name} brings you to ${newTotalProtein}g protein for the morning!`,
+        `Critical protein window - add ${bestSupplement.name} for ${newTotalProtein}g protein and ${newTotalCalories} calories before lunch!`
+      ];
+      
+      message += lateSupplementMessages[Math.floor(Math.random() * lateSupplementMessages.length)];
+    } else {
+      // Protein is good
+      const maintenanceMessages = [
+        "Protein is dialed in - this snack just needs to bridge you perfectly into a strong lunch!",
+        "You're tracking beautifully - maintain this consistency through lunch and you're golden!",
+        "This is exactly the kind of precision that transforms physiques over time!"
+      ];
+      message += maintenanceMessages[Math.floor(Math.random() * maintenanceMessages.length)];
+    }
+
+    message += " ";
+
+    // ============ PART 3: ENERGY/HUNGER STATE + PRE-LUNCH PREP ============
+    
+    const hoursSinceFirstSnack = firstSnackTime ? 
+      snackHour - parseInt(firstSnackTime.split(':')[0]) : 
+      snackHour - parseInt(breakfastTime.split(':')[0]);
+    
+    if (lunchishTime) {
+      const preLunchMessages = [
+        `With lunch approaching, make sure it's substantial - you've been fueling consistently and your body is primed for nutrients!`,
+        `Pre-lunch timing is perfect - your metabolism is firing hot from consistent feeding, so lunch will be utilized efficiently!`,
+        `This late-morning fuel sets up lunch perfectly - your body is in prime nutrient uptake mode!`
+      ];
+      message += preLunchMessages[Math.floor(Math.random() * preLunchMessages.length)];
+    } else if (hoursSinceFirstSnack >= 2) {
+      const consistentFeedingMessages = [
+        `${hoursSinceFirstSnack} hours since your last fuel - this consistent feeding keeps your metabolism firing optimally!`,
+        `Perfect feeding frequency! Every ${hoursSinceFirstSnack} hours prevents muscle breakdown and maintains energy levels.`,
+        `${hoursSinceFirstSnack}-hour gaps are ideal for muscle protein synthesis - you're timing this like a pro!`
+      ];
+      message += consistentFeedingMessages[Math.floor(Math.random() * consistentFeedingMessages.length)];
+    } else {
+      const quickRefuelMessages = [
+        `Quick refuel after just ${hoursSinceFirstSnack} hour(s) - staying ahead of hunger and energy dips!`,
+        `Preemptive nutrition at its finest - never letting your body think it needs to conserve energy!`,
+        `This is how you stay anabolic - consistent fuel prevents your body from breaking down muscle!`
+      ];
+      message += quickRefuelMessages[Math.floor(Math.random() * quickRefuelMessages.length)];
+    }
+
+    return message;
   },
 
   // ========================
