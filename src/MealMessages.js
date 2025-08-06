@@ -3,7 +3,7 @@
 export const MealMessages = {
 
   // ========================
-  // BREAKFAST MESSAGES - UPDATED WITH 3-PART SYSTEM
+  // BREAKFAST MESSAGES - UPDATED WITH 3-PART SYSTEM + SUPPLEMENT CALCULATIONS
   // ========================
   getBreakfastMessage: (pieData, selectedTime, foodItems, totals, userProfile) => {
     if (totals.calories < 50) return null;
@@ -47,7 +47,7 @@ export const MealMessages = {
       return message;
     }
 
-    // NEW 3-PART PERSONALIZED MESSAGE SYSTEM
+    // NEW 3-PART PERSONALIZED MESSAGE SYSTEM WITH SUPPLEMENT CALCULATIONS
     if (userProfile.firstName) {
       let message = "";
       const timeHour = parseInt(selectedTime.split(':')[0]);
@@ -125,16 +125,63 @@ export const MealMessages = {
         message += lateMessages[Math.floor(Math.random() * lateMessages.length)];
       }
       
-      // PART 3: Balance and Adjustment Advice
+      // PART 3: NEW - Smart Supplement Calculations for Low Protein (under 25%)
       message += " ";
       if (proteinPercent < 25) {
-        const lowProteinAdvice = [
-          "Try adding some Greek yogurt or eggs to boost your protein for better satiety.",
-          "Consider increasing protein next time - it'll keep you fuller longer and support your goals.",
-          "A bit more protein would make this breakfast even more powerful for muscle building.",
-          "Next time, try adding a protein source to optimize this meal's staying power."
+        // Calculate optimal supplement to reach 40%+ protein
+        const currentProteinGrams = totals.protein;
+        const currentCalories = totals.calories;
+        
+        // Try different supplements to find the best match
+        const supplements = [
+          { name: 'whey protein scoop', protein: 24, calories: 120, type: 'powder' },
+          { name: 'beef jerky (1oz)', protein: 9, calories: 80, type: 'snack' },
+          { name: 'Quest protein bar', protein: 20, calories: 190, type: 'bar' },
+          { name: 'Greek yogurt cup', protein: 17, calories: 92, type: 'whole food' },
+          { name: 'hard-boiled egg', protein: 6, calories: 70, type: 'whole food' }
         ];
-        message += lowProteinAdvice[Math.floor(Math.random() * lowProteinAdvice.length)];
+        
+        let bestSupplement = null;
+        let bestMatch = 0;
+        
+        for (const supplement of supplements) {
+          const newTotalProtein = currentProteinGrams + supplement.protein;
+          const newTotalCalories = currentCalories + supplement.calories;
+          const newProteinPercent = (newTotalProtein * 4 / newTotalCalories) * 100;
+          
+          // Find the supplement that gets closest to 40-45% protein range
+          if (newProteinPercent >= 35 && newProteinPercent <= 50) {
+            const targetScore = Math.abs(newProteinPercent - 42); // Aim for 42%
+            if (!bestSupplement || targetScore < bestMatch) {
+              bestSupplement = supplement;
+              bestMatch = targetScore;
+            }
+          }
+        }
+        
+        if (bestSupplement) {
+          const newTotalProtein = Math.round(currentProteinGrams + bestSupplement.protein);
+          const newTotalCalories = Math.round(currentCalories + bestSupplement.calories);
+          const newProteinPercent = Math.round((newTotalProtein * 4 / newTotalCalories) * 100);
+          
+          const supplementMessages = [
+            `This is where I add in ${bestSupplement.name} to bring you from ${proteinPercent}% to ${newProteinPercent}% protein (${newTotalProtein}g total, ${newTotalCalories} calories).`,
+            `Perfect opportunity to add ${bestSupplement.name} - that would boost you to ${newProteinPercent}% protein for the meal (${newTotalProtein}g protein, ${newTotalCalories} total calories).`,
+            `I'd throw in ${bestSupplement.name} here to hit ${newProteinPercent}% protein instead of ${proteinPercent}% - takes you to ${newTotalProtein}g protein in ${newTotalCalories} calories.`,
+            `Time to add ${bestSupplement.name}! That jumps you from ${proteinPercent}% to ${newProteinPercent}% protein (${newTotalProtein}g in ${newTotalCalories} total calories).`
+          ];
+          
+          message += supplementMessages[Math.floor(Math.random() * supplementMessages.length)];
+        } else {
+          // Fallback if no supplement calculation works
+          const lowProteinAdvice = [
+            "Try adding some Greek yogurt or eggs to boost your protein for better satiety.",
+            "Consider increasing protein next time - it'll keep you fuller longer and support your goals.",
+            "A bit more protein would make this breakfast even more powerful for muscle building.",
+            "Next time, try adding a protein source to optimize this meal's staying power."
+          ];
+          message += lowProteinAdvice[Math.floor(Math.random() * lowProteinAdvice.length)];
+        }
       } else if (carbPercent > 60) {
         const highCarbAdvice = [
           "Those carbs will give you energy, but adding more protein would provide better balance.",
