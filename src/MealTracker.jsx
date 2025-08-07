@@ -160,7 +160,7 @@ const MealTracker = ({
     return times;
   };
 
-  // Get appropriate message for this meal type
+  // Get appropriate message for this meal type - FIXED WITH CORRECT PARAMETERS
   const getMessage = () => {
     if (!totals || !pieData || !items || !userProfile) {
       return null;
@@ -176,7 +176,10 @@ const MealTracker = ({
             previousMeals.breakfast?.time, 
             previousMeals.breakfast?.totals, 
             previousMeals.breakfast?.pieData, 
-            userProfile
+            userProfile,
+            calorieData,
+            previousMeals.postWorkout?.totals,
+            previousMeals.postWorkout?.time
           );
         case 'secondSnack':
           return MealMessages.getSecondSnackMessage(
@@ -188,7 +191,9 @@ const MealTracker = ({
             previousMeals.firstSnack?.totals,
             previousMeals.firstSnack?.items,
             userProfile,
-            calorieData
+            calorieData,
+            previousMeals.postWorkout?.totals,
+            previousMeals.postWorkout?.time
           );
         case 'lunch':
           return MealMessages.getLunchMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
