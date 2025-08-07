@@ -19,6 +19,26 @@ export const TimeAwareMealMessages = {
   // Universal message generator that works for any meal type
   getTimeAwareMessage: (allMeals, currentMealType, currentMealTotals, currentMealItems, userProfile, calorieData, selectedTime, pieData) => {
     
+    console.log(`\n=== TimeAwareMealMessages.getTimeAwareMessage called for ${currentMealType} ===`);
+    console.log(`Calories: ${Math.round(currentMealTotals.calories)}, Protein: ${Math.round(currentMealTotals.protein)}g`);
+    console.log(`PieData: Protein ${pieData[0]?.percentage || 0}%, Carbs ${pieData[1]?.percentage || 0}%, Fat ${pieData[2]?.percentage || 0}%`);
+    console.log(`UserProfile firstName: ${userProfile.firstName}`);
+    
+    // CORRECTED: Route EVERYTHING through the new carb detection system
+    // This is the key fix - instead of routing to old individual systems
+    return generateTimeAwareMessage(
+      allMeals,           // All meals with their times and data
+      currentMealType,    // Current meal type
+      currentMealTotals,  // Current meal totals
+      currentMealItems,   // Current meal items
+      userProfile,        // User profile
+      calorieData,        // TDEE data
+      selectedTime,       // Current meal time
+      pieData             // Current meal pie chart data
+    );
+
+    // OLD ROUTING (commented out - this was the problem!)
+    /*
     // Use time-aware analysis
     const context = analyzeMealContext(allMeals, currentMealType, currentMealTotals, userProfile, calorieData);
     const recommendations = getSmartRecommendations(context, userProfile, currentMealType);
@@ -85,6 +105,7 @@ export const TimeAwareMealMessages = {
     }
     
     return finalMessage || null;
+    */
   }
 };
 
