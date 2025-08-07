@@ -4,6 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Toolti
 import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories, getFoodsInCategory } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
+// UPDATED IMPORT - Now using the new file structure
+import { MealMessages } from './MealMessages/index.js';
 
 const defaultUserProfile = {
   firstName: '',
