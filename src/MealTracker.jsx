@@ -1,4 +1,4 @@
-// Updated MealTracker.jsx - Universal reusable meal tracking component with food modal
+// Updated MealTracker.jsx - Universal reusable meal tracking component with time-aware messaging
 import React from 'react';
 import { Plus, Minus, Scale } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -115,12 +115,13 @@ const MealTracker = ({
   warnings = [],
   userProfile = {},
   calorieData = {},
-  previousMeals = {},
+  allMeals = {}, // NEW: Complete meal data instead of previousMeals
   onOpenServingModal = () => {},
-  onOpenFoodModal = () => {}, // NEW PROP
+  onOpenFoodModal = () => {},
   onUpdateFoodItem = () => {},
   onAddFoodItem = () => {},
-  onRemoveFoodItem = () => {}
+  onRemoveFoodItem = () => {},
+  isMobile = false // NEW: Added isMobile prop
 }) => {
   // Additional validation and debugging
   if (!mealType || typeof mealType !== 'string') {
@@ -160,57 +161,41 @@ const MealTracker = ({
     return times;
   };
 
-  // Get appropriate message for this meal type - FIXED WITH CORRECT PARAMETERS
+  // UPDATED: Get time-aware message using new system
   const getMessage = () => {
     if (!totals || !pieData || !items || !userProfile) {
       return null;
     }
 
     try {
-      switch(mealType) {
-        case 'breakfast':
-          return MealMessages.getBreakfastMessage(pieData, time, items, totals, userProfile);
-        case 'firstSnack':
-          return MealMessages.getFirstSnackMessage(
-            pieData, time, items, totals, 
-            previousMeals.breakfast?.time, 
-            previousMeals.breakfast?.totals, 
-            previousMeals.breakfast?.pieData, 
-            userProfile,
-            calorieData,
-            previousMeals.postWorkout?.totals,
-            previousMeals.postWorkout?.time
-          );
-        case 'secondSnack':
-          return MealMessages.getSecondSnackMessage(
-            pieData, time, items, totals,
-            previousMeals.breakfast?.time,
-            previousMeals.breakfast?.totals,
-            previousMeals.breakfast?.items,
-            previousMeals.firstSnack?.time,
-            previousMeals.firstSnack?.totals,
-            previousMeals.firstSnack?.items,
-            userProfile,
-            calorieData,
-            previousMeals.postWorkout?.totals,
-            previousMeals.postWorkout?.time
-          );
-        case 'lunch':
-          return MealMessages.getLunchMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-        case 'midAfternoon':
-          return MealMessages.getMidAfternoonMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-        case 'dinner':
-          return MealMessages.getDinnerMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-        case 'lateSnack':
-          return MealMessages.getLateSnackMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-        case 'postWorkout':
-          return MealMessages.getPostWorkoutMessage(pieData, time, items, totals, previousMeals, userProfile, calorieData);
-        default:
-          return null;
-      }
+      // Use the new time-aware messaging system
+      return MealMessages.getTimeAwareMessage(
+        allMeals,           // All meals with their times and data
+        mealType,           // Current meal type
+        totals,             // Current meal totals
+        items,              // Current meal items
+        userProfile,        // User profile
+        calorieData,        // TDEE data
+        time,               // Current meal time
+        pieData             // Current meal pie chart data
+      );
     } catch (error) {
-      console.error(`Error getting message for meal type ${mealType}:`, error);
-      return null;
+      console.error(`Error getting time-aware message for meal type ${mealType}:`, error);
+      
+      // Fallback to legacy system if needed
+      try {
+        switch(mealType) {
+          case 'breakfast':
+            return MealMessages.getBreakfastMessage(pieData, time, items, totals, userProfile);
+          case 'postWorkout':
+            return MealMessages.getPostWorkoutMessage(pieData, time, items, totals, allMeals, userProfile, calorieData);
+          default:
+            return "Looking good! Keep building on this nutrition foundation.";
+        }
+      } catch (fallbackError) {
+        console.error(`Fallback message error for ${mealType}:`, fallbackError);
+        return null;
+      }
     }
   };
 
@@ -481,7 +466,7 @@ const MealTracker = ({
         </div>
       )}
 
-      {/* Smart Messages */}
+      {/* Smart Messages - NOW WITH TIME-AWARE CONTEXT! */}
       {message && (
         <div className={`p-4 bg-${config.color}-100 border-l-4 border-${config.color}-500 rounded-md`}>
           <p className={`text-${config.color}-800 font-medium`}>
