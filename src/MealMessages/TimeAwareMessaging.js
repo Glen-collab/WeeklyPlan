@@ -564,6 +564,8 @@ const getSpecificSupplementRecommendation = (proteinNeeded, goal, mealType) => {
 // MAIN TIME-AWARE MESSAGE GENERATOR
 // ========================
 
+// REPLACE the generateTimeAwareMessage function in your TimeAwareMessaging.js with this enhanced version:
+
 export const generateTimeAwareMessage = (allMeals, currentMealType, currentMealTotals, currentMealItems, userProfile, calorieData, selectedTime, pieData) => {
   
   // Use time-aware analysis
@@ -577,43 +579,60 @@ export const generateTimeAwareMessage = (allMeals, currentMealType, currentMealT
   
   let finalMessage = "";
   
-  // PART 1: Time-aware context message (post-workout acknowledgment or daily progress)
+  // PART 1: Enhanced Protein Analysis with Carb-Loading Detection & Course Correction
+  // This now includes carb-loading sarcasm and course correction from previous poor meals
+  const enhancedProteinMessage = getEnhancedProteinFocusedMessage(
+    currentMealTotals, 
+    context.nutritionSoFar, 
+    currentMealType, 
+    userProfile, 
+    pieData,
+    context.mealsBefore  // Pass previous meals for course correction analysis
+  );
+  
+  if (enhancedProteinMessage) {
+    finalMessage += enhancedProteinMessage;
+    
+    // If it's a carb-loading message or course correction, that's the main focus - add context if needed
+    const isMainMessage = enhancedProteinMessage.includes("whoa") || 
+                          enhancedProteinMessage.includes("carb") || 
+                          enhancedProteinMessage.includes("course-correct") ||
+                          enhancedProteinMessage.includes("rescue") ||
+                          enhancedProteinMessage.includes("intervention");
+    
+    if (!isMainMessage) {
+      // Only add context if this wasn't a major carb/correction message
+      const contextMessage = generateContextMessage(context, userProfile, currentMealType);
+      if (contextMessage) {
+        finalMessage = contextMessage + " " + finalMessage;
+      }
+    }
+    
+    return finalMessage;
+  }
+  
+  // PART 2: Time-aware context message (only if no protein issues detected)
   const contextMessage = generateContextMessage(context, userProfile, currentMealType);
   if (contextMessage) {
     finalMessage += contextMessage;
   }
   
-  // PART 2: Protein-focused meal analysis (sarcasm for low protein, praise for good protein)
-  const proteinMessage = getProteinFocusedMessage(
+  // PART 3: Smart recommendations (only if no major issues)
+  const recommendationMessage = generateRecommendationMessage(
+    recommendations, 
+    userProfile, 
     currentMealTotals, 
-    context.nutritionSoFar, 
-    currentMealType, 
-    userProfile
+    currentMealType
   );
   
-  if (proteinMessage) {
+  if (recommendationMessage && recommendationMessage !== "Keep up the great work with your nutrition timing!") {
     if (finalMessage) finalMessage += " ";
-    finalMessage += proteinMessage;
-  }
-  
-  // PART 3: Smart recommendations (only if protein analysis didn't provide direction)
-  if (!proteinMessage) {
-    const recommendationMessage = generateRecommendationMessage(
-      recommendations, 
-      userProfile, 
-      currentMealTotals, 
-      currentMealType
-    );
-    
-    if (recommendationMessage && recommendationMessage !== "Keep up the great work with your nutrition timing!") {
-      if (finalMessage) finalMessage += " ";
-      finalMessage += recommendationMessage;
-    }
+    finalMessage += recommendationMessage;
   }
   
   // PART 4: Add specific supplement recommendations for protein gaps
   const proteinGap = getUserProteinTarget(userProfile) - context.nutritionSoFar.protein;
-  if (proteinGap > 15 && !proteinMessage.includes("try ")) {
+  if (proteinGap > 15 && !enhancedProteinMessage) {
     const supplementRec = getSpecificSupplementRecommendation(proteinGap, userProfile.goal, currentMealType);
     if (supplementRec) {
       if (finalMessage) finalMessage += " ";
