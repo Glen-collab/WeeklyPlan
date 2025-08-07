@@ -134,16 +134,17 @@ export const getUserProteinTarget = (userProfile) => {
 // INTELLIGENT RECOMMENDATION ENGINE
 // ========================
 
+// REPLACE the getSmartRecommendations function in your TimeAwareMessaging.js with this:
+
 export const getSmartRecommendations = (context, userProfile, currentMealType) => {
   const { nutritionSoFar, timeBasedTargets, hasPostWorkoutBefore, postWorkoutMeal } = context;
   
   const proteinTarget = getUserProteinTarget(userProfile);
   const proteinGap = proteinTarget - nutritionSoFar.protein;
-  const calorieGap = timeBasedTargets.calories - nutritionSoFar.calories;
   
   let recommendations = [];
   
-  // Post-workout context adjustments
+  // Post-workout context (keep this)
   if (hasPostWorkoutBefore) {
     const postWorkoutProtein = postWorkoutMeal.totals.protein;
     recommendations.push({
@@ -152,30 +153,116 @@ export const getSmartRecommendations = (context, userProfile, currentMealType) =
     });
   }
   
-  // Protein gap recommendations
-  if (proteinGap > 20) {
+  // MEAL-SPECIFIC PROTEIN RECOMMENDATIONS
+  if (proteinGap > 15) {
+    let suggestions = [];
+    let mealContext = "";
+    
+    // SNACKS = SUPPLEMENTS
+    if (['firstSnack', 'secondSnack', 'midAfternoon'].includes(currentMealType)) {
+      const snackSuggestions = {
+        'dirty-bulk': [
+          { food: 'Fairlife Core Power 42g + Banana', protein: 43, calories: 319 },
+          { food: 'Met-RX Big 100 Bar', protein: 30, calories: 410 },
+          { food: 'Whey Protein + Bagel', protein: 33, calories: 365 },
+          { food: 'Pure Protein RTD + Rice Cakes (2)', protein: 35, calories: 250 },
+          { food: 'Quest Bar + Almonds', protein: 26, calories: 354 },
+          { food: 'Ryse Protein + Peanut Butter', protein: 33, calories: 308 }
+        ],
+        'gain-muscle': [
+          { food: 'Whey Protein Shake', protein: 24, calories: 120 },
+          { food: 'Quest Protein Bar', protein: 20, calories: 190 },
+          { food: 'Pure Protein RTD', protein: 35, calories: 160 },
+          { food: 'Greek Yogurt + Whey Protein', protein: 41, calories: 212 },
+          { food: 'Turkey Jerky (2oz)', protein: 22, calories: 140 },
+          { food: 'Fairlife Core Power 26g', protein: 26, calories: 150 }
+        ],
+        'lose': [
+          { food: 'Whey Protein Isolate', protein: 25, calories: 110 },
+          { food: 'Turkey Jerky (1.5oz)', protein: 16, calories: 105 },
+          { food: 'String Cheese (2) + Beef Jerky', protein: 21, calories: 220 },
+          { food: 'Pure Protein Bar', protein: 20, calories: 180 },
+          { food: 'Greek Yogurt (large)', protein: 20, calories: 130 },
+          { food: 'Atkins RTD', protein: 15, calories: 160 }
+        ]
+      };
+      
+      suggestions = snackSuggestions[userProfile.goal] || snackSuggestions['gain-muscle'];
+      mealContext = currentMealType === 'firstSnack' ? "first snack supplement" : 
+                   currentMealType === 'secondSnack' ? "second snack fuel" : "afternoon protein boost";
+                   
+    // LUNCH/DINNER = REAL FOOD VARIETY
+    } else if (['lunch', 'dinner'].includes(currentMealType)) {
+      const mealSuggestions = {
+        'dirty-bulk': [
+          { food: 'Salmon (6oz) + Sweet Potato', protein: 40, calories: 506 },
+          { food: 'Lean Beef (5oz) + Rice', protein: 43, calories: 456 },
+          { food: 'Turkey Breast (6oz) + Pasta', protein: 58, calories: 401 },
+          { food: 'Tuna Steak (6oz) + Brown Rice', protein: 54, calories: 352 },
+          { food: 'Pork Tenderloin (5oz) + Potato', protein: 41, calories: 454 }
+        ],
+        'gain-muscle': [
+          { food: 'Chicken Breast (4oz) + Rice', protein: 35, calories: 277 },
+          { food: 'Salmon (4oz) + Quinoa', protein: 31, calories: 328 },
+          { food: 'Turkey Breast (4oz) + Sweet Potato', protein: 39, calories: 221 },
+          { food: 'Tuna (6oz) + Brown Rice', protein: 46, calories: 260 },
+          { food: 'Lean Beef (4oz) + Vegetables', protein: 35, calories: 201 }
+        ],
+        'lose': [
+          { food: 'Chicken Breast (4oz) + Vegetables', protein: 35, calories: 190 },
+          { food: 'Tuna (5oz) + Large Salad', protein: 38, calories: 170 },
+          { food: 'Turkey Breast (4oz) + Asparagus', protein: 39, calories: 175 },
+          { food: 'Salmon (3oz) + Broccoli', protein: 25, calories: 183 },
+          { food: 'Cod (5oz) + Green Beans', protein: 33, calories: 120 }
+        ]
+      };
+      
+      suggestions = mealSuggestions[userProfile.goal] || mealSuggestions['gain-muscle'];
+      mealContext = `${currentMealType} protein powerhouse`;
+      
+    // LATE SNACK = EASY DIGESTION
+    } else if (currentMealType === 'lateSnack') {
+      const lateOptions = {
+        'dirty-bulk': [
+          { food: 'Greek Yogurt + Almonds', protein: 23, calories: 256 },
+          { food: 'Cottage Cheese + Peanut Butter', protein: 19, calories: 286 },
+          { food: 'Casein Protein Shake', protein: 24, calories: 120 },
+          { food: 'Fairlife Milk + Quest Bar', protein: 33, calories: 300 }
+        ],
+        'gain-muscle': [
+          { food: 'Greek Yogurt (large)', protein: 20, calories: 130 },
+          { food: 'Cottage Cheese (1 cup)', protein: 22, calories: 196 },
+          { food: 'Casein Protein', protein: 24, calories: 120 },
+          { food: 'Atkins RTD', protein: 15, calories: 160 }
+        ],
+        'lose': [
+          { food: 'Greek Yogurt (non-fat)', protein: 17, calories: 92 },
+          { food: 'Cottage Cheese (1/2 cup)', protein: 11, calories: 98 },
+          { food: 'Casein Protein (1/2 scoop)', protein: 12, calories: 60 },
+          { food: 'Hard-Boiled Eggs (2)', protein: 12, calories: 140 }
+        ]
+      };
+      
+      suggestions = lateOptions[userProfile.goal] || lateOptions['gain-muscle'];
+      mealContext = "late night easy-digestion option";
+    }
+    
+    if (suggestions && suggestions.length > 0) {
+      // Randomly pick one to avoid repetition
+      const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+      
+      recommendations.push({
+        type: 'protein',
+        priority: 'high',
+        message: `Perfect ${mealContext}: try ${randomSuggestion.food} (${randomSuggestion.protein}g protein, ${randomSuggestion.calories} calories).`,
+        suggestion: randomSuggestion
+      });
+    }
+  } else if (proteinGap > 5) {
     recommendations.push({
       type: 'protein',
-      priority: 'high',
-      message: `You need ${Math.round(proteinGap)}g more protein to hit your daily target.`,
-      suggestions: getProteinSuggestions(proteinGap, userProfile.goal)
-    });
-  } else if (proteinGap > 10) {
-    recommendations.push({
-      type: 'protein',
-      priority: 'medium',
-      message: `You're close! Just ${Math.round(proteinGap)}g more protein needed.`,
-      suggestions: getProteinSuggestions(proteinGap, userProfile.goal)
-    });
-  }
-  
-  // Calorie pacing recommendations
-  if (calorieGap > 300) {
-    recommendations.push({
-      type: 'calories',
-      priority: 'medium',
-      message: `You're ${Math.round(calorieGap)} calories behind your time-based target.`,
-      suggestions: getCalorieSuggestions(calorieGap, userProfile.goal)
+      priority: 'low',
+      message: `You're close! Just ${Math.round(proteinGap)}g more protein needed.`
     });
   }
   
