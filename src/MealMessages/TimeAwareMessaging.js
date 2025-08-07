@@ -1,4 +1,4 @@
-// TimeAwareMessaging.js - Smart chronological meal analysis
+// TimeAwareMessaging.js - Complete Smart chronological meal analysis with improved messaging
 
 // ========================
 // TIME UTILITIES
@@ -134,8 +134,6 @@ export const getUserProteinTarget = (userProfile) => {
 // INTELLIGENT RECOMMENDATION ENGINE
 // ========================
 
-// REPLACE the getSmartRecommendations function in your TimeAwareMessaging.js with this:
-
 export const getSmartRecommendations = (context, userProfile, currentMealType) => {
   const { nutritionSoFar, timeBasedTargets, hasPostWorkoutBefore, postWorkoutMeal } = context;
   
@@ -270,118 +268,218 @@ export const getSmartRecommendations = (context, userProfile, currentMealType) =
 };
 
 // ========================
-// SUGGESTION GENERATORS
+// IMPROVED CONTEXT MESSAGE GENERATION
 // ========================
-
-export const getProteinSuggestions = (proteinNeeded, goal) => {
-  const suggestions = {
-    'dirty-bulk': [
-      { food: 'Whey Protein + Peanut Butter + Bagel', protein: 41, calories: 708 },
-      { food: 'Fairlife Core Power 42g + Banana', protein: 43, calories: 319 },
-      { food: 'Chicken Breast (6oz) + Rice', protein: 46, calories: 390 }
-    ],
-    'gain-muscle': [
-      { food: 'Chicken Breast (5oz)', protein: 39, calories: 206 },
-      { food: 'Greek Yogurt + Whey Protein', protein: 41, calories: 212 },
-      { food: 'Tuna + Rice Cakes (3)', protein: 24, calories: 213 }
-    ],
-    'lose': [
-      { food: 'Whey Protein Shake', protein: 24, calories: 120 },
-      { food: 'Greek Yogurt (large)', protein: 20, calories: 130 },
-      { food: 'Turkey Jerky (2oz)', protein: 22, calories: 140 }
-    ]
-  };
-  
-  const goalSuggestions = suggestions[goal] || suggestions['gain-muscle'];
-  return goalSuggestions.filter(s => s.protein >= Math.min(proteinNeeded, 15));
-};
-
-export const getCalorieSuggestions = (caloriesNeeded, goal) => {
-  const suggestions = {
-    'dirty-bulk': [
-      { food: 'Peanut Butter + Bread', calories: 400, protein: 16 },
-      { food: 'Bagel + Cream Cheese', calories: 350, protein: 12 },
-      { food: 'Almonds (2oz)', calories: 328, protein: 12 }
-    ],
-    'gain-muscle': [
-      { food: 'Banana + Almonds', calories: 253, protein: 7 },
-      { food: 'Apple + Peanut Butter', calories: 240, protein: 8 },
-      { food: 'Rice Cakes (4) + Honey', calories: 200, protein: 3 }
-    ]
-  };
-  
-  const goalSuggestions = suggestions[goal] || suggestions['gain-muscle'];
-  return goalSuggestions.filter(s => s.calories >= Math.min(caloriesNeeded, 200));
-};
-
-// ========================
-// TIME-AWARE MESSAGE GENERATORS
-// ========================
-
-export const generateTimeAwareMessage = (allMeals, currentMealType, currentMealTotals, currentMealItems, userProfile, calorieData, selectedTime, pieData) => {
-  const context = analyzeMealContext(allMeals, currentMealType, currentMealTotals, userProfile, calorieData);
-  const recommendations = getSmartRecommendations(context, userProfile, currentMealType);
-  
-  // Get base message from existing system
-  let message = getBaseMealMessage(currentMealType, pieData, selectedTime, currentMealItems, currentMealTotals, userProfile);
-  
-  // Add time-aware context
-  const contextMessage = generateContextMessage(context, userProfile, currentMealType);
-  if (contextMessage) {
-    message = contextMessage + " " + (message || "");
-  }
-  
-  // Add smart recommendations
-  const recommendationMessage = generateRecommendationMessage(recommendations, userProfile);
-  if (recommendationMessage) {
-    message += " " + recommendationMessage;
-  }
-  
-  return message;
-};
 
 export const generateContextMessage = (context, userProfile, currentMealType) => {
   const { nutritionSoFar, hasPostWorkoutBefore, postWorkoutMeal, dayProgress } = context;
   
   if (!userProfile.firstName) return null;
   
+  // Only show messages if there's actual food (calories > 0)
+  if (nutritionSoFar.calories <= 0) return null;
+  
   let contextParts = [];
   
-  // Post-workout acknowledgment
+  // VARIED POST-WORKOUT ACKNOWLEDGMENT - Goal-specific and meal-specific
   if (hasPostWorkoutBefore) {
     const pwProtein = Math.round(postWorkoutMeal.totals.protein);
     const pwCalories = Math.round(postWorkoutMeal.totals.calories);
-    contextParts.push(`Great job on that earlier post-workout fuel (${pwProtein}g protein, ${pwCalories} cals)!`);
+    
+    // Different message based on current meal type and goal
+    const postWorkoutMessages = {
+      firstSnack: {
+        'dirty-bulk': `That earlier post-workout fuel (${pwProtein}g protein) is already fueling your MASS BUILDING - keep this bulk momentum going!`,
+        'gain-muscle': `Your post-workout ${pwProtein}g protein is working on muscle protein synthesis right now - smart timing!`,
+        'lose': `Post-workout ${pwProtein}g protein without excess calories? Perfect for lean muscle preservation while cutting!`,
+        'maintain': `Earlier post-workout nutrition (${pwProtein}g protein) shows you understand recovery - staying consistent!`
+      },
+      secondSnack: {
+        'dirty-bulk': `Your post-workout ${pwProtein}g protein is building SIZE while you keep feeding the machine - this is BULK perfection!`,
+        'gain-muscle': `That post-workout fuel is still working its magic - ${pwProtein}g protein supporting your lean gains perfectly!`,
+        'lose': `Post-workout protein already in the bank means this snack can be strategic - nice fat loss approach!`,
+        'maintain': `With post-workout nutrition handled (${pwProtein}g protein), you're maintaining that perfect balance!`
+      },
+      lunch: {
+        'dirty-bulk': `Your earlier post-workout session (${pwProtein}g protein, ${pwCalories} cals) + this lunch = SERIOUS mass building formula!`,
+        'gain-muscle': `Post-workout recovery nutrition already optimal - now lunch can focus on sustained muscle building!`,
+        'lose': `Post-workout fueling was on point (${pwProtein}g protein) - lunch can stay controlled for fat loss goals!`,
+        'maintain': `Earlier post-workout nutrition dialed in - you're managing recovery and maintenance perfectly!`
+      },
+      midAfternoon: {
+        'dirty-bulk': `That morning post-workout fuel (${pwProtein}g protein) is STILL building mass - afternoon nutrition keeps the gains coming!`,
+        'gain-muscle': `Post-workout protein synthesis from earlier is ongoing - this afternoon fuel supports continuous growth!`,
+        'lose': `Morning post-workout nutrition handled the muscle preservation - afternoon can stay lean and focused!`,
+        'maintain': `Post-workout recovery from earlier keeps you stable - perfect maintenance approach!`
+      },
+      dinner: {
+        'dirty-bulk': `Your post-workout investment (${pwProtein}g protein) earlier is paying BULK dividends - dinner seals the mass-building day!`,
+        'gain-muscle': `All-day protein synthesis started with that post-workout fuel - dinner completes the lean growth equation!`,
+        'lose': `Post-workout muscle preservation locked in earlier - dinner can focus on satiety without excess!`,
+        'maintain': `Post-workout foundation from earlier keeps everything balanced - consistent maintenance wins!`
+      },
+      lateSnack: {
+        'dirty-bulk': `That post-workout nutrition earlier started the BULK process - late fuel keeps the mass machine running overnight!`,
+        'gain-muscle': `Post-workout protein working all day - this evening nutrition supports overnight recovery perfectly!`,
+        'lose': `Morning post-workout handled muscle needs - late snack stays strategic for fat loss goals!`,
+        'maintain': `Post-workout timing earlier was smart - evening nutrition maintains that perfect balance!`
+      }
+    };
+    
+    const goalMessages = postWorkoutMessages[currentMealType] || postWorkoutMessages.lunch;
+    const message = goalMessages[userProfile.goal] || goalMessages['maintain'];
+    contextParts.push(message);
   }
   
-  // Daily progress context
-  const totalProtein = Math.round(nutritionSoFar.protein);
-  const totalCalories = Math.round(nutritionSoFar.calories);
-  const progressPercentage = Math.round(dayProgress * 100);
-  
-  if (progressPercentage > 75) {
-    contextParts.push(`You're ${progressPercentage}% through your day with ${totalProtein}g protein and ${totalCalories} calories - strong finish ahead!`);
-  } else if (progressPercentage > 50) {
-    contextParts.push(`Midday check: ${totalProtein}g protein and ${totalCalories} calories so far - solid progress, ${userProfile.firstName}!`);
-  } else if (progressPercentage > 25) {
-    contextParts.push(`Morning fuel: ${totalProtein}g protein and ${totalCalories} calories - you're building momentum!`);
-  } else {
-    contextParts.push(`Early start with ${totalProtein}g protein and ${totalCalories} calories - perfect foundation, ${userProfile.firstName}!`);
+  // DAILY PROGRESS CONTEXT - Avoid duplicate names
+  if (!hasPostWorkoutBefore) {
+    const totalProtein = Math.round(nutritionSoFar.protein);
+    const totalCalories = Math.round(nutritionSoFar.calories);
+    const progressPercentage = Math.round(dayProgress * 100);
+    
+    if (progressPercentage > 75) {
+      contextParts.push(`You're ${progressPercentage}% through your day with ${totalProtein}g protein and ${totalCalories} calories - strong finish ahead!`);
+    } else if (progressPercentage > 50) {
+      contextParts.push(`Midday check: ${totalProtein}g protein and ${totalCalories} calories so far - solid progress building!`);
+    } else if (progressPercentage > 25) {
+      contextParts.push(`Morning fuel: ${totalProtein}g protein and ${totalCalories} calories - you're building momentum!`);
+    } else {
+      contextParts.push(`Early nutrition: ${totalProtein}g protein and ${totalCalories} calories - perfect foundation setting!`);
+    }
   }
   
   return contextParts.join(" ");
 };
 
-export const generateRecommendationMessage = (recommendations, userProfile) => {
+// ========================
+// PROTEIN-FOCUSED MEAL ANALYSIS
+// ========================
+
+export const getProteinFocusedMessage = (currentMealTotals, nutritionSoFar, currentMealType, userProfile) => {
+  const currentProtein = Math.round(currentMealTotals.protein);
+  const currentCalories = Math.round(currentMealTotals.calories);
+  const totalDailyProtein = Math.round(nutritionSoFar.protein);
+  
+  // Calculate protein percentage for this meal
+  const mealProteinPercent = currentCalories > 0 ? Math.round((currentProtein * 4 / currentCalories) * 100) : 0;
+  
+  // Main meal protein requirements (breakfast, lunch, dinner)
+  const isMainMeal = ['breakfast', 'lunch', 'dinner'].includes(currentMealType);
+  const mainMealProteinTarget = 20; // At least 20g for main meals
+  
+  // Snack context - check if daily protein is on track
+  const isSnackMeal = ['firstSnack', 'secondSnack', 'midAfternoon', 'lateSnack'].includes(currentMealType);
+  const dailyProteinTarget = getUserProteinTarget(userProfile);
+  const dailyProteinProgress = totalDailyProtein / dailyProteinTarget;
+  
+  let message = "";
+  
+  // MAIN MEAL PROTEIN ANALYSIS - Be sarcastic about low protein
+  if (isMainMeal && currentCalories > 100) {
+    if (currentProtein < mainMealProteinTarget && mealProteinPercent < 25) {
+      // Low protein + high carbs/fat = sarcasm time
+      const sarcasticMessages = [
+        `${userProfile.firstName}, really? ${currentProtein}g protein in a ${currentCalories}-calorie ${currentMealType}? Those carbs and fats won't build muscle by themselves!`,
+        `Interesting ${currentMealType} strategy, ${userProfile.firstName} - ${currentProtein}g protein but ${currentCalories} calories total. Your muscles are confused!`,
+        `${userProfile.firstName}, that's ${currentProtein}g protein in ${currentCalories} calories for ${currentMealType}. Are we building muscle or just storing energy?`,
+        `Hold up, ${userProfile.firstName}! ${currentProtein}g protein in a ${currentCalories}-calorie ${currentMealType}? Your ${userProfile.goal} goals need MORE protein focus!`,
+        `${userProfile.firstName}, ${currentProtein}g protein for ${currentMealType}? Those ${currentCalories} calories better start working harder for muscle building!`
+      ];
+      message = sarcasticMessages[Math.floor(Math.random() * sarcasticMessages.length)];
+      
+    } else if (currentProtein >= mainMealProteinTarget && mealProteinPercent >= 35) {
+      // Good protein in main meal
+      const excellentMainMealMessages = [
+        `EXCELLENT ${currentMealType}, ${userProfile.firstName}! ${currentProtein}g protein at ${mealProteinPercent}% - this is how you build muscle!`,
+        `${currentMealType} PERFECTION! ${currentProtein}g protein dominates this ${currentCalories}-calorie meal - your ${userProfile.goal} goals are ON TRACK!`,
+        `${userProfile.firstName}, PROTEIN POWERHOUSE ${currentMealType}! ${currentProtein}g at ${mealProteinPercent}% - this is elite nutrition!`,
+        `CRUSHING IT! ${currentProtein}g protein in ${currentMealType} shows you understand ${userProfile.goal} nutrition - keep this standard!`,
+        `${currentMealType} MASTERY, ${userProfile.firstName}! ${currentProtein}g protein at ${mealProteinPercent}% - this builds real results!`
+      ];
+      message = excellentMainMealMessages[Math.floor(Math.random() * excellentMainMealMessages.length)];
+      
+    } else if (currentProtein >= mainMealProteinTarget) {
+      // Decent protein, could be better percentage
+      const decentMainMealMessages = [
+        `Solid ${currentMealType} protein at ${currentProtein}g, but ${mealProteinPercent}% could be higher for optimal ${userProfile.goal} results!`,
+        `Good ${currentProtein}g protein foundation - just dial up that percentage for MAXIMUM ${userProfile.goal} impact!`,
+        `${currentProtein}g protein hits the mark, but imagine the gains at 40%+ protein in your ${currentMealType}!`,
+        `Decent protein game at ${currentProtein}g - push that percentage higher next time for superior results!`
+      ];
+      message = decentMainMealMessages[Math.floor(Math.random() * decentMainMealMessages.length)];
+    }
+  }
+  
+  // SNACK MEAL ANALYSIS - Context-aware based on daily progress
+  else if (isSnackMeal && currentCalories > 25) {
+    if (dailyProteinProgress >= 0.7) {
+      // Daily protein is good, snack can be lower protein
+      if (currentProtein < 10) {
+        const lowProteinOkayMessages = [
+          `${currentProtein}g protein for this snack is fine - you're crushing daily protein at ${totalDailyProtein}g total!`,
+          `Low snack protein? No problem! Your daily total of ${totalDailyProtein}g has you covered for ${userProfile.goal}!`,
+          `${currentProtein}g protein here works since you're dominating daily targets at ${totalDailyProtein}g - smart balance!`,
+          `This snack can stay light on protein - ${totalDailyProtein}g daily total shows you understand the big picture!`
+        ];
+        message = lowProteinOkayMessages[Math.floor(Math.random() * lowProteinOkayMessages.length)];
+      } else {
+        // Good snack protein + good daily protein
+        const excellentSnackMessages = [
+          `BONUS protein at ${currentProtein}g! Already dominating with ${totalDailyProtein}g daily - this is next-level consistency!`,
+          `${currentProtein}g snack protein on top of ${totalDailyProtein}g daily total? This is how you MAXIMIZE ${userProfile.goal} results!`,
+          `Extra protein boost at ${currentProtein}g! Daily total of ${totalDailyProtein}g puts you in elite territory!`,
+          `${currentProtein}g protein snack when daily is already strong? This separates champions from average people!`
+        ];
+        message = excellentSnackMessages[Math.floor(Math.random() * excellentSnackMessages.length)];
+      }
+    } else {
+      // Daily protein is behind, even snacks need to contribute
+      if (currentProtein < 10) {
+        const snackProteinNeededMessages = [
+          `${userProfile.firstName}, even snacks need protein focus! Only ${totalDailyProtein}g daily so far - every meal counts for ${userProfile.goal}!`,
+          `Snack opportunity missed! ${currentProtein}g protein when daily total is only ${totalDailyProtein}g? Step up the protein game!`,
+          `${totalDailyProtein}g daily protein is behind target - this snack could help bridge that gap with better choices!`,
+          `Daily protein at ${totalDailyProtein}g needs help - even snacks should contribute to ${userProfile.goal} success!`
+        ];
+        message = snackProteinNeededMessages[Math.floor(Math.random() * snackProteinNeededMessages.length)];
+      } else {
+        // Good snack protein when daily needs help
+        const helpfulSnackMessages = [
+          `SMART snack protein at ${currentProtein}g! Daily total climbing to ${totalDailyProtein}g - this helps your ${userProfile.goal} goals!`,
+          `${currentProtein}g protein snack when daily needs help? This is strategic nutrition for ${userProfile.goal}!`,
+          `Perfect snack protein boost! ${totalDailyProtein}g daily total is improving thanks to choices like this!`,
+          `${currentProtein}g protein helps rescue the daily total - this is how you course-correct for ${userProfile.goal}!`
+        ];
+        message = helpfulSnackMessages[Math.floor(Math.random() * helpfulSnackMessages.length)];
+      }
+    }
+  }
+  
+  return message;
+};
+
+// ========================
+// UPDATED RECOMMENDATION MESSAGE GENERATOR  
+// ========================
+
+export const generateRecommendationMessage = (recommendations, userProfile, currentMealTotals, currentMealType) => {
   const highPriorityRecs = recommendations.filter(r => r.priority === 'high');
   const mediumPriorityRecs = recommendations.filter(r => r.priority === 'medium');
   
+  // Get protein-focused message first
+  const proteinMessage = getProteinFocusedMessage(
+    currentMealTotals, 
+    { protein: currentMealTotals.protein }, // Pass current meal as context for now
+    currentMealType, 
+    userProfile
+  );
+  
+  if (proteinMessage) {
+    return proteinMessage;
+  }
+  
   if (highPriorityRecs.length > 0) {
     const rec = highPriorityRecs[0];
-    if (rec.suggestions && rec.suggestions.length > 0) {
-      const suggestion = rec.suggestions[0];
-      return `${rec.message} Try adding ${suggestion.food} (${suggestion.protein}g protein, ${suggestion.calories} calories).`;
-    }
     return rec.message;
   }
   
@@ -390,15 +488,138 @@ export const generateRecommendationMessage = (recommendations, userProfile) => {
     return rec.message;
   }
   
-  return "Keep up the great work with your nutrition timing!";
+  // Varied positive reinforcement messages
+  const positiveMessages = [
+    "Solid nutrition choices building toward your goals!",
+    "This meal timing and composition supports your progress!",
+    "You're developing excellent nutrition habits!",
+    "Smart food choices that align with your objectives!",
+    "This kind of consistency separates successful people!",
+    "Building the foundation for long-term results!"
+  ];
+  
+  return positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
 };
 
 // ========================
-// FALLBACK BASE MESSAGES
+// SPECIFIC SUPPLEMENT RECOMMENDATION
 // ========================
 
-export const getBaseMealMessage = (mealType, pieData, selectedTime, items, totals, userProfile) => {
-  // This would call the existing meal-specific message functions as fallback
-  // Implementation would depend on how you want to integrate with existing MealMessages
+const getSpecificSupplementRecommendation = (proteinNeeded, goal, mealType) => {
+  // SNACKS = SUPPLEMENTS
+  if (['firstSnack', 'secondSnack', 'midAfternoon'].includes(mealType)) {
+    const snackOptions = {
+      'dirty-bulk': [
+        "Add Fairlife Core Power 42g + Banana (43g protein, 319 calories) to fuel that bulk!",
+        "Try Met-RX Big 100 Bar (30g protein, 410 calories) for serious mass building!",
+        "Grab Whey Protein + Bagel (33g protein, 365 calories) - perfect bulk fuel!",
+        "Pure Protein RTD + Rice Cakes (35g protein, 250 calories) keeps the gains coming!"
+      ],
+      'gain-muscle': [
+        "Perfect time for Whey Protein Shake (24g protein, 120 calories) - lean and effective!",
+        "Try Quest Protein Bar (20g protein, 190 calories) for portable muscle fuel!",
+        "Pure Protein RTD (35g protein, 160 calories) delivers without excess calories!",
+        "Greek Yogurt + Whey Protein (41g protein, 212 calories) = muscle building perfection!"
+      ],
+      'lose': [
+        "Whey Protein Isolate (25g protein, 110 calories) maximizes protein while cutting!",
+        "Turkey Jerky 1.5oz (16g protein, 105 calories) - pure protein, minimal calories!",
+        "Pure Protein Bar (20g protein, 180 calories) satisfies without derailing fat loss!",
+        "Greek Yogurt large (20g protein, 130 calories) keeps you full and lean!"
+      ]
+    };
+    
+    const options = snackOptions[goal] || snackOptions['gain-muscle'];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+  
+  // LATE SNACK = EASY DIGESTION
+  if (mealType === 'lateSnack') {
+    const lateOptions = {
+      'dirty-bulk': [
+        "Greek Yogurt + Almonds (23g protein, 256 calories) digests easily for overnight gains!",
+        "Casein Protein Shake (24g protein, 120 calories) feeds muscles all night!",
+        "Cottage Cheese + Peanut Butter (19g protein, 286 calories) - slow-digesting perfection!"
+      ],
+      'gain-muscle': [
+        "Greek Yogurt large (20g protein, 130 calories) - perfect pre-sleep protein!",
+        "Casein Protein (24g protein, 120 calories) works while you sleep!",
+        "Cottage Cheese 1 cup (22g protein, 196 calories) for overnight recovery!"
+      ],
+      'lose': [
+        "Greek Yogurt non-fat (17g protein, 92 calories) - lean nighttime nutrition!",
+        "Casein Protein half-scoop (12g protein, 60 calories) without excess calories!",
+        "Cottage Cheese half-cup (11g protein, 98 calories) satisfies late hunger!"
+      ]
+    };
+    
+    const options = lateOptions[goal] || lateOptions['gain-muscle'];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+  
   return null;
+};
+
+// ========================
+// MAIN TIME-AWARE MESSAGE GENERATOR
+// ========================
+
+export const generateTimeAwareMessage = (allMeals, currentMealType, currentMealTotals, currentMealItems, userProfile, calorieData, selectedTime, pieData) => {
+  
+  // Use time-aware analysis
+  const context = analyzeMealContext(allMeals, currentMealType, currentMealTotals, userProfile, calorieData);
+  const recommendations = getSmartRecommendations(context, userProfile, currentMealType);
+  
+  // Only generate messages if there's actual food (calories > 0)
+  if (currentMealTotals.calories <= 0) {
+    return null;
+  }
+  
+  let finalMessage = "";
+  
+  // PART 1: Time-aware context message (post-workout acknowledgment or daily progress)
+  const contextMessage = generateContextMessage(context, userProfile, currentMealType);
+  if (contextMessage) {
+    finalMessage += contextMessage;
+  }
+  
+  // PART 2: Protein-focused meal analysis (sarcasm for low protein, praise for good protein)
+  const proteinMessage = getProteinFocusedMessage(
+    currentMealTotals, 
+    context.nutritionSoFar, 
+    currentMealType, 
+    userProfile
+  );
+  
+  if (proteinMessage) {
+    if (finalMessage) finalMessage += " ";
+    finalMessage += proteinMessage;
+  }
+  
+  // PART 3: Smart recommendations (only if protein analysis didn't provide direction)
+  if (!proteinMessage) {
+    const recommendationMessage = generateRecommendationMessage(
+      recommendations, 
+      userProfile, 
+      currentMealTotals, 
+      currentMealType
+    );
+    
+    if (recommendationMessage && recommendationMessage !== "Keep up the great work with your nutrition timing!") {
+      if (finalMessage) finalMessage += " ";
+      finalMessage += recommendationMessage;
+    }
+  }
+  
+  // PART 4: Add specific supplement recommendations for protein gaps
+  const proteinGap = getUserProteinTarget(userProfile) - context.nutritionSoFar.protein;
+  if (proteinGap > 15 && !proteinMessage.includes("try ")) {
+    const supplementRec = getSpecificSupplementRecommendation(proteinGap, userProfile.goal, currentMealType);
+    if (supplementRec) {
+      if (finalMessage) finalMessage += " ";
+      finalMessage += supplementRec;
+    }
+  }
+  
+  return finalMessage || null;
 };
