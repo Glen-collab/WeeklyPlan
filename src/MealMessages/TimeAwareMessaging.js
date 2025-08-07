@@ -1,4 +1,4 @@
-// TimeAwareMessaging.js - Complete Smart chronological meal analysis with improved messaging
+// TimeAwareMessaging.js - Complete Smart chronological meal analysis with carb detection
 
 // ========================
 // TIME UTILITIES
@@ -128,6 +128,166 @@ export const getUserProteinTarget = (userProfile) => {
     default:
       return 120;
   }
+};
+
+// ========================
+// CARB-LOADING DETECTION & GOAL-SPECIFIC SARCASM
+// ========================
+
+export const getCarbLoadingMessage = (currentMealTotals, currentMealType, userProfile, pieData) => {
+  const currentCalories = Math.round(currentMealTotals.calories);
+  const proteinPercent = pieData[0]?.percentage || 0;
+  const carbPercent = pieData[1]?.percentage || 0;
+  
+  console.log(`Carb Detection - Meal: ${currentMealType}, Calories: ${currentCalories}, Protein: ${proteinPercent}%, Carbs: ${carbPercent}%`);
+  
+  // CARB-LOADING DETECTION: High carbs (>60%) + Low protein (<25%) + Meaningful calories
+  const isCarbLoading = carbPercent > 60 && proteinPercent < 25 && currentCalories > 150;
+  
+  if (!isCarbLoading || !userProfile.firstName) {
+    console.log(`No carb loading detected. CarbLoading: ${isCarbLoading}, FirstName: ${userProfile.firstName}`);
+    return null;
+  }
+  
+  console.log(`CARB LOADING DETECTED! ${carbPercent}% carbs, ${proteinPercent}% protein`);
+  
+  // Goal-specific carb-loading sarcasm
+  const carbLoadingMessages = {
+    'dirty-bulk': [
+      `${userProfile.firstName}, whoa! ${carbPercent}% carbs for DIRTY BULK? Even bulking needs protein to build muscle, not just store energy!`,
+      `Carb loading much, ${userProfile.firstName}? ${carbPercent}% carbs won't build the mass you want for dirty bulk - where's the PROTEIN?`,
+      `${userProfile.firstName}, ${carbPercent}% carbs for dirty bulk? Are we marathon training or muscle building? Check your goal!`,
+      `Hold up, ${userProfile.firstName}! ${carbPercent}% carbs, ${proteinPercent}% protein for DIRTY BULK? That's backwards muscle building!`
+    ],
+    'gain-muscle': [
+      `${userProfile.firstName}, seriously? ${carbPercent}% carbs for LEAN MUSCLE gain? That's how you gain fat, not muscle!`,
+      `Carb festival, ${userProfile.firstName}! ${carbPercent}% carbs won't build lean muscle - your gain-muscle goal needs PROTEIN focus!`,
+      `${userProfile.firstName}, ${carbPercent}% carbs for muscle building? Check your goal - LEAN gains require lean protein, not carb loading!`,
+      `WHOA, ${userProfile.firstName}! ${carbPercent}% carbs for gain-muscle? That's gain-fat nutrition, not gain-muscle!`
+    ],
+    'lose': [
+      `${userProfile.firstName}, ${carbPercent}% carbs for FAT LOSS? That's literally the opposite of your goal!`,
+      `Carb overload, ${userProfile.firstName}! ${carbPercent}% carbs won't help you lose weight - your goal needs protein and fat focus!`,
+      `${userProfile.firstName}, ${carbPercent}% carbs when trying to LOSE fat? Those carbs are working against your goal!`,
+      `Really, ${userProfile.firstName}? ${carbPercent}% carbs for fat loss? That's like using a fire hose to put out a match!`
+    ],
+    'maintain': [
+      `${userProfile.firstName}, ${carbPercent}% carbs for maintenance? Even maintaining muscle needs protein balance!`,
+      `Carb heavy at ${carbPercent}%, ${userProfile.firstName}! Maintenance still requires protein to preserve muscle mass!`,
+      `${userProfile.firstName}, ${carbPercent}% carbs won't maintain muscle - your body needs protein to stay strong!`,
+      `Maintenance mode doesn't mean carb-loading mode, ${userProfile.firstName}! ${carbPercent}% carbs is excessive!`
+    ]
+  };
+  
+  const goalMessages = carbLoadingMessages[userProfile.goal] || carbLoadingMessages['maintain'];
+  const selectedMessage = goalMessages[Math.floor(Math.random() * goalMessages.length)];
+  console.log(`Selected carb loading message: ${selectedMessage}`);
+  return selectedMessage;
+};
+
+// ========================
+// ANALYZE PREVIOUS MEAL QUALITY FOR CONTEXT
+// ========================
+
+export const analyzePreviousMealQuality = (mealsBefore) => {
+  let poorMeals = [];
+  let goodMeals = [];
+  
+  mealsBefore.forEach(meal => {
+    if (meal.totals.calories > 100) {
+      const proteinCals = meal.totals.protein * 4;
+      const carbCals = meal.totals.carbs * 4;
+      const fatCals = meal.totals.fat * 9;
+      const totalMacros = proteinCals + carbCals + fatCals;
+      
+      if (totalMacros > 0) {
+        const proteinPercent = (proteinCals / totalMacros) * 100;
+        const carbPercent = (carbCals / totalMacros) * 100;
+        
+        if (carbPercent > 60 && proteinPercent < 25) {
+          poorMeals.push({
+            mealType: meal.mealType,
+            proteinPercent: Math.round(proteinPercent),
+            carbPercent: Math.round(carbPercent),
+            protein: Math.round(meal.totals.protein),
+            calories: Math.round(meal.totals.calories)
+          });
+        } else if (proteinPercent >= 35) {
+          goodMeals.push({
+            mealType: meal.mealType,
+            proteinPercent: Math.round(proteinPercent),
+            protein: Math.round(meal.totals.protein)
+          });
+        }
+      }
+    }
+  });
+  
+  console.log(`Previous meal analysis - Poor meals: ${poorMeals.length}, Good meals: ${goodMeals.length}`);
+  return { poorMeals, goodMeals };
+};
+
+// ========================
+// COURSE CORRECTION MESSAGES FOR SUBSEQUENT MEALS
+// ========================
+
+export const getCourseCorrectingMessage = (currentMealType, previousMealAnalysis, userProfile, currentMealTotals, nutritionSoFar) => {
+  const { poorMeals, goodMeals } = previousMealAnalysis;
+  
+  if (poorMeals.length === 0 || !userProfile.firstName) {
+    console.log(`No course correction needed. Poor meals: ${poorMeals.length}, FirstName: ${userProfile.firstName}`);
+    return null;
+  }
+  
+  const totalDailyProtein = Math.round(nutritionSoFar.protein);
+  const proteinTarget = getUserProteinTarget(userProfile);
+  const proteinGap = proteinTarget - totalDailyProtein;
+  const lastPoorMeal = poorMeals[poorMeals.length - 1];
+  
+  console.log(`Course correction needed! Last poor meal: ${lastPoorMeal.mealType} (${lastPoorMeal.carbPercent}% carbs)`);
+  
+  const courseCorrectionMessages = {
+    firstSnack: [
+      `${userProfile.firstName}, time to course-correct after that ${lastPoorMeal.carbPercent}% carb ${lastPoorMeal.mealType}! This snack needs PROTEIN focus.`,
+      `Recovery time, ${userProfile.firstName}! That carb-heavy ${lastPoorMeal.mealType} put you behind - let's get protein back on track!`,
+      `${userProfile.firstName}, damage control! Your ${lastPoorMeal.mealType} was ${lastPoorMeal.carbPercent}% carbs - this snack must prioritize protein!`
+    ],
+    secondSnack: [
+      `${userProfile.firstName}, still behind from that carb-loaded ${lastPoorMeal.mealType}! Only ${totalDailyProtein}g protein so far - step it up!`,
+      `Rescue mission continues, ${userProfile.firstName}! That ${lastPoorMeal.carbPercent}% carb ${lastPoorMeal.mealType} needs balancing - more protein NOW!`,
+      `${userProfile.firstName}, protein deficit alert! After that carb fest ${lastPoorMeal.mealType}, you're ${proteinGap}g behind target!`
+    ],
+    lunch: [
+      `${userProfile.firstName}, LUNCH RESCUE MISSION! That carb-heavy ${lastPoorMeal.mealType} put you behind - make this meal PROTEIN-DOMINANT!`,
+      `Big opportunity, ${userProfile.firstName}! After that ${lastPoorMeal.carbPercent}% carb ${lastPoorMeal.mealType}, lunch can save your ${userProfile.goal} goals!`,
+      `${userProfile.firstName}, lunch is your redemption! That carb-loaded ${lastPoorMeal.mealType} needs serious protein compensation NOW!`
+    ],
+    midAfternoon: [
+      `${userProfile.firstName}, still recovering from that carb-heavy ${lastPoorMeal.mealType}! Your protein game needs emergency intervention!`,
+      `Afternoon reality check, ${userProfile.firstName}! That ${lastPoorMeal.carbPercent}% carb ${lastPoorMeal.mealType} has you chasing protein all day!`,
+      `${userProfile.firstName}, protein emergency continues! After that carb fest, even snacks need to contribute to ${userProfile.goal}!`
+    ],
+    dinner: [
+      `${userProfile.firstName}, DINNER SALVATION! That carb-heavy ${lastPoorMeal.mealType} put you behind - make this meal MASSIVE on protein!`,
+      `Final chance, ${userProfile.firstName}! After that ${lastPoorMeal.carbPercent}% carb ${lastPoorMeal.mealType}, dinner must be protein-DOMINANT!`,
+      `${userProfile.firstName}, dinner intervention! That carb-loaded start means this meal determines your ${userProfile.goal} success!`
+    ],
+    lateSnack: [
+      `${userProfile.firstName}, even late snacks matter after that carb-heavy ${lastPoorMeal.mealType}! Every gram of protein counts now!`,
+      `Final protein push, ${userProfile.firstName}! That ${lastPoorMeal.carbPercent}% carb ${lastPoorMeal.mealType} means this snack can't be wasted!`,
+      `${userProfile.firstName}, last chance protein! After that carb fest, make this late snack work for your ${userProfile.goal} goals!`
+    ]
+  };
+  
+  const mealMessages = courseCorrectionMessages[currentMealType];
+  if (!mealMessages) {
+    console.log(`No course correction messages for meal type: ${currentMealType}`);
+    return null;
+  }
+  
+  const selectedMessage = mealMessages[Math.floor(Math.random() * mealMessages.length)];
+  console.log(`Selected course correction message: ${selectedMessage}`);
+  return selectedMessage;
 };
 
 // ========================
@@ -352,10 +512,25 @@ export const generateContextMessage = (context, userProfile, currentMealType) =>
 };
 
 // ========================
-// PROTEIN-FOCUSED MEAL ANALYSIS
+// PROTEIN-FOCUSED MEAL ANALYSIS WITH CARB DETECTION INTEGRATION
 // ========================
 
-export const getProteinFocusedMessage = (currentMealTotals, nutritionSoFar, currentMealType, userProfile) => {
+export const getEnhancedProteinFocusedMessage = (currentMealTotals, nutritionSoFar, currentMealType, userProfile, pieData, mealsBefore) => {
+  
+  // PRIORITY 1: Check for carb-loading in current meal
+  const carbLoadingMessage = getCarbLoadingMessage(currentMealTotals, currentMealType, userProfile, pieData);
+  if (carbLoadingMessage) {
+    return carbLoadingMessage;
+  }
+  
+  // PRIORITY 2: Check if we need course correction from previous poor meals
+  const previousMealAnalysis = analyzePreviousMealQuality(mealsBefore);
+  const courseCorrectingMessage = getCourseCorrectingMessage(currentMealType, previousMealAnalysis, userProfile, currentMealTotals, nutritionSoFar);
+  if (courseCorrectingMessage) {
+    return courseCorrectingMessage;
+  }
+  
+  // PRIORITY 3: Regular protein analysis
   const currentProtein = Math.round(currentMealTotals.protein);
   const currentCalories = Math.round(currentMealTotals.calories);
   const totalDailyProtein = Math.round(nutritionSoFar.protein);
@@ -466,16 +641,18 @@ export const generateRecommendationMessage = (recommendations, userProfile, curr
   const highPriorityRecs = recommendations.filter(r => r.priority === 'high');
   const mediumPriorityRecs = recommendations.filter(r => r.priority === 'medium');
   
-  // Get protein-focused message first
-  const proteinMessage = getProteinFocusedMessage(
+  // Get enhanced protein-focused message first (includes carb detection)
+  const enhancedProteinMessage = getEnhancedProteinFocusedMessage(
     currentMealTotals, 
     { protein: currentMealTotals.protein }, // Pass current meal as context for now
     currentMealType, 
-    userProfile
+    userProfile,
+    [], // pieData - will be passed from main function
+    []  // mealsBefore - will be passed from main function
   );
   
-  if (proteinMessage) {
-    return proteinMessage;
+  if (enhancedProteinMessage) {
+    return enhancedProteinMessage;
   }
   
   if (highPriorityRecs.length > 0) {
@@ -561,10 +738,8 @@ const getSpecificSupplementRecommendation = (proteinNeeded, goal, mealType) => {
 };
 
 // ========================
-// MAIN TIME-AWARE MESSAGE GENERATOR
+// MAIN TIME-AWARE MESSAGE GENERATOR WITH CARB DETECTION
 // ========================
-
-// REPLACE the generateTimeAwareMessage function in your TimeAwareMessaging.js with this enhanced version:
 
 export const generateTimeAwareMessage = (allMeals, currentMealType, currentMealTotals, currentMealItems, userProfile, calorieData, selectedTime, pieData) => {
   
