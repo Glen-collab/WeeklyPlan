@@ -111,6 +111,60 @@ const NutritionApp = () => {
     return { totals, pieData };
   };
 
+  // NEW: Create complete meal data structure for time-aware messaging
+  const getAllMealsData = () => {
+    return {
+      breakfast: {
+        time: meals.breakfast.time,
+        totals: getMealData('breakfast').totals,
+        items: meals.breakfast.items,
+        pieData: getMealData('breakfast').pieData
+      },
+      firstSnack: {
+        time: meals.firstSnack.time,
+        totals: getMealData('firstSnack').totals,
+        items: meals.firstSnack.items,
+        pieData: getMealData('firstSnack').pieData
+      },
+      secondSnack: {
+        time: meals.secondSnack.time,
+        totals: getMealData('secondSnack').totals,
+        items: meals.secondSnack.items,
+        pieData: getMealData('secondSnack').pieData
+      },
+      lunch: {
+        time: meals.lunch.time,
+        totals: getMealData('lunch').totals,
+        items: meals.lunch.items,
+        pieData: getMealData('lunch').pieData
+      },
+      midAfternoon: {
+        time: meals.midAfternoon.time,
+        totals: getMealData('midAfternoon').totals,
+        items: meals.midAfternoon.items,
+        pieData: getMealData('midAfternoon').pieData
+      },
+      dinner: {
+        time: meals.dinner.time,
+        totals: getMealData('dinner').totals,
+        items: meals.dinner.items,
+        pieData: getMealData('dinner').pieData
+      },
+      lateSnack: {
+        time: meals.lateSnack.time,
+        totals: getMealData('lateSnack').totals,
+        items: meals.lateSnack.items,
+        pieData: getMealData('lateSnack').pieData
+      },
+      postWorkout: {
+        time: meals.postWorkout.time,
+        totals: getMealData('postWorkout').totals,
+        items: meals.postWorkout.items,
+        pieData: getMealData('postWorkout').pieData
+      }
+    };
+  };
+
   const handleTimeChange = (mealType, newTime) => {
     setMeals(prev => ({
       ...prev,
@@ -360,7 +414,7 @@ const NutritionApp = () => {
                 warnings={[]}
                 userProfile={userProfile}
                 calorieData={calorieData || {}}
-                previousMeals={meals}
+                allMeals={getAllMealsData()} // NEW: Pass complete meal data instead of previousMeals
                 onOpenServingModal={handleOpenServingModal}
                 onOpenFoodModal={handleOpenFoodModal} // NEW PROP
                 onUpdateFoodItem={handleUpdateFoodItem}
