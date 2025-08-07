@@ -255,21 +255,24 @@ export const MealMessages = {
                                    postWorkoutTotals.calories > 0 && 
                                    postWorkoutMinutes < snackMinutes;
 
-    // Calculate combined morning totals (breakfast + post-workout if applicable)
-    const morningCombinedCalories = breakfastTotals.calories + (shouldIncludePostWorkout ? postWorkoutTotals.calories : 0);
-    const morningCombinedProtein = breakfastTotals.protein + (shouldIncludePostWorkout ? postWorkoutTotals.protein : 0);
+    // Calculate combined morning totals (breakfast + post-workout if applicable) - WITH SAFE DEFAULTS
+    const safeBreakfastTotals = breakfastTotals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    const safePostWorkoutTotals = postWorkoutTotals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    
+    const morningCombinedCalories = safeBreakfastTotals.calories + (shouldIncludePostWorkout ? safePostWorkoutTotals.calories : 0);
+    const morningCombinedProtein = safeBreakfastTotals.protein + (shouldIncludePostWorkout ? safePostWorkoutTotals.protein : 0);
     
     // Calculate totals so far including this snack
     const totalCaloriesSoFar = morningCombinedCalories + totals.calories;
     const totalProteinSoFar = morningCombinedProtein + totals.protein;
     
-    // Calculate time gaps
-    const breakfastHour = parseInt(breakfastTime.split(':')[0]);
+    // Calculate time gaps - WITH SAFE DEFAULTS
+    const breakfastHour = breakfastTime ? parseInt(breakfastTime.split(':')[0]) : 7;
     const snackHour = parseInt(selectedTime.split(':')[0]);
     const hoursFromBreakfast = snackHour - breakfastHour;
     
-    // Food quality assessment based on protein ratio
-    const breakfastProteinRatio = breakfastTotals.protein / (breakfastTotals.protein + breakfastTotals.carbs + breakfastTotals.fat);
+    // Food quality assessment based on protein ratio - WITH SAFE DEFAULTS
+    const breakfastProteinRatio = safeBreakfastTotals.protein / (safeBreakfastTotals.protein + safeBreakfastTotals.carbs + safeBreakfastTotals.fat || 1);
     const foodQuality = breakfastProteinRatio >= 0.4 ? 'high' : breakfastProteinRatio >= 0.25 ? 'medium' : 'low';
     
     // Goal-based protein targets
@@ -518,17 +521,16 @@ export const MealMessages = {
                                    postWorkoutTotals.calories > 0 && 
                                    postWorkoutMinutes < snackMinutes;
     
-    // Calculate all totals so far
-    const morningCombinedCalories = breakfastTotals.calories + (shouldIncludePostWorkout ? postWorkoutTotals.calories : 0);
-    const morningCombinedProtein = breakfastTotals.protein + (shouldIncludePostWorkout ? postWorkoutTotals.protein : 0);
+    // Calculate all totals so far - WITH SAFE DEFAULTS
+    const safeBreakfastTotals = breakfastTotals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    const safeFirstSnackTotals = firstSnackTotals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    const safePostWorkoutTotals = postWorkoutTotals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
     
-    const totalCaloriesSoFar = morningCombinedCalories + 
-                              (firstSnackTotals ? firstSnackTotals.calories : 0) + 
-                              totals.calories;
+    const morningCombinedCalories = safeBreakfastTotals.calories + (shouldIncludePostWorkout ? safePostWorkoutTotals.calories : 0);
+    const morningCombinedProtein = safeBreakfastTotals.protein + (shouldIncludePostWorkout ? safePostWorkoutTotals.protein : 0);
     
-    const totalProteinSoFar = morningCombinedProtein + 
-                             (firstSnackTotals ? firstSnackTotals.protein : 0) + 
-                             totals.protein;
+    const totalCaloriesSoFar = morningCombinedCalories + safeFirstSnackTotals.calories + totals.calories;
+    const totalProteinSoFar = morningCombinedProtein + safeFirstSnackTotals.protein + totals.protein;
 
     // Goal-based targets  
     const proteinTarget = ['gain-muscle', 'dirty-bulk'].includes(userProfile.goal) ? 75 : 50; // Higher by second snack
@@ -695,7 +697,7 @@ export const MealMessages = {
     
     const hoursSinceFirstSnack = firstSnackTime ? 
       snackHour - parseInt(firstSnackTime.split(':')[0]) : 
-      snackHour - parseInt(breakfastTime.split(':')[0]);
+      (breakfastTime ? snackHour - parseInt(breakfastTime.split(':')[0]) : 2);
     
     if (lunchishTime) {
       const preLunchMessages = [
