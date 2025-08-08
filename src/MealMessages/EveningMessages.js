@@ -1,4 +1,5 @@
 // EveningMessages.js - Enhanced evening meal messages with 3-part system
+import { WeeklyConsistencyPatterns } from './WeeklyConsistencyPatterns.js';
 
 export const EveningMessages = {
 
@@ -388,7 +389,7 @@ export const EveningMessages = {
   },
 
   // ========================
-  // DINNER MESSAGES - ENHANCED 3-PART SYSTEM
+  // DINNER MESSAGES - STREAMLINED WITH WEEKLY FOCUS
   // ========================
   getDinnerMessage: (pieData, selectedTime, foodItems, totals, previousMeals, userProfile, calorieData) => {
     if (totals.calories < 50) return null;
@@ -437,132 +438,66 @@ export const EveningMessages = {
                              (previousMeals.postWorkout?.totals?.protein || 0) +
                              totals.protein;
 
-    const targetDailyCalories = calorieData?.targetCalories || 2500;
-    const finalProteinTarget = ['gain-muscle', 'dirty-bulk'].includes(userProfile.goal) ? 150 : 120;
+    const nutritionSoFar = { calories: totalDailyCalories, protein: totalDailyProtein };
 
     let message = "";
 
-    // ============ PART 1: FINAL DAILY ACHIEVEMENT ASSESSMENT ============
+    // ============ PART 1: STREAMLINED DAILY ACHIEVEMENT ASSESSMENT ============
     
     if (userProfile.goal === 'dirty-bulk') {
       const estimatedTDEE = calorieData?.tdee || (userProfile.weight ? Math.round(userProfile.weight * 15 + 500) : 3000);
       
       if (totalDailyCalories >= estimatedTDEE) {
         const bulkVictoryMessages = [
-          `${userProfile.firstName}, BULK DOMINATION COMPLETE! ${Math.round(totalDailyCalories)} calories CRUSHED your ${estimatedTDEE} target - you're building SERIOUS MASS!`,
-          `MASS BUILDING CHAMPION, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories and ${Math.round(totalDailyProtein)}g protein - this is how you get HUGE!`,
-          `${userProfile.firstName}, DIRTY BULK PERFECTION! ${Math.round(totalDailyCalories)} calories - you've ANNIHILATED your daily goals!`,
-          `BULK BEAST SUPREME, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories down - your gains are going to be LEGENDARY!`,
-          `CALORIE CRUSHING MACHINE, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories - you've DOMINATED the bulk game today!`
+          `${userProfile.firstName}, BULK DOMINATION! ${Math.round(totalDailyCalories)} calories CRUSHED your ${estimatedTDEE} target!`,
+          `MASS BUILDING CHAMPION, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories and ${Math.round(totalDailyProtein)}g protein - you're getting HUGE!`,
+          `${userProfile.firstName}, DIRTY BULK PERFECTION! ${Math.round(totalDailyCalories)} calories - ANNIHILATED your daily goals!`
         ];
         message += bulkVictoryMessages[Math.floor(Math.random() * bulkVictoryMessages.length)];
       } else {
         const remaining = estimatedTDEE - Math.round(totalDailyCalories);
         const bulkAlmostMessages = [
-          `${userProfile.firstName}, SO CLOSE to bulk perfection! ${Math.round(totalDailyCalories)} calories - just ${remaining} more and you've DOMINATED!`,
-          `ALMOST THERE, ${userProfile.firstName}! ${remaining} calories short of ${estimatedTDEE} - still a SOLID bulk day at ${Math.round(totalDailyCalories)}!`,
-          `${userProfile.firstName}, STRONG bulk effort! ${Math.round(totalDailyCalories)} calories - maybe a small evening snack to hit ${estimatedTDEE}?`,
-          `DECENT bulk progress, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories - you're ${remaining} away from TOTAL DOMINATION!`
+          `${userProfile.firstName}, solid bulk effort! ${Math.round(totalDailyCalories)} calories - just ${remaining} short of TOTAL DOMINATION!`,
+          `STRONG bulk progress, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories - you're building mass consistently!`
         ];
         message += bulkAlmostMessages[Math.floor(Math.random() * bulkAlmostMessages.length)];
       }
     } else {
-      // Other goals - final achievement assessment
-      if (totalDailyCalories >= targetDailyCalories * 0.9 && totalDailyProtein >= finalProteinTarget) {
-        const dailyVictoryMessages = [
-          `${userProfile.firstName}, DAILY VICTORY! ${Math.round(totalDailyCalories)} calories and ${Math.round(totalDailyProtein)}g protein - you've CRUSHED your ${userProfile.goal} goals!`,
-          `CHAMPION-LEVEL day, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein and perfect calorie pacing - this is ${userProfile.goal} EXCELLENCE!`,
-          `${userProfile.firstName}, MASTERCLASS nutrition! ${Math.round(totalDailyCalories)} calories with ${Math.round(totalDailyProtein)}g protein - you've DOMINATED today!`,
-          `PHENOMENAL execution, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein achievement - you're in ELITE ${userProfile.goal} territory!`,
-          `DAILY DOMINATION COMPLETE, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories and protein ON FIRE - this is how you achieve ${userProfile.goal}!`
+      // Other goals - simplified assessment
+      const finalProteinTarget = ['gain-muscle', 'dirty-bulk'].includes(userProfile.goal) ? 130 : 100;
+      
+      if (totalDailyCalories >= (calorieData?.targetCalories || 2200) * 0.9 && totalDailyProtein >= finalProteinTarget) {
+        const excellentMessages = [
+          `${userProfile.firstName}, EXCEPTIONAL day! ${Math.round(totalDailyProtein)}g protein and ${Math.round(totalDailyCalories)} calories - textbook ${userProfile.goal} execution!`,
+          `CHAMPION-LEVEL day, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein - you've DOMINATED your ${userProfile.goal} goals!`,
+          `${userProfile.firstName}, MASTERCLASS nutrition! ${Math.round(totalDailyCalories)} calories with perfect protein - this is ${userProfile.goal} EXCELLENCE!`
         ];
-        message += dailyVictoryMessages[Math.floor(Math.random() * dailyVictoryMessages.length)];
-      } else if (totalDailyProtein >= finalProteinTarget) {
-        const proteinVictoryMessages = [
-          `${userProfile.firstName}, PROTEIN CHAMPION! ${Math.round(totalDailyProtein)}g achieved - calories at ${Math.round(totalDailyCalories)} support your ${userProfile.goal} perfectly!`,
-          `PROTEIN DOMINATION, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g shows SERIOUS commitment to ${userProfile.goal} - excellent work!`,
-          `${userProfile.firstName}, ELITE protein game! ${Math.round(totalDailyProtein)}g is PRO-LEVEL nutrition for ${userProfile.goal} success!`,
-          `PROTEIN POWERHOUSE, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g means your muscles are SET for ${userProfile.goal} results!`
+        message += excellentMessages[Math.floor(Math.random() * excellentMessages.length)];
+      } else if (totalDailyProtein >= finalProteinTarget * 0.8) {
+        const goodMessages = [
+          `${userProfile.firstName}, solid day with ${Math.round(totalDailyProtein)}g protein and ${Math.round(totalDailyCalories)} calories - good progress toward ${userProfile.goal}!`,
+          `DECENT execution, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein shows commitment to ${userProfile.goal} success!`
         ];
-        message += proteinVictoryMessages[Math.floor(Math.random() * proteinVictoryMessages.length)];
-      } else if (totalDailyCalories >= targetDailyCalories * 0.8) {
-        const calorieGoodMessages = [
-          `${userProfile.firstName}, SOLID daily effort! ${Math.round(totalDailyCalories)} calories and ${Math.round(totalDailyProtein)}g protein - good progress toward ${userProfile.goal}!`,
-          `DECENT day execution, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories with consistent nutrition choices - you're building habits!`,
-          `${userProfile.firstName}, STEADY progress! ${Math.round(totalDailyProtein)}g protein shows commitment - tomorrow can be even BETTER!`,
-          `CONSISTENT effort, ${userProfile.firstName}! ${Math.round(totalDailyCalories)} calories - you're moving toward ${userProfile.goal} success!`
-        ];
-        message += calorieGoodMessages[Math.floor(Math.random() * calorieGoodMessages.length)];
+        message += goodMessages[Math.floor(Math.random() * goodMessages.length)];
       } else {
-        const needImprovementMessages = [
-          `${userProfile.firstName}, TOMORROW IS YOUR COMEBACK! ${Math.round(totalDailyCalories)} calories isn't enough for ${userProfile.goal} - let's DOMINATE tomorrow!`,
-          `LEARNING DAY, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein and ${Math.round(totalDailyCalories)} calories - tomorrow we CRUSH it!`,
-          `${userProfile.firstName}, RESET TIME! Today's ${Math.round(totalDailyCalories)} calories teaches us what NOT to do - tomorrow is your VICTORY day!`,
-          `COMEBACK OPPORTUNITY, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein shows effort - tomorrow we MULTIPLY this success!`
+        const improvementMessages = [
+          `${userProfile.firstName}, ${Math.round(totalDailyCalories)} calories and ${Math.round(totalDailyProtein)}g protein - room to improve but every day is learning!`,
+          `BUILDING momentum, ${userProfile.firstName}! ${Math.round(totalDailyProtein)}g protein - consistency will get you to ${userProfile.goal} success!`
         ];
-        message += needImprovementMessages[Math.floor(Math.random() * needImprovementMessages.length)];
+        message += improvementMessages[Math.floor(Math.random() * improvementMessages.length)];
       }
     }
 
     message += " ";
 
-    // ============ PART 2: EVENING RECOVERY & OVERNIGHT OPTIMIZATION ============
+    // ============ PART 2: NEW WEEKLY CONSISTENCY FOCUS ============
     
-    if (proteinPercent >= 40) {
-      const recoveryProteinMessages = [
-        `PERFECT dinner protein at ${proteinPercent}%! This will power OVERNIGHT muscle recovery and protein synthesis - you'll wake up STRONGER!`,
-        `RECOVERY PERFECTION, ${userProfile.firstName}! ${proteinPercent}% protein optimizes overnight muscle building - tomorrow you'll feel AMAZING!`,
-        `CHAMPION-LEVEL recovery fuel! ${proteinPercent}% protein ensures MAXIMUM overnight gains - your body will thank you!`,
-        `OVERNIGHT MUSCLE BUILDING ACTIVATED! ${proteinPercent}% protein dinner = PEAK recovery while you sleep!`
-      ];
-      message += recoveryProteinMessages[Math.floor(Math.random() * recoveryProteinMessages.length)];
-    } else if (carbPercent >= 50) {
-      const recoveryBalanceMessages = [
-        `High carbs at ${carbPercent}% will replenish glycogen stores - good for recovery, but consider more protein for overnight muscle building!`,
-        `${carbPercent}% carbs will fuel recovery - just ensure you're getting enough protein for overnight muscle protein synthesis!`,
-        `Energy-focused dinner with ${carbPercent}% carbs - great for refueling, but protein would optimize overnight recovery even more!`,
-        `Carb-heavy recovery at ${carbPercent}% - excellent for energy stores, consider protein balance for muscle building overnight!`
-      ];
-      message += recoveryBalanceMessages[Math.floor(Math.random() * recoveryBalanceMessages.length)];
-    } else {
-      const recoveryGeneralMessages = [
-        `SOLID recovery nutrition! This dinner combination will support overnight repair and prepare you for tomorrow's SUCCESS!`,
-        `EXCELLENT evening fuel! Your body will efficiently use these nutrients for overnight recovery and muscle building!`,
-        `PERFECT dinner balance! This supports both recovery and tomorrow's energy needs - OPTIMAL evening nutrition!`,
-        `CHAMPION-LEVEL evening meal! This fuels overnight recovery while supporting your ${userProfile.goal} goals!`
-      ];
-      message += recoveryGeneralMessages[Math.floor(Math.random() * recoveryGeneralMessages.length)];
-    }
-
-    message += " ";
-
-    // ============ PART 3: SLEEP TIMING & TOMORROW PREP ============
+    // Assess daily success for weekly context
+    const dailySuccess = WeeklyConsistencyPatterns.assessDailySuccess(nutritionSoFar, userProfile, calorieData);
     
-    if (dinnerHour >= 19 && totals.calories > 400) {
-      const lateDinnerMessages = [
-        `Late dinner at ${selectedTime} with ${Math.round(totals.calories)} calories - try to finish eating 2-3 hours before bed for OPTIMAL sleep quality!`,
-        `${selectedTime} dinner timing means EARLY digestion focus - light evening activities and hydration will help process this fuel!`,
-        `LATE FUEL WARNING, ${userProfile.firstName}! ${Math.round(totals.calories)} calories at ${selectedTime} - prioritize gentle movement and avoid heavy snacks!`,
-        `${selectedTime} dinner requires SMART sleep prep - finish eating soon and allow digestion time for quality rest!`
-      ];
-      message += lateDinnerMessages[Math.floor(Math.random() * lateDinnerMessages.length)];
-    } else if (dinnerHour <= 17) {
-      const earlyDinnerMessages = [
-        `EARLY dinner at ${selectedTime}? PERFECT for digestion and sleep quality - you might want a small evening snack later!`,
-        `SMART early timing, ${userProfile.firstName}! ${selectedTime} dinner allows PERFECT digestion - consider light evening fuel if needed!`,
-        `EXCELLENT dinner timing at ${selectedTime}! This optimizes digestion AND leaves room for evening snack if hunger strikes!`,
-        `CHAMPION timing, ${userProfile.firstName}! ${selectedTime} dinner = OPTIMAL digestion and flexibility for evening nutrition!`
-      ];
-      message += earlyDinnerMessages[Math.floor(Math.random() * earlyDinnerMessages.length)];
-    } else {
-      const perfectDinnerMessages = [
-        `TEXTBOOK dinner timing at ${selectedTime}! Perfect balance for digestion, sleep quality, and tomorrow's energy - OPTIMAL evening nutrition!`,
-        `IDEAL dinner window, ${userProfile.firstName}! ${selectedTime} timing maximizes nutrient utilization while ensuring quality rest!`,
-        `PERFECT evening timing at ${selectedTime}! This dinner supports both tonight's recovery and tomorrow's PEAK performance!`,
-        `CHAMPION-LEVEL dinner timing, ${userProfile.firstName}! ${selectedTime} is the SWEET SPOT for evening nutrition success!`
-      ];
-      message += perfectDinnerMessages[Math.floor(Math.random() * perfectDinnerMessages.length)];
-    }
+    // Get weekly momentum message instead of "tomorrow" focused
+    const weeklyMessage = WeeklyConsistencyPatterns.getWeeklyMomentumMessage(userProfile, dailySuccess, 'dinner');
+    message += weeklyMessage;
 
     return message;
   },
