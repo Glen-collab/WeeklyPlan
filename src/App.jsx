@@ -99,6 +99,11 @@ const NutritionApp = () => {
     isOpen: false
   });
 
+  // NEW: Personal Trainer modal state
+  const [personalTrainerModal, setPersonalTrainerModal] = useState({
+    isOpen: false
+  });
+
   const [customServing, setCustomServing] = useState({ 
     amount: 1, 
     unit: 'servings' 
@@ -259,6 +264,15 @@ const NutritionApp = () => {
     setProfileModal({ isOpen: false });
   };
 
+  // NEW: Personal Trainer modal handlers
+  const handleOpenPersonalTrainerModal = () => {
+    setPersonalTrainerModal({ isOpen: true });
+  };
+
+  const handleClosePersonalTrainerModal = () => {
+    setPersonalTrainerModal({ isOpen: false });
+  };
+
   const updateUserProfile = (field, value) => {
     setUserProfile(prev => ({ ...prev, [field]: value }));
   };
@@ -391,12 +405,24 @@ const NutritionApp = () => {
               )}
             </div>
             
-            <button
-              onClick={handleOpenProfileModal}
-              className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
-            >
-              {userProfile.firstName ? 'Edit Profile' : 'Setup Profile'}
-            </button>
+            {/* Profile and Personal Trainer Buttons */}
+            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-3'}`}>
+              <button
+                onClick={handleOpenProfileModal}
+                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
+              >
+                {userProfile.firstName ? 'Edit Profile' : 'Setup Profile'}
+              </button>
+              
+              {/* NEW: Personal Trainer Button */}
+              <button
+                onClick={handleOpenPersonalTrainerModal}
+                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium flex items-center justify-center gap-2`}
+              >
+                <span>💪</span>
+                Personal Trainer
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1128,6 +1154,158 @@ const NutritionApp = () => {
                   className={`${isMobile ? 'w-full py-3' : 'w-full py-2 px-4'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium`}
                 >
                   Save Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NEW: Personal Trainer Summary Modal */}
+        {personalTrainerModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className={`bg-white rounded-lg ${isMobile ? 'p-4 w-full max-h-[90vh]' : 'p-6 max-w-4xl w-full mx-4 max-h-[80vh]'} overflow-hidden flex flex-col`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 flex items-center gap-2`}>
+                  <span>💪</span>
+                  Personal Trainer Analysis
+                </h3>
+                <button
+                  onClick={handleClosePersonalTrainerModal}
+                  className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-2' : ''}`}
+                >
+                  <X size={isMobile ? 20 : 24} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                {(() => {
+                  const summary = generatePersonalTrainerSummary(getAllMealsData(), userProfile, calorieData);
+                  
+                  if (!userProfile.firstName) {
+                    return (
+                      <div className="text-center py-8">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Complete Your Profile First</h3>
+                        <p className="text-gray-600 mb-6">Please fill out your profile information to get your personalized trainer analysis!</p>
+                        <button
+                          onClick={() => {
+                            handleClosePersonalTrainerModal();
+                            handleOpenProfileModal();
+                          }}
+                          className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition-colors font-medium"
+                        >
+                          Setup Profile Now
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Grade Header */}
+                      <div className="text-center bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border">
+                        <div className={`text-6xl font-bold mb-2 ${
+                          summary.grade === 'A' ? 'text-green-600' :
+                          summary.grade === 'B' ? 'text-blue-600' :
+                          summary.grade === 'C' ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {summary.grade}
+                        </div>
+                        <div className="text-lg text-gray-600">Daily Score: {summary.score}/100</div>
+                        <div className="text-sm text-gray-500 mt-2">
+                          Daily Totals: {summary.dailyTotals.calories} cal • {summary.dailyTotals.protein}g protein • {summary.dailyTotals.sugar}g sugar
+                        </div>
+                      </div>
+
+                      {/* Strengths */}
+                      {summary.strengths.length > 0 && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                            <span>🏆</span> Your Strengths
+                          </h4>
+                          <ul className="space-y-2">
+                            {summary.strengths.map((strength, index) => (
+                              <li key={index} className="text-green-700 text-sm">{strength}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Critical Issues */}
+                      {summary.issues.length > 0 && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <h4 className="font-bold text-red-800 mb-3 flex items-center gap-2">
+                            <span>🚨</span> Critical Issues
+                          </h4>
+                          <ul className="space-y-2">
+                            {summary.issues.map((issue, index) => (
+                              <li key={index} className="text-red-700 text-sm">{issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Analysis Sections */}
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="font-bold text-blue-800 mb-2">💪 Protein Analysis</h4>
+                          <p className="text-blue-700 text-sm">{summary.proteinAnalysis}</p>
+                        </div>
+
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                          <h4 className="font-bold text-orange-800 mb-2">🍞 Carb Strategy</h4>
+                          <p className="text-orange-700 text-sm">{summary.carbAnalysis}</p>
+                        </div>
+
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                          <h4 className="font-bold text-purple-800 mb-2">⏰ Meal Timing</h4>
+                          <p className="text-purple-700 text-sm">{summary.timingAnalysis}</p>
+                        </div>
+
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-bold text-gray-800 mb-2">🎯 Goal Alignment</h4>
+                          <p className="text-gray-700 text-sm">{summary.goalAlignment}</p>
+                        </div>
+                      </div>
+
+                      {/* Top Recommendations */}
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2">
+                          <span>💡</span> Top 3 Recommendations
+                        </h4>
+                        <ol className="space-y-2">
+                          {summary.recommendations.map((rec, index) => (
+                            <li key={index} className="text-yellow-700 text-sm">
+                              <span className="font-medium">{index + 1}.</span> {rec}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+
+                      {/* Weekly Advice */}
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                        <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                          <span>📅</span> Weekly Consistency Focus
+                        </h4>
+                        <p className="text-indigo-700 text-sm">{summary.weeklyAdvice}</p>
+                      </div>
+
+                      {/* Bottom Line */}
+                      <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg p-4 text-center">
+                        <h4 className="font-bold mb-2">🎯 Bottom Line</h4>
+                        <p className="text-sm">{summary.bottomLine}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="mt-6 pt-4 border-t">
+                <button
+                  onClick={handleClosePersonalTrainerModal}
+                  className={`${isMobile ? 'w-full py-3' : 'w-full py-2 px-4'} bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium`}
+                >
+                  Close Analysis
                 </button>
               </div>
             </div>
