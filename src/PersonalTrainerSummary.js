@@ -75,7 +75,7 @@ const calculateOverallGrade = (dailyTotals, userProfile, calorieData) => {
   return { grade: 'F', score: Math.round(score) };
 };
 
-const identifyStrengths = (allMeals, userProfile, dailyTotals) => {
+const identifyStrengths = (allMeals, userProfile, dailyTotals, calorieData) => {
   const strengths = [];
   
   // Check meal frequency
@@ -121,7 +121,7 @@ const identifyStrengths = (allMeals, userProfile, dailyTotals) => {
   return strengths.length > 0 ? strengths.slice(0, 4) : [`✅ You're building healthy habits - consistency is your foundation!`];
 };
 
-const identifyCriticalIssues = (allMeals, userProfile, dailyTotals) => {
+const identifyCriticalIssues = (allMeals, userProfile, dailyTotals, calorieData) => {
   const issues = [];
   
   // Protein deficiency - CRITICAL
@@ -317,7 +317,7 @@ const getWeeklyConsistencyAdvice = (gradeInfo, userProfile) => {
   }
 };
 
-const generateTopRecommendations = (analysis, userProfile, dailyTotals) => {
+const generateTopRecommendations = (allMeals, userProfile, dailyTotals) => {
   const recommendations = [];
   const proteinTarget = getUserProteinTarget(userProfile);
   
@@ -359,6 +359,12 @@ const generateTopRecommendations = (analysis, userProfile, dailyTotals) => {
 // ========================
 
 export const generatePersonalTrainerSummary = (allMeals, userProfile, calorieData) => {
+  console.log('generatePersonalTrainerSummary called with:', { 
+    allMeals: Object.keys(allMeals), 
+    userProfile: userProfile.firstName,
+    calorieData: calorieData?.targetCalories 
+  });
+
   if (!userProfile.firstName) {
     return {
       title: "Complete Your Profile First",
@@ -366,46 +372,63 @@ export const generatePersonalTrainerSummary = (allMeals, userProfile, calorieDat
     };
   }
   
-  const dailyTotals = calculateDailyTotalsFromMeals(allMeals);
-  const gradeInfo = calculateOverallGrade(dailyTotals, userProfile, calorieData);
-  const strengths = identifyStrengths(allMeals, userProfile, dailyTotals);
-  const issues = identifyCriticalIssues(allMeals, userProfile, dailyTotals);
-  const proteinAnalysis = analyzeProteinTiming(allMeals);
-  const carbAnalysis = assessCarbStrategy(allMeals, userProfile);
-  const timingAnalysis = assessMealTiming(allMeals);
-  const goalAlignment = assessGoalAlignment(dailyTotals, userProfile, calorieData);
-  const weeklyAdvice = getWeeklyConsistencyAdvice(gradeInfo, userProfile);
-  const recommendations = generateTopRecommendations({ dailyTotals }, userProfile, dailyTotals);
-  
-  // Personal bottom line
-  let bottomLine = "";
-  if (gradeInfo.grade === 'A') {
-    bottomLine = `${userProfile.firstName}, you're operating at ELITE level! This precision repeated weekly = guaranteed results!`;
-  } else if (gradeInfo.grade === 'B') {
-    bottomLine = `${userProfile.firstName}, you're on the right track! Focus on the recommendations above and you'll reach A-level consistency!`;
-  } else {
-    bottomLine = `${userProfile.firstName}, there's huge potential here! Pick 1-2 key improvements and master them this week. You've got this!`;
-  }
-  
-  return {
-    title: `${userProfile.firstName}'s Personal Trainer Analysis`,
-    grade: gradeInfo.grade,
-    score: gradeInfo.score,
-    strengths,
-    issues,
-    proteinAnalysis,
-    carbAnalysis,  
-    timingAnalysis,
-    goalAlignment,
-    weeklyAdvice,
-    recommendations,
-    bottomLine,
-    dailyTotals: {
-      calories: Math.round(dailyTotals.calories),
-      protein: Math.round(dailyTotals.protein),
-      carbs: Math.round(dailyTotals.carbs), 
-      fat: Math.round(dailyTotals.fat),
-      sugar: Math.round(dailyTotals.sugar)
+  try {
+    const dailyTotals = calculateDailyTotalsFromMeals(allMeals);
+    console.log('Daily totals calculated:', dailyTotals);
+    
+    const gradeInfo = calculateOverallGrade(dailyTotals, userProfile, calorieData);
+    console.log('Grade calculated:', gradeInfo);
+    
+    const strengths = identifyStrengths(allMeals, userProfile, dailyTotals, calorieData);
+    const issues = identifyCriticalIssues(allMeals, userProfile, dailyTotals, calorieData);
+    const proteinAnalysis = analyzeProteinTiming(allMeals);
+    const carbAnalysis = assessCarbStrategy(allMeals, userProfile);
+    const timingAnalysis = assessMealTiming(allMeals);
+    const goalAlignment = assessGoalAlignment(dailyTotals, userProfile, calorieData);
+    const weeklyAdvice = getWeeklyConsistencyAdvice(gradeInfo, userProfile);
+    const recommendations = generateTopRecommendations(allMeals, userProfile, dailyTotals);
+    
+    // Personal bottom line
+    let bottomLine = "";
+    if (gradeInfo.grade === 'A') {
+      bottomLine = `${userProfile.firstName}, you're operating at ELITE level! This precision repeated weekly = guaranteed results!`;
+    } else if (gradeInfo.grade === 'B') {
+      bottomLine = `${userProfile.firstName}, you're on the right track! Focus on the recommendations above and you'll reach A-level consistency!`;
+    } else {
+      bottomLine = `${userProfile.firstName}, there's huge potential here! Pick 1-2 key improvements and master them this week. You've got this!`;
     }
-  };
+    
+    const result = {
+      title: `${userProfile.firstName}'s Personal Trainer Analysis`,
+      grade: gradeInfo.grade,
+      score: gradeInfo.score,
+      strengths,
+      issues,
+      proteinAnalysis,
+      carbAnalysis,  
+      timingAnalysis,
+      goalAlignment,
+      weeklyAdvice,
+      recommendations,
+      bottomLine,
+      dailyTotals: {
+        calories: Math.round(dailyTotals.calories),
+        protein: Math.round(dailyTotals.protein),
+        carbs: Math.round(dailyTotals.carbs), 
+        fat: Math.round(dailyTotals.fat),
+        sugar: Math.round(dailyTotals.sugar)
+      }
+    };
+    
+    console.log('Final result:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('Error in generatePersonalTrainerSummary:', error);
+    return {
+      title: "Analysis Error",
+      content: "There was an error analyzing your nutrition data. Please try again.",
+      error: error.message
+    };
+  }
 };
