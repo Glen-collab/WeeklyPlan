@@ -6,6 +6,8 @@ import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories,
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 // UPDATED IMPORT - Now using the new file structure
 import { MealMessages } from './MealMessages/index.js';
+// NEW IMPORT - Personal Trainer Summary
+import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 
 const defaultUserProfile = {
   firstName: '',
