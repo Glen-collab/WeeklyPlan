@@ -1199,6 +1199,66 @@ const NutritionApp = () => {
                     );
                   }
 
+                  // NEW: Handle jumpstart message for users with profile but no food data
+                  if (summary.isJumpstart) {
+                    return (
+                      <div className="space-y-6">
+                        {/* Motivational Header */}
+                        <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border">
+                          <div className="text-4xl mb-3">🚀</div>
+                          <h3 className="text-xl font-bold text-gray-800 mb-2">Ready to Transform?</h3>
+                          <p className="text-gray-700 font-medium">{summary.goalMotivation}</p>
+                          <div className="mt-4 text-sm text-gray-600">
+                            Target: {summary.targets.calories} calories • {summary.targets.protein}g protein daily
+                          </div>
+                        </div>
+
+                        {/* Top 3 Recommendations */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                            <span>🎯</span> Your Top 3 Fundamentals
+                          </h4>
+                          <ol className="space-y-3">
+                            {summary.recommendations.map((rec, index) => (
+                              <li key={index} className="text-blue-700 text-sm">
+                                <span className="font-bold">{index + 1}.</span> {rec}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+
+                        {/* Pro Tips */}
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                          <h4 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
+                            <span>🏆</span> Wisdom from the Pros
+                          </h4>
+                          <div className="space-y-3">
+                            {summary.proTips.map((tip, index) => (
+                              <div key={index} className="text-purple-700 text-sm italic border-l-2 border-purple-300 pl-3">
+                                {tip}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Call to Action */}
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                            <span>⚡</span> Your Next Steps
+                          </h4>
+                          <p className="text-yellow-700 text-sm">{summary.callToAction}</p>
+                        </div>
+
+                        {/* Bottom Line */}
+                        <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg p-4 text-center">
+                          <h4 className="font-bold mb-2">🔥 Champion Mindset</h4>
+                          <p className="text-sm">{summary.bottomLine}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Regular analysis for users with food data
                   return (
                     <div className="space-y-6">
                       {/* Grade Header */}
