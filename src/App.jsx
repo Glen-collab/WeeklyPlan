@@ -8,6 +8,8 @@ import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 // NEW IMPORT - Personal Trainer Summary
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
+// NEW IMPORT - Meal Swipe Game
+import MealSwipeGame from './MealSwipeGame.jsx';
 
 const defaultUserProfile = {
   firstName: '',
@@ -16,7 +18,8 @@ const defaultUserProfile = {
   heightInches: '',
   weight: '',
   exerciseLevel: '',
-  goal: ''
+  goal: '',
+  gender: '' // NEW: Added gender for game personalization
 };
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -101,6 +104,11 @@ const NutritionApp = () => {
 
   // NEW: Personal Trainer modal state
   const [personalTrainerModal, setPersonalTrainerModal] = useState({
+    isOpen: false
+  });
+
+  // NEW: Meal Swipe Game modal state
+  const [mealSwipeGameModal, setMealSwipeGameModal] = useState({
     isOpen: false
   });
 
@@ -273,6 +281,15 @@ const NutritionApp = () => {
     setPersonalTrainerModal({ isOpen: false });
   };
 
+  // NEW: Meal Swipe Game modal handlers
+  const handleOpenMealSwipeGameModal = () => {
+    setMealSwipeGameModal({ isOpen: true });
+  };
+
+  const handleCloseMealSwipeGameModal = () => {
+    setMealSwipeGameModal({ isOpen: false });
+  };
+
   const updateUserProfile = (field, value) => {
     setUserProfile(prev => ({ ...prev, [field]: value }));
   };
@@ -286,7 +303,8 @@ const NutritionApp = () => {
       heightInches: '10',
       weight: '165',
       exerciseLevel: 'moderate',
-      goal: 'maintain'
+      goal: 'maintain',
+      gender: 'male' // NEW: Added gender
     });
   };
 
@@ -298,7 +316,8 @@ const NutritionApp = () => {
       heightInches: '6',
       weight: '135',
       exerciseLevel: 'moderate',
-      goal: 'maintain'
+      goal: 'maintain',
+      gender: 'female' // NEW: Added gender
     });
   };
 
@@ -405,7 +424,7 @@ const NutritionApp = () => {
               )}
             </div>
             
-            {/* Profile and Personal Trainer Buttons */}
+            {/* Profile, Personal Trainer, and Meal Swipe Game Buttons */}
             <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-3'}`}>
               <button
                 onClick={handleOpenProfileModal}
@@ -414,13 +433,22 @@ const NutritionApp = () => {
                 {userProfile.firstName ? 'Edit Profile' : 'Setup Profile'}
               </button>
               
-              {/* NEW: Personal Trainer Button */}
+              {/* Personal Trainer Button */}
               <button
                 onClick={handleOpenPersonalTrainerModal}
                 className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium flex items-center justify-center gap-2`}
               >
                 <span>💪</span>
                 Personal Trainer
+              </button>
+
+              {/* NEW: Meal Swipe Game Button */}
+              <button
+                onClick={handleOpenMealSwipeGameModal}
+                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors font-medium flex items-center justify-center gap-2`}
+              >
+                <span>🎯</span>
+                Meal Swipe Game
               </button>
             </div>
           </div>
@@ -940,7 +968,7 @@ const NutritionApp = () => {
           </div>
         )}
 
-        {/* NEW: Food Selection Modal */}
+        {/* Food Selection Modal */}
         {foodModal.isOpen && foodModal.category && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className={`bg-white rounded-lg ${isMobile ? 'p-4 max-w-sm w-full max-h-[80vh]' : 'p-6 max-w-md w-full mx-4 max-h-[70vh]'} overflow-hidden flex flex-col`}>
@@ -982,7 +1010,7 @@ const NutritionApp = () => {
           </div>
         )}
 
-        {/* NEW: Profile Modal */}
+        {/* Profile Modal */}
         {profileModal.isOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className={`bg-white rounded-lg ${isMobile ? 'p-4 w-full max-h-[90vh]' : 'p-6 max-w-2xl w-full mx-4 max-h-[80vh]'} overflow-hidden flex flex-col`}>
@@ -1041,6 +1069,18 @@ const NutritionApp = () => {
                         className={`${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                       />
                     </div>
+                    
+                    {/* NEW: Gender Selection */}
+                    <select
+                      value={userProfile.gender}
+                      onChange={(e) => updateUserProfile('gender', e.target.value)}
+                      className={`w-full ${isMobile ? 'p-3 text-base' : 'p-2 text-sm'} border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="non-binary">Non-binary</option>
+                    </select>
                     
                     <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-3 gap-2'}`}>
                       <select
@@ -1160,7 +1200,7 @@ const NutritionApp = () => {
           </div>
         )}
 
-        {/* NEW: Personal Trainer Summary Modal */}
+        {/* Personal Trainer Summary Modal */}
         {personalTrainerModal.isOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className={`bg-white rounded-lg ${isMobile ? 'p-4 w-full max-h-[90vh]' : 'p-6 max-w-4xl w-full mx-4 max-h-[80vh]'} overflow-hidden flex flex-col`}>
@@ -1199,7 +1239,7 @@ const NutritionApp = () => {
                     );
                   }
 
-                  // NEW: Handle jumpstart message for users with profile but no food data
+                  // Handle jumpstart message for users with profile but no food data
                   if (summary.isJumpstart) {
                     return (
                       <div className="space-y-6">
@@ -1369,6 +1409,18 @@ const NutritionApp = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* NEW: Meal Swipe Game Modal */}
+        {mealSwipeGameModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <MealSwipeGame
+              allMeals={getAllMealsData()}
+              userProfile={userProfile}
+              calorieData={calorieData}
+              onClose={handleCloseMealSwipeGameModal}
+            />
           </div>
         )}
       </div>
