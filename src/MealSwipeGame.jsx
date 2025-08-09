@@ -1,283 +1,295 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, X, RotateCcw, Trophy, Star } from 'lucide-react';
-import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 
 const MealSwipeGame = ({ 
   allMeals = {}, 
   userProfile = {}, 
   calorieData = {},
-  onComplete = () => {},
-  isIntegrated = false
+  onClose = () => {} 
 }) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [gameCards, setGameCards] = useState([]);
   const [swipeResults, setSwipeResults] = useState([]);
   const [gameComplete, setGameComplete] = useState(false);
-  const [overallGrade, setOverallGrade] = useState('');
-  const [showResults, setShowResults] = useState(false);
-  const [lastResponse, setLastResponse] = useState('');
+  const [userGrade, setUserGrade] = useState('');
+  const [aiPersonality, setAiPersonality] = useState('');
 
-  // Initialize game cards from actual meal data
+  // Initialize game cards from meal data
   useEffect(() => {
     if (!allMeals || Object.keys(allMeals).length === 0) return;
     
     const cards = [];
-    
-    // Only include meals that have actual food (calories > 50)
     Object.entries(allMeals).forEach(([mealType, mealData]) => {
-      if (mealData.totals && mealData.totals.calories > 50) {
+      if (mealData.totals && mealData.totals.calories > 0) {
         cards.push({
           id: `${mealType}-${Date.now()}`,
           mealType,
           time: mealData.time,
           totals: mealData.totals,
           pieData: mealData.pieData || [],
-          items: mealData.items || [],
-          isRealMeal: true
+          items: mealData.items || []
         });
       }
     });
 
-    // Sort by meal time chronologically
-    const timeToMinutes = (timeStr) => {
-      if (!timeStr) return 0;
-      const [time, period] = timeStr.split(' ');
-      const [hours, minutes] = time.split(':').map(Number);
-      let hour24 = hours;
-      if (period === 'PM' && hours !== 12) hour24 += 12;
-      if (period === 'AM' && hours === 12) hour24 = 0;
-      return hour24 * 60 + minutes;
-    };
+    // Add some sample "bad" cards for variety
+    const badCards = [
+      {
+        id: 'bad-1',
+        mealType: 'temptation',
+        title: 'Large Pizza + Soda',
+        totals: { calories: 1200, protein: 28, carbs: 140, fat: 48, sugar: 35 },
+        isGoodChoice: false,
+        description: '🍕 Pepperoni pizza (4 slices) + 20oz Coke'
+      },
+      {
+        id: 'bad-2', 
+        mealType: 'temptation',
+        title: 'Donut Breakfast',
+        totals: { calories: 680, protein: 8, carbs: 86, fat: 34, sugar: 42 },
+        isGoodChoice: false,
+        description: '🍩 2 glazed donuts + large coffee with cream & sugar'
+      },
+      {
+        id: 'bad-3',
+        mealType: 'temptation', 
+        title: 'Fast Food Combo',
+        totals: { calories: 1100, protein: 25, carbs: 108, fat: 52, sugar: 28 },
+        isGoodChoice: false,
+        description: '🍔 Big Mac + large fries + milkshake'
+      }
+    ];
 
-    cards.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+    const allCards = [...cards, ...badCards].sort(() => Math.random() - 0.5);
+    setGameCards(allCards);
     
-    setGameCards(cards);
-    
-    // Get overall grade from personal trainer summary
-    const summary = generatePersonalTrainerSummary(allMeals, userProfile, calorieData);
-    setOverallGrade(summary.grade || 'C');
+    // Calculate user's nutrition grade
+    const grade = calculateNutritionGrade(allMeals, userProfile, calorieData);
+    setUserGrade(grade);
+    setAiPersonality(getAIPersonality(grade));
   }, [allMeals, userProfile, calorieData]);
 
-  // Evaluate meal quality (returns score 0-100)
-  const evaluateMealQuality = (card) => {
-    const { totals } = card;
+  // Calculate user's nutrition grade based on their actual meals
+  const calculateNutritionGrade = (meals, profile, calData) => {
+    if (!meals || Object.keys(meals).length === 0) return 'D';
+    
     let score = 0;
-    const issues = [];
-    const strengths = [];
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalSugar = 0;
+    let mealCount = 0;
 
-    // Calculate macro percentages
-    const totalMacroCalories = (totals.protein * 4) + (totals.carbs * 4) + (totals.fat * 9);
-    const proteinPercent = totalMacroCalories > 0 ? (totals.protein * 4) / totalMacroCalories * 100 : 0;
-    const carbPercent = totalMacroCalories > 0 ? (totals.carbs * 4) / totalMacroCalories * 100 : 0;
-    const fatPercent = totalMacroCalories > 0 ? (totals.fat * 9) / totalMacroCalories * 100 : 0;
+    Object.values(meals).forEach(meal => {
+      if (meal.totals && meal.totals.calories > 50) {
+        totalCalories += meal.totals.calories;
+        totalProtein += meal.totals.protein;
+        totalSugar += meal.totals.sugar;
+        mealCount++;
+      }
+    });
 
-    // Macro ratio evaluation (40-40-20 ±5%)
-    const proteinIdeal = Math.abs(proteinPercent - 40) <= 5;
-    const carbIdeal = Math.abs(carbPercent - 40) <= 5;
-    const fatIdeal = Math.abs(fatPercent - 20) <= 5;
+    // Protein score (40 points)
+    const proteinTarget = getProteinTarget(profile.goal);
+    if (totalProtein >= proteinTarget) score += 40;
+    else if (totalProtein >= proteinTarget * 0.8) score += 30;
+    else if (totalProtein >= proteinTarget * 0.6) score += 20;
+    else score += 10;
 
-    if (proteinIdeal && carbIdeal && fatIdeal) {
-      score += 40;
-      strengths.push('perfect_macros');
-    } else if (proteinPercent >= 35) {
-      score += 25;
-      strengths.push('good_protein');
-    } else if (proteinPercent < 20) {
-      issues.push('low_protein');
-    }
+    // Calorie accuracy (30 points)
+    const targetCals = calData?.targetCalories || 2500;
+    const calorieAccuracy = 1 - Math.abs(totalCalories - targetCals) / targetCals;
+    score += Math.max(calorieAccuracy * 30, 0);
 
-    // Sugar evaluation
-    if (totals.sugar <= 10) {
-      score += 25;
-      strengths.push('low_sugar');
-    } else if (totals.sugar <= 25) {
-      score += 15;
-    } else if (totals.sugar > 30) {
-      score -= 20;
-      issues.push('high_sugar');
-    }
+    // Meal frequency (20 points)
+    if (mealCount >= 6) score += 20;
+    else if (mealCount >= 4) score += 15;
+    else if (mealCount >= 3) score += 10;
+    else score += 5;
 
-    // Calorie appropriateness
-    if (totals.calories >= 100 && totals.calories <= 800) {
-      score += 20;
-    } else if (totals.calories > 1000) {
-      score -= 15;
-      issues.push('too_many_calories');
-    }
+    // Sugar control (10 points)
+    const sugarLimit = getSugarLimit(profile.goal);
+    if (totalSugar <= sugarLimit) score += 10;
+    else if (totalSugar <= sugarLimit * 1.5) score += 5;
 
-    // Protein adequacy for body weight
-    const targetWeight = parseInt(userProfile.weight) || 150;
-    const mealProteinTarget = card.mealType === 'breakfast' || card.mealType === 'lunch' || card.mealType === 'dinner' 
-      ? targetWeight * 0.15 // 15% of bodyweight in grams for main meals
-      : targetWeight * 0.05; // 5% for snacks
-
-    if (totals.protein >= mealProteinTarget) {
-      score += 15;
-      strengths.push('adequate_protein');
-    } else {
-      issues.push('insufficient_protein');
-    }
-
-    return {
-      score: Math.max(0, Math.min(100, score)),
-      issues,
-      strengths,
-      macros: { proteinPercent, carbPercent, fatPercent }
-    };
+    if (score >= 85) return 'A';
+    if (score >= 75) return 'B';
+    if (score >= 65) return 'C';
+    return 'D';
   };
 
-  // Get contextual response based on swipe and meal quality
-  const getSwipeResponse = (card, swipeDirection, evaluation) => {
-    const { firstName, gender } = userProfile;
-    const { score, issues, strengths, macros } = evaluation;
+  const getProteinTarget = (goal) => {
+    switch(goal) {
+      case 'dirty-bulk': return 150;
+      case 'gain-muscle': return 130;
+      case 'lose': return 120;
+      default: return 100;
+    }
+  };
+
+  const getSugarLimit = (goal) => {
+    switch(goal) {
+      case 'dirty-bulk': return 50;
+      case 'lose': return 25;
+      case 'gain-muscle': return 25;
+      default: return 35;
+    }
+  };
+
+  const getAIPersonality = (grade) => {
+    switch(grade) {
+      case 'A': return 'THE NUTRITION PROFESSOR 🎓';
+      case 'B': return 'THE SUPPORTIVE WINGMAN 💪';
+      case 'C': return 'LATE NIGHT LEFTOVERS 🌙';
+      case 'D': return 'YOUR TIME WILL COME ⭐';
+      default: return 'NUTRITION NEWBIE 🔰';
+    }
+  };
+
+  // Get AI response based on grade and swipe
+  const getSarcasticResponse = (card, swipeDirection, grade, userProfile) => {
+    const firstName = userProfile.firstName || 'Friend';
+    const gender = userProfile.gender || 'neutral';
+    
+    // Determine if this was a good or bad choice
+    const isRealMeal = card.mealType !== 'temptation';
+    const isGoodMeal = isRealMeal ? isNutritiousChoice(card) : false;
     const swipedRight = swipeDirection === 'right';
-    const isGoodMeal = score >= 70;
     
-    // Gender-specific pronouns and metaphors
-    const genderPronouns = {
-      male: { they: 'she', possessive: 'her', article: 'a', title: 'queen' },
-      female: { they: 'he', possessive: 'his', article: 'a', title: 'king' },
-      'non-binary': { they: 'they', possessive: 'their', article: 'a', title: 'royalty' }
+    // Create scenario key
+    let scenario = '';
+    if (swipedRight && isGoodMeal) scenario = 'rightSwipeGood';
+    else if (swipedRight && !isGoodMeal) scenario = 'rightSwipeBad';
+    else if (!swipedRight && isGoodMeal) scenario = 'leftSwipeGood';
+    else scenario = 'leftSwipeBad';
+
+    return getResponseByGradeAndScenario(grade, scenario, firstName, gender, card);
+  };
+
+  const isNutritiousChoice = (card) => {
+    const { totals } = card;
+    if (!totals) return false;
+    
+    const totalMacros = totals.protein + totals.carbs + totals.fat;
+    if (totalMacros === 0) return false;
+    
+    const proteinPercent = (totals.protein / totalMacros) * 100;
+    const sugarRatio = totals.sugar / totals.calories * 100;
+    
+    return proteinPercent >= 25 && sugarRatio <= 15 && totals.calories < 800;
+  };
+
+  const getResponseByGradeAndScenario = (grade, scenario, firstName, gender, card) => {
+    const responses = {
+      'A': {
+        rightSwipeGood: [
+          `Obviously you spotted that perfection! ${firstName}, you could teach a masterclass on nutrition!`,
+          `A+ choice recognition! That ${Math.round(card.totals.protein)}g protein was calling your name, wasn't it?`,
+          `Textbook excellence! Your expert eye caught those perfect macros immediately!`
+        ],
+        rightSwipeBad: [
+          `${firstName}, did someone hack your brain?! Even nutrition experts have off days...`,
+          `Wait, WHAT?! The professor chose the 🍕? I'm shook! Everyone makes mistakes though.`,
+          `Error 404: Expert judgment not found! But hey, we all have weak moments!`
+        ],
+        leftSwipeGood: [
+          `Hmm, ${firstName}, that was actually solid nutrition. Even experts can be too picky sometimes!`,
+          `You rejected quality fuel? That's... surprising from a nutrition pro like you!`,
+          `Expert-level standards, but maybe TOO expert? That was actually decent!`
+        ],
+        leftSwipeBad: [
+          `PERFECT rejection! You spotted that nutritional disaster from a mile away!`,
+          `Expert instincts activated! That sugar bomb had no chance against your knowledge!`,
+          `Flawless defense against junk food! This is why you're the professor!`
+        ]
+      },
+      'B': {
+        rightSwipeGood: [
+          `Your nutrition wingman approves! ${firstName}, you're learning to spot the good ones!`,
+          `Solid choice recognition! That ${Math.round(card.totals.protein)}g protein caught your trained eye!`,
+          `You're getting really good at this! Your nutrition instincts are developing nicely!`
+        ],
+        rightSwipeBad: [
+          `Ooof, ${firstName}! I've got your back, but we need to work on spotting the red flags together!`,
+          `Your wingman is covering for you here... that was NOT the move! But we'll learn!`,
+          `Even good wingmen make bad calls sometimes! Let's stick to the game plan next time!`
+        ],
+        leftSwipeGood: [
+          `Hey ${firstName}, your wingman thinks you might've been too harsh there!`,
+          `That was actually decent nutrition! Your standards are getting high - good problem to have!`,
+          `Wingman wisdom: sometimes good enough IS good enough! That wasn't bad!`
+        ],
+        leftSwipeBad: [
+          `Your wingman is PROUD! You dodged that nutritional bullet like a pro!`,
+          `Perfect teamwork! We spotted that junk food together and shut it down!`,
+          `That's what I'm talking about! You're learning to protect yourself from bad choices!`
+        ]
+      },
+      'C': {
+        rightSwipeGood: [
+          `You actually found quality at 2 AM?! ${firstName}, miracles DO happen!`,
+          `Wait, you chose something GOOD for once?! The bar is closing and you found nutrition!`,
+          `Miracle alert! ${firstName} found actual food instead of nutritional scraps!`
+        ],
+        rightSwipeBad: [
+          `Of course you did... ${firstName}, it's 2 AM and you're accepting whatever's left!`,
+          `Desperation is showing! That's exactly what I'd expect from someone grabbing leftovers!`,
+          `Peak 2 AM energy - just taking whatever's available, aren't we?`
+        ],
+        leftSwipeGood: [
+          `${firstName}, you rejected GOOD nutrition?! At this hour, you can't afford to be picky!`,
+          `You're turning down quality food at 2 AM? That's... actually worse than settling!`,
+          `Even at the bottom of the barrel, you're being too selective! That was decent!`
+        ],
+        leftSwipeBad: [
+          `Finally showing some standards! Even at 2 AM, you know trash when you see it!`,
+          `Look who's suddenly got taste! Rejecting the worst of the worst - progress!`,
+          `At least you can spot complete garbage! Baby steps, ${firstName}!`
+        ]
+      },
+      'D': {
+        rightSwipeGood: [
+          `THIS is your moment! ${firstName}, patience pays off and you found the good stuff!`,
+          `YES! Your time finally came and you DELIVERED! That's quality nutrition right there!`,
+          `The stars aligned! ${firstName}, you waited for the right choice and NAILED IT!`
+        ],
+        rightSwipeBad: [
+          `Oh ${firstName}... your heart is in the right place, but that wasn't it!`,
+          `Sweet ${firstName}, I believe in you! This just wasn't your nutritional soulmate!`,
+          `Your time will come! This wasn't the one, but don't give up on finding good nutrition!`
+        ],
+        leftSwipeGood: [
+          `${firstName}, you let perfection slip away! Your perfect match just walked by!`,
+          `Nooo! That was actually your moment and you missed it! But don't worry, more chances coming!`,
+          `Your time will come... but that WAS good nutrition! Trust your instincts more!`
+        ],
+        leftSwipeBad: [
+          `Good instincts, ${firstName}! You're learning to recognize what you DON'T want!`,
+          `Smart rejection! Your perfect nutrition match is still out there - keep waiting!`,
+          `That's the spirit! You know you deserve better than that junk!`
+        ]
+      }
     };
-    
-    const pronouns = genderPronouns[gender] || genderPronouns['non-binary'];
-    
-    // Create responses based on grade and scenario
-    if (swipedRight && isGoodMeal) {
-      // Swiped right on good meal - Success!
-      const successMessages = {
-        'A': [
-          `🔥 MATCH! That meal is ${pronouns.article} perfect 10, and ${pronouns.they} swiped back! Elite nutrition game, ${firstName}!`,
-          `💍 It's a match made in macro heaven! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s got that 40-40-20 glow and you knew it!`,
-          `🏆 Expert-level swipe! That meal is ${pronouns.article} ${pronouns.title} and you've got the nutrition IQ to match!`
-        ],
-        'B': [
-          `✨ NICE MATCH! You've got good taste - that meal is definitely date-worthy nutrition!`,
-          `🎯 Solid choice! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s got those balanced macros you can bring home to your goals!`,
-          `💪 Great eye! You spotted quality nutrition when you saw it!`
-        ],
-        'C': [
-          `😊 Not bad! You recognized a decent meal when you saw one - progress!`,
-          `👍 Good call! That meal might not be perfect, but ${pronouns.they}'s got potential!`,
-          `📈 Learning! You're starting to spot the good ones!`
-        ],
-        'D': [
-          `🙌 Finally! You found a good one! That meal is way out of your usual league!`,
-          `🎉 Miracle match! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s perfect and somehow interested in your nutrition chaos!`,
-          `✨ Dreams do come true! Quality nutrition said yes to you!`
-        ]
-      };
-      
-      return successMessages[overallGrade][Math.floor(Math.random() * successMessages[overallGrade].length)];
-    }
-    
-    if (swipedRight && !isGoodMeal) {
-      // Swiped right on bad meal - Rejection!
-      const rejectionMessages = {
-        'A': [
-          `💔 REJECTED! ${firstName}, that meal is way below your standards! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s got ${Math.round(card.totals.sugar)}g sugar - total red flag!`,
-          `🚫 Standards, ${firstName}! You're an A-grade nutrition expert - why are you chasing ${Math.round(macros.carbPercent)}% carb disasters?`,
-          `❌ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s not interested! ${issues.includes('high_sugar') ? 'Too much sugar' : 'Wrong macros'} = immediate left swipe from quality meals!`
-        ],
-        'B': [
-          `😬 Ouch! That meal saw your swipe coming and ${pronouns.they} said "no thanks" - ${Math.round(macros.proteinPercent)}% protein isn't cutting it!`,
-          `🤦‍♀️ ${firstName}, you aimed too high! That ${Math.round(card.totals.calories)}-calorie mess is out of your league!`,
-          `💸 Friend-zoned! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} wants someone who understands balanced nutrition!`
-        ],
-        'C': [
-          `😅 Swing and a miss! That meal is looking for someone with better nutrition game than you've got!`,
-          `🎭 Plot twist: ${pronouns.they} ghosted you! Those macros weren't feeling your energy!`,
-          `📱 Read receipt: OFF! That meal doesn't want to deal with your nutrition confusion!`
-        ],
-        'D': [
-          `🤡 Come on, ${firstName}! Even terrible meals have standards! That ${Math.round(card.totals.sugar)}g sugar bomb rejected YOU!`,
-          `🙈 Embarrassing! You got turned down by a nutritional disaster - time to level up your game!`,
-          `🚨 BRUTAL! Even junk food doesn't want to be associated with your nutrition choices!`
-        ]
-      };
-      
-      return rejectionMessages[overallGrade][Math.floor(Math.random() * rejectionMessages[overallGrade].length)];
-    }
-    
-    if (!swipedRight && isGoodMeal) {
-      // Swiped left on good meal - Missed opportunity!
-      const missedMessages = {
-        'A': [
-          `😱 WHAT?! ${firstName}, you just rejected ${pronouns.article} perfect 10! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} had ideal macros and you said no?!`,
-          `🤯 Expert mistake! That meal was macro perfection and you let ${pronouns.possessive} walk away!`,
-          `💔 Heartbreak! You're so used to A-grade meals you didn't appreciate that ${Math.round(macros.proteinPercent)}% protein masterpiece!`
-        ],
-        'B': [
-          `😕 You missed out! That meal was actually really good - ${pronouns.they} would've been great for your goals!`,
-          `🚪 One that got away! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} was quality nutrition and you weren't ready!`,
-          `📞 ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s telling ${pronouns.possessive} friends you have commitment issues with good meals!`
-        ],
-        'C': [
-          `🤷‍♀️ Your loss! That was actually a decent meal and you pushed ${pronouns.possessive} away!`,
-          `📋 Add it to the list of good meals you've rejected! Maybe you're not ready for quality nutrition?`,
-          `🎪 Self-sabotage! You're so used to mediocre meals you can't recognize a good one!`
-        ],
-        'D': [
-          `😭 WHY?! That was literally the best meal you've seen all day and you said no! You need therapy!`,
-          `🏃‍♀️ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} dodged a bullet! You're not ready for that level of nutrition excellence!`,
-          `🎯 Self-destruction! You had a chance at greatness and chose chaos instead!`
-        ]
-      };
-      
-      return missedMessages[overallGrade][Math.floor(Math.random() * missedMessages[overallGrade].length)];
-    }
-    
-    // Swiped left on bad meal - Good choice!
-    const goodRejectMessages = {
-      'A': [
-        `👑 QUEEN/KING ENERGY! You spotted that ${Math.round(card.totals.sugar)}g sugar disaster immediately! Elite standards, ${firstName}!`,
-        `🛡️ Perfect defense! That ${Math.round(macros.carbPercent)}% carb chaos couldn't fool an expert like you!`,
-        `🎯 Flawless execution! You saw through that nutritional catfish instantly!`
-      ],
-      'B': [
-        `💪 Good instincts! You're learning to spot the red flags - ${Math.round(card.totals.calories)} calories of trouble!`,
-        `🚫 Smart swipe! That meal was definitely not worth your time or your goals!`,
-        `📊 Progress! You're developing better nutrition standards!`
-      ],
-      'C': [
-        `👍 Decent call! Even you can spot when something's obviously wrong with those macros!`,
-        `🎲 Lucky guess! That meal was clearly a disaster and you figured it out!`,
-        `📚 Learning moment! You're starting to recognize the bad ones!`
-      ],
-      'D': [
-        `🎉 MIRACLE! You actually made a good choice! Even a broken clock is right twice a day!`,
-        `😲 Shock! You rejected something terrible for once! There's hope for you yet, ${firstName}!`,
-        `🔥 Character development! You're finally learning to say no to nutritional disasters!`
-      ]
-    };
-    
-    return goodRejectMessages[overallGrade][Math.floor(Math.random() * goodRejectMessages[overallGrade].length)];
+
+    const gradeResponses = responses[grade] || responses['D'];
+    const scenarioResponses = gradeResponses[scenario] || gradeResponses.rightSwipeGood;
+    return scenarioResponses[Math.floor(Math.random() * scenarioResponses.length)];
   };
 
   const handleSwipe = (direction) => {
     const currentCard = gameCards[currentCardIndex];
     if (!currentCard) return;
 
-    const evaluation = evaluateMealQuality(currentCard);
-    const response = getSwipeResponse(currentCard, direction, evaluation);
-    
-    setLastResponse(response);
+    const response = getSarcasticResponse(currentCard, direction, userGrade, userProfile);
     
     setSwipeResults(prev => [...prev, {
       card: currentCard,
       direction,
       response,
-      evaluation,
-      isCorrect: direction === 'right' ? evaluation.score >= 70 : evaluation.score < 70
+      isCorrect: direction === 'right' ? isNutritiousChoice(currentCard) : !isNutritiousChoice(currentCard)
     }]);
 
     if (currentCardIndex >= gameCards.length - 1) {
       setGameComplete(true);
-      setTimeout(() => {
-        if (isIntegrated) {
-          onComplete();
-        }
-      }, 3000); // Show final message for 3 seconds
     } else {
       setCurrentCardIndex(prev => prev + 1);
     }
@@ -287,185 +299,196 @@ const MealSwipeGame = ({
     setCurrentCardIndex(0);
     setSwipeResults([]);
     setGameComplete(false);
-    setShowResults(false);
-    setLastResponse('');
   };
 
-  const getMealTypeDisplayName = (mealType) => {
-    const names = {
-      breakfast: 'Breakfast',
-      firstSnack: 'Morning Snack',
-      secondSnack: 'Mid-Morning Snack', 
-      lunch: 'Lunch',
-      midAfternoon: 'Afternoon Snack',
-      dinner: 'Dinner',
-      lateSnack: 'Evening Snack',
-      postWorkout: 'Post-Workout'
-    };
-    return names[mealType] || mealType;
+  const calculateFinalScore = () => {
+    const correctChoices = swipeResults.filter(result => result.isCorrect).length;
+    return Math.round((correctChoices / swipeResults.length) * 100);
   };
-
-  if (gameCards.length === 0) {
-    return (
-      <div className="max-w-md mx-auto bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl shadow-lg p-6 text-center border-2 border-pink-200">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">🍽️ No Meals to Rate!</h2>
-        <p className="text-gray-600 mb-4">Add some meals to your daily plan first, then come back to rate them!</p>
-      </div>
-    );
-  }
 
   const currentCard = gameCards[currentCardIndex];
 
   if (gameComplete) {
-    const finalScore = Math.round((swipeResults.filter(r => r.isCorrect).length / swipeResults.length) * 100);
+    const finalScore = calculateFinalScore();
+    const finalGrade = finalScore >= 90 ? 'A' : finalScore >= 80 ? 'B' : finalScore >= 70 ? 'C' : 'D';
     
     return (
-      <div className="max-w-md mx-auto bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl shadow-lg p-6 border-2 border-pink-200">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-2xl p-6">
+        {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">🎯 Dating Game Complete!</h1>
-          <div className="text-lg text-gray-600">Your Nutrition Dating Score: {finalScore}%</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">🎯 Game Complete!</h1>
+          <div className="text-sm text-gray-600">Playing as: {aiPersonality}</div>
         </div>
 
-        <div className="bg-white rounded-lg p-4 mb-4">
-          <h3 className="font-bold text-gray-800 mb-3">Final Verdict:</h3>
-          <p className="text-gray-700 text-sm italic">
-            {finalScore >= 80 ? `${userProfile.firstName}, you've got excellent taste in nutrition! You know quality when you see it!` :
-             finalScore >= 60 ? `Not bad, ${userProfile.firstName}! You're learning to spot good nutrition vs. the disasters.` :
-             `${userProfile.firstName}, your nutrition dating game needs work! Time to learn what quality meals look like!`}
-          </p>
-        </div>
-
-        {!isIntegrated && (
-          <div className="flex gap-3">
-            <button
-              onClick={resetGame}
-              className="flex-1 bg-pink-500 text-white py-3 px-4 rounded-lg hover:bg-pink-600 transition-colors font-medium flex items-center justify-center gap-2"
-            >
-              <RotateCcw size={18} />
-              Date Again
-            </button>
+        {/* Final Score */}
+        <div className="text-center mb-6">
+          <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg p-6 text-white mb-4">
+            <div className="text-4xl font-bold mb-2">{finalScore}%</div>
+            <div className="text-lg">Grade: {finalGrade}</div>
+            <div className="text-sm opacity-90">
+              {swipeResults.filter(r => r.isCorrect).length} out of {swipeResults.length} correct
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Results Summary */}
+        <div className="space-y-3 mb-6 max-h-40 overflow-y-auto">
+          {swipeResults.map((result, index) => (
+            <div key={index} className={`p-3 rounded-lg border ${result.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">
+                  {result.card.title || result.card.mealType}
+                </span>
+                <span className={`text-lg ${result.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                  {result.isCorrect ? '✅' : '❌'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={resetGame}
+            className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <RotateCcw size={18} />
+            Play Again
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentCard) {
+    return (
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-2xl p-6 text-center">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">No meals to review!</h2>
+        <p className="text-gray-600 mb-4">Add some meals to your daily plan first.</p>
+        <button
+          onClick={onClose}
+          className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          Close
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      {/* Game Header */}
-      <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-t-xl p-4 text-center">
-        <h1 className="text-xl font-bold mb-1">🍽️ Nutrition Dating</h1>
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4">
+        <div className="flex justify-between items-center mb-2">
+          <h1 className="text-xl font-bold">🍽️ Meal Swipe</h1>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-200 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
         <div className="text-sm opacity-90">
-          Rate Your Meals • {currentCardIndex + 1} of {gameCards.length}
+          Your Grade: {userGrade} • {aiPersonality}
         </div>
         <div className="text-xs opacity-75 mt-1">
-          Your Grade: {overallGrade} • Swipe like your goals depend on it!
+          Card {currentCardIndex + 1} of {gameCards.length}
         </div>
       </div>
 
-      {/* Card Stack Container */}
-      <div className="relative bg-white rounded-b-xl shadow-lg p-6 min-h-[500px]">
-        
-        {/* Background Cards (stacked effect) */}
-        {gameCards.slice(currentCardIndex + 1, currentCardIndex + 3).map((card, index) => (
-          <div 
-            key={card.id}
-            className="absolute inset-4 bg-gray-100 rounded-lg border"
-            style={{ 
-              transform: `scale(${0.95 - index * 0.05}) translateY(${index * 8}px)`,
-              zIndex: 10 - index,
-              opacity: 0.6 - index * 0.2
-            }}
-          />
-        ))}
-
-        {/* Current Card */}
-        {currentCard && (
-          <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-lg border-2 border-gray-200 p-6 shadow-lg" style={{ zIndex: 20 }}>
-            
-            {/* Card Header */}
-            <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-1">
-                {getMealTypeDisplayName(currentCard.mealType)}
-              </h2>
+      {/* Card */}
+      <div className="p-6">
+        <div className="bg-gray-50 rounded-lg p-6 mb-6 min-h-[300px] flex flex-col justify-center">
+          {/* Meal Title */}
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              {currentCard.title || `${currentCard.mealType.charAt(0).toUpperCase() + currentCard.mealType.slice(1)}`}
+            </h2>
+            {currentCard.time && (
               <div className="text-sm text-gray-600">⏰ {currentCard.time}</div>
-            </div>
-
-            {/* Nutrition Display */}
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                <span className="text-gray-600">Calories:</span>
-                <span className="font-bold text-lg">{Math.round(currentCard.totals.calories)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                <span className="text-gray-600">Protein:</span>
-                <span className="font-bold text-blue-600">{Math.round(currentCard.totals.protein)}g</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                <span className="text-gray-600">Carbs:</span>
-                <span className="font-bold text-green-600">{Math.round(currentCard.totals.carbs)}g</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                <span className="text-gray-600">Fat:</span>
-                <span className="font-bold text-yellow-600">{Math.round(currentCard.totals.fat)}g</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">Sugar:</span>
-                <span className={`font-bold ${currentCard.totals.sugar > 30 ? 'text-red-600' : 'text-gray-600'}`}>
-                  {Math.round(currentCard.totals.sugar)}g
-                </span>
-              </div>
-            </div>
-
-            {/* Macro Percentages */}
-            {currentCard.pieData && currentCard.pieData.length > 0 && (
-              <div className="text-center mb-6">
-                <div className="text-sm font-medium text-gray-700 mb-2">Macro Split:</div>
-                <div className="text-sm text-gray-600">
-                  💪 {currentCard.pieData[0]?.percentage || 0}% • 
-                  🌾 {currentCard.pieData[1]?.percentage || 0}% • 
-                  🥑 {currentCard.pieData[2]?.percentage || 0}%
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  (Target: 40% • 40% • 20%)
-                </div>
-              </div>
             )}
+            {currentCard.description && (
+              <div className="text-sm text-gray-700 mt-2">{currentCard.description}</div>
+            )}
+          </div>
 
-            {/* Swipe Actions */}
-            <div className="flex justify-center gap-8 mb-4">
-              <button
-                onClick={() => handleSwipe('left')}
-                className="bg-red-500 hover:bg-red-600 text-white w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
-              >
-                <X size={32} />
-              </button>
-              <button
-                onClick={() => handleSwipe('right')}
-                className="bg-green-500 hover:bg-green-600 text-white w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
-              >
-                <Heart size={32} />
-              </button>
+          {/* Nutrition Info */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600">Calories:</span>
+              <span className="font-bold text-lg">{Math.round(currentCard.totals.calories)}</span>
             </div>
-
-            <div className="text-center text-xs text-gray-500">
-              ❌ Pass • ❤️ Accept
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600">Protein:</span>
+              <span className="font-bold text-blue-600">{Math.round(currentCard.totals.protein)}g</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600">Carbs:</span>
+              <span className="font-bold text-green-600">{Math.round(currentCard.totals.carbs)}g</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600">Fat:</span>
+              <span className="font-bold text-yellow-600">{Math.round(currentCard.totals.fat)}g</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-600">Sugar:</span>
+              <span className="font-bold text-red-600">{Math.round(currentCard.totals.sugar)}g</span>
             </div>
           </div>
-        )}
 
-        {/* Last Response */}
-        {lastResponse && (
-          <div className="mt-4 bg-pink-50 border border-pink-200 rounded-lg p-3">
-            <div className="text-sm font-medium text-pink-800 mb-1">
-              💭 Dating Coach Says:
+          {/* Macro Percentage */}
+          {currentCard.pieData && currentCard.pieData.length > 0 && (
+            <div className="mt-4 text-center">
+              <div className="text-sm text-gray-600">
+                P: {currentCard.pieData[0]?.percentage || 0}% • 
+                C: {currentCard.pieData[1]?.percentage || 0}% • 
+                F: {currentCard.pieData[2]?.percentage || 0}%
+              </div>
             </div>
-            <div className="text-sm text-pink-700">
-              "{lastResponse}"
-            </div>
+          )}
+        </div>
+
+        {/* Swipe Actions */}
+        <div className="flex justify-center gap-8">
+          <button
+            onClick={() => handleSwipe('left')}
+            className="bg-red-500 hover:bg-red-600 text-white w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
+          >
+            <X size={32} />
+          </button>
+          <button
+            onClick={() => handleSwipe('right')}
+            className="bg-green-500 hover:bg-green-600 text-white w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
+          >
+            <Heart size={32} />
+          </button>
+        </div>
+
+        <div className="text-center mt-4">
+          <div className="text-sm text-gray-600">
+            ❌ Pass • ❤️ Accept
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Last Response */}
+      {swipeResults.length > 0 && (
+        <div className="bg-blue-50 border-t border-blue-200 p-4">
+          <div className="text-sm font-medium text-blue-800">
+            {aiPersonality} says:
+          </div>
+          <div className="text-sm text-blue-700 mt-1">
+            "{swipeResults[swipeResults.length - 1].response}"
+          </div>
+        </div>
+      )}
     </div>
   );
 };
