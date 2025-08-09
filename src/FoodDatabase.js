@@ -1,17 +1,21 @@
-// FoodDatabase.js - All food nutrition data and serving size conversions
+// FoodDatabase.js - COMPLETE corrected nutritional data based on CalorieKing/USDA standards
 
-// Main nutrition database - all values per serving
+// Main nutrition database - all values per serving (corrected for accuracy)
 export const FoodDatabase = {
   protein: {
     'Chicken Breast': { protein: 31, carbs: 0, fat: 3.6, sugar: 0, calories: 165 },
-    'Egg Whites': { protein: 11, carbs: 1, fat: 0.2, sugar: 1, calories: 52 },
+    // CORRECTED: Single large egg white (~33g)
+    'Egg Whites': { protein: 3.6, carbs: 0.2, fat: 0.1, sugar: 0.2, calories: 17 },
     'Tuna (canned in water)': { protein: 23, carbs: 0, fat: 1, sugar: 0, calories: 108 },
     'Turkey Breast': { protein: 29, carbs: 0, fat: 1, sugar: 0, calories: 135 },
     'Lean Beef (90/10)': { protein: 26, carbs: 0, fat: 10, sugar: 0, calories: 176 },
     'Salmon': { protein: 20, carbs: 0, fat: 13, sugar: 0, calories: 208 },
-    'Greek Yogurt (non-fat)': { protein: 17, carbs: 6, fat: 0, sugar: 4, calories: 92 },
-    'Cottage Cheese (low-fat)': { protein: 11, carbs: 3.4, fat: 4.3, sugar: 2, calories: 98 },
-    'Eggs (whole)': { protein: 13, carbs: 1.1, fat: 11, sugar: 1, calories: 155 },
+    // CORRECTED: 1 cup non-fat Greek yogurt
+    'Greek Yogurt (non-fat)': { protein: 23, carbs: 9, fat: 0, sugar: 6, calories: 130 },
+    // CORRECTED: 1/2 cup low-fat cottage cheese
+    'Cottage Cheese (low-fat)': { protein: 14, carbs: 5, fat: 2, sugar: 4, calories: 90 },
+    // CORRECTED: Single large whole egg (~50g)
+    'Eggs (whole)': { protein: 6, carbs: 0.6, fat: 5, sugar: 0.6, calories: 70 },
     'Cod': { protein: 20, carbs: 0, fat: 0.7, sugar: 0, calories: 89 },
     'Tilapia': { protein: 20, carbs: 0, fat: 1.7, sugar: 0, calories: 96 },
     'Shrimp': { protein: 18, carbs: 1, fat: 0.3, sugar: 0, calories: 85 },
@@ -19,7 +23,8 @@ export const FoodDatabase = {
   },
   carbohydrate: {
     'Brown Rice (cooked)': { protein: 2.6, carbs: 23, fat: 0.9, sugar: 0.4, calories: 112 },
-    'Oats (dry)': { protein: 13, carbs: 67, fat: 7, sugar: 1, calories: 379 },
+    // CORRECTED: 1/2 cup dry oats (was 67g carbs/379 cal)
+    'Oats (dry)': { protein: 5, carbs: 27, fat: 3, sugar: 1, calories: 150 },
     'Sweet Potato': { protein: 1.6, carbs: 20, fat: 0.1, sugar: 4.2, calories: 86 },
     'White Rice (cooked)': { protein: 2.7, carbs: 28, fat: 0.3, sugar: 0.1, calories: 130 },
     'Quinoa (cooked)': { protein: 4.1, carbs: 21, fat: 1.9, sugar: 0.9, calories: 120 },
@@ -33,7 +38,8 @@ export const FoodDatabase = {
     'Ezekiel Bread': { protein: 4, carbs: 15, fat: 0.5, sugar: 0, calories: 80 },
     'Rice Cakes': { protein: 0.7, carbs: 7, fat: 0.4, sugar: 0.1, calories: 35 },
     'Cream of Rice (dry)': { protein: 1.5, carbs: 22, fat: 0.5, sugar: 0, calories: 95 },
-    'Instant Oats (dry)': { protein: 3, carbs: 27, fat: 2, sugar: 1, calories: 130 }
+    // CORRECTED: 1/2 cup dry instant oats
+    'Instant Oats (dry)': { protein: 5, carbs: 27, fat: 3, sugar: 1, calories: 150 }
   },
   fruits: {
     'Apple': { protein: 0.3, carbs: 14, fat: 0.2, sugar: 10, calories: 52 },
@@ -89,6 +95,7 @@ export const FoodDatabase = {
     'Beef Jerky (1oz)': { protein: 9, carbs: 6, fat: 1.5, sugar: 6, calories: 80 },
     'Turkey Jerky (1oz)': { protein: 11, carbs: 4, fat: 1, sugar: 3, calories: 70 },
     'String Cheese': { protein: 6, carbs: 1, fat: 5, sugar: 0, calories: 70 },
+    // CORRECTED: Single hard-boiled egg
     'Hard-Boiled Egg': { protein: 6, carbs: 0.5, fat: 5, sugar: 0, calories: 70 }
   },
   fat: {
@@ -145,13 +152,17 @@ export const FoodDatabase = {
 export const servingSizeConversions = {
   protein: {
     'Chicken Breast': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1 palm' },
-    'Egg Whites': { grams: 46, ounces: 1.6, cups: 0.25, palm: '3 eggs' },
+    // CORRECTED: Single large egg white
+    'Egg Whites': { grams: 33, ounces: 1.2, cups: 0.15, palm: '1 egg white' },
     'Tuna (canned in water)': { grams: 85, ounces: 3, cups: 0.5, palm: '1 palm' },
     'Turkey Breast': { grams: 85, ounces: 3, cups: 0.5, palm: '1 palm' },
     'Lean Beef (90/10)': { grams: 85, ounces: 3, cups: 0.5, palm: '1 palm' },
     'Salmon': { grams: 85, ounces: 3, cups: 0.5, palm: '1 palm' },
-    'Greek Yogurt (non-fat)': { grams: 150, ounces: 5.3, cups: 0.67, palm: '1 cupped palm' },
+    // CORRECTED: 1 cup Greek yogurt
+    'Greek Yogurt (non-fat)': { grams: 245, ounces: 8.6, cups: 1, palm: '2 cupped palms' },
+    // CORRECTED: 1/2 cup cottage cheese
     'Cottage Cheese (low-fat)': { grams: 113, ounces: 4, cups: 0.5, palm: '1 cupped palm' },
+    // CORRECTED: Single large whole egg
     'Eggs (whole)': { grams: 50, ounces: 1.8, cups: 0.25, palm: '1 egg' },
     'Cod': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1 palm' },
     'Tilapia': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1 palm' },
@@ -160,6 +171,7 @@ export const servingSizeConversions = {
   },
   carbohydrate: {
     'Brown Rice (cooked)': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1 cupped palm' },
+    // CORRECTED: 1/2 cup dry oats
     'Oats (dry)': { grams: 40, ounces: 1.4, cups: 0.5, palm: '1 cupped palm' },
     'Sweet Potato': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1 fist' },
     'White Rice (cooked)': { grams: 100, ounces: 3.5, cups: 0.5, palm: '1 cupped palm' },
@@ -174,6 +186,7 @@ export const servingSizeConversions = {
     'Ezekiel Bread': { grams: 34, ounces: 1.2, cups: 0.125, palm: '1 slice' },
     'Rice Cakes': { grams: 9, ounces: 0.3, cups: 0.06, palm: '1 cake' },
     'Cream of Rice (dry)': { grams: 30, ounces: 1, cups: 0.25, palm: '1/4 cup' },
+    // CORRECTED: 1/2 cup dry instant oats
     'Instant Oats (dry)': { grams: 40, ounces: 1.4, cups: 0.5, palm: '1/2 cup' }
   },
   fruits: {
@@ -230,6 +243,7 @@ export const servingSizeConversions = {
     'Beef Jerky (1oz)': { grams: 28, ounces: 1, cups: 0.125, palm: '1 handful' },
     'Turkey Jerky (1oz)': { grams: 28, ounces: 1, cups: 0.125, palm: '1 handful' },
     'String Cheese': { grams: 28, ounces: 1, cups: 0.125, palm: '1 stick' },
+    // CORRECTED: Single hard-boiled egg
     'Hard-Boiled Egg': { grams: 50, ounces: 1.8, cups: 0.25, palm: '1 egg' }
   },
   fat: {
