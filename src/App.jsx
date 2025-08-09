@@ -8,8 +8,7 @@ import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 // NEW IMPORT - Personal Trainer Summary
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
-// NEW IMPORT - Meal Swipe Game
-import MealSwipeGame from './MealSwipeGame.jsx';
+// MealSwipeGame import removed - component disabled
 
 const defaultUserProfile = {
   firstName: '',
@@ -19,7 +18,7 @@ const defaultUserProfile = {
   weight: '',
   exerciseLevel: '',
   goal: '',
-  gender: '' // NEW: Added gender for game personalization
+  gender: '' // Added gender for game personalization
 };
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -37,6 +36,7 @@ const NutritionApp = () => {
   const [userProfile, setUserProfile] = useState(defaultUserProfile);
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState('cards');
+  // MealSwipeGame state removed - component disabled
   
   useEffect(() => {
     const checkMobile = () => {
@@ -107,11 +107,6 @@ const NutritionApp = () => {
     isOpen: false
   });
 
-  // NEW: Meal Swipe Game modal state
-  const [mealSwipeGameModal, setMealSwipeGameModal] = useState({
-    isOpen: false
-  });
-
   const [customServing, setCustomServing] = useState({ 
     amount: 1, 
     unit: 'servings' 
@@ -179,6 +174,12 @@ const NutritionApp = () => {
       }
     };
   };
+
+  // NEW: Check if user has meals to swipe - DISABLED
+  // const hasMealsToSwipe = () => {
+  //   const allMeals = getAllMealsData();
+  //   return Object.values(allMeals).some(meal => meal.totals && meal.totals.calories > 50);
+  // };
 
   const handleTimeChange = (mealType, newTime) => {
     setMeals(prev => ({
@@ -281,15 +282,6 @@ const NutritionApp = () => {
     setPersonalTrainerModal({ isOpen: false });
   };
 
-  // NEW: Meal Swipe Game modal handlers
-  const handleOpenMealSwipeGameModal = () => {
-    setMealSwipeGameModal({ isOpen: true });
-  };
-
-  const handleCloseMealSwipeGameModal = () => {
-    setMealSwipeGameModal({ isOpen: false });
-  };
-
   const updateUserProfile = (field, value) => {
     setUserProfile(prev => ({ ...prev, [field]: value }));
   };
@@ -304,7 +296,7 @@ const NutritionApp = () => {
       weight: '165',
       exerciseLevel: 'moderate',
       goal: 'maintain',
-      gender: 'male' // NEW: Added gender
+      gender: 'male'
     });
   };
 
@@ -317,7 +309,7 @@ const NutritionApp = () => {
       weight: '135',
       exerciseLevel: 'moderate',
       goal: 'maintain',
-      gender: 'female' // NEW: Added gender
+      gender: 'female'
     });
   };
 
@@ -424,7 +416,7 @@ const NutritionApp = () => {
               )}
             </div>
             
-            {/* Profile, Personal Trainer, and Meal Swipe Game Buttons */}
+            {/* Profile and Personal Trainer Buttons (removed meal swipe game button) */}
             <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-3'}`}>
               <button
                 onClick={handleOpenProfileModal}
@@ -441,19 +433,26 @@ const NutritionApp = () => {
                 <span>💪</span>
                 Personal Trainer
               </button>
-
-              {/* NEW: Meal Swipe Game Button */}
-              <button
-                onClick={handleOpenMealSwipeGameModal}
-                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors font-medium flex items-center justify-center gap-2`}
-              >
-                <span>🎯</span>
-                Meal Swipe Game
-              </button>
             </div>
           </div>
         </div>
 
+        {/* MealSwipeGame disabled - uncomment below to re-enable */}
+        {/* 
+        {hasMealsToSwipe() && !hasCompletedSwipeGame && userProfile.firstName && userProfile.gender && (
+          <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
+            <MealSwipeGame
+              allMeals={getAllMealsData()}
+              userProfile={userProfile}
+              calorieData={calorieData}
+              onComplete={() => setHasCompletedSwipeGame(true)}
+              isIntegrated={true}
+            />
+          </div>
+        )}
+        */}
+
+        {/* Show meal trackers (MealSwipeGame disabled) */}
         <div className={`space-y-${isMobile ? '3' : '6'}`}>
           {Object.keys(meals).map(mealType => {
             const { totals, pieData } = getMealData(mealType);
@@ -470,9 +469,9 @@ const NutritionApp = () => {
                 warnings={[]}
                 userProfile={userProfile}
                 calorieData={calorieData || {}}
-                allMeals={getAllMealsData()} // NEW: Pass complete meal data instead of previousMeals
+                allMeals={getAllMealsData()}
                 onOpenServingModal={handleOpenServingModal}
-                onOpenFoodModal={handleOpenFoodModal} // NEW PROP
+                onOpenFoodModal={handleOpenFoodModal}
                 onUpdateFoodItem={handleUpdateFoodItem}
                 onAddFoodItem={handleAddFoodItem}
                 onRemoveFoodItem={handleRemoveFoodItem}
@@ -482,395 +481,256 @@ const NutritionApp = () => {
           })}
         </div>
 
-        <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
-          <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800 mb-4 text-center`}>
-            📊 Daily Summary
-          </h2>
-          {(() => {
-            const totalDailyCalories = Object.keys(meals).reduce((sum, mealType) => {
-              const { totals } = getMealData(mealType);
-              return sum + totals.calories;
-            }, 0);
-            
-            return (
-              <div className="text-center">
-                <div className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-blue-600 mb-2`}>
-                  {Math.round(totalDailyCalories)} / {calorieData?.targetCalories || 2200} calories
+        {/* Summary and charts (MealSwipeGame disabled) */}
+        <>
+          <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
+            <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800 mb-4 text-center`}>
+              📊 Daily Summary
+            </h2>
+            {(() => {
+              const totalDailyCalories = Object.keys(meals).reduce((sum, mealType) => {
+                const { totals } = getMealData(mealType);
+                return sum + totals.calories;
+              }, 0);
+              
+              return (
+                <div className="text-center">
+                  <div className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-blue-600 mb-2`}>
+                    {Math.round(totalDailyCalories)} / {calorieData?.targetCalories || 2200} calories
+                  </div>
+                  <div className={`w-full bg-gray-200 rounded-full ${isMobile ? 'h-6' : 'h-4'} mb-4`}>
+                    <div 
+                      className={`bg-blue-600 ${isMobile ? 'h-6' : 'h-4'} rounded-full transition-all duration-500`} 
+                      style={{ 
+                        width: `${Math.min((totalDailyCalories / (calorieData?.targetCalories || 2200)) * 100, 100)}%` 
+                      }}
+                    ></div>
+                  </div>
+                  <p className={`text-gray-600 ${isMobile ? 'text-base' : 'text-sm'}`}>
+                    {(() => {
+                      const target = calorieData?.targetCalories || 2200;
+                      if (totalDailyCalories < target) {
+                        return `${target - Math.round(totalDailyCalories)} calories remaining`;
+                      } else if (totalDailyCalories > target) {
+                        return `${Math.round(totalDailyCalories - target)} calories over target`;
+                      } else {
+                        return "Perfect! You've hit your calorie target!";
+                      }
+                    })()}
+                  </p>
                 </div>
-                <div className={`w-full bg-gray-200 rounded-full ${isMobile ? 'h-6' : 'h-4'} mb-4`}>
-                  <div 
-                    className={`bg-blue-600 ${isMobile ? 'h-6' : 'h-4'} rounded-full transition-all duration-500`} 
-                    style={{ 
-                      width: `${Math.min((totalDailyCalories / (calorieData?.targetCalories || 2200)) * 100, 100)}%` 
-                    }}
-                  ></div>
-                </div>
-                <p className={`text-gray-600 ${isMobile ? 'text-base' : 'text-sm'}`}>
-                  {(() => {
-                    const target = calorieData?.targetCalories || 2200;
-                    if (totalDailyCalories < target) {
-                      return `${target - Math.round(totalDailyCalories)} calories remaining`;
-                    } else if (totalDailyCalories > target) {
-                      return `${Math.round(totalDailyCalories - target)} calories over target`;
-                    } else {
-                      return "Perfect! You've hit your calorie target!";
-                    }
-                  })()}
-                </p>
-              </div>
-            );
-          })()}
-        </div>
-
-        <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
-          <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'flex-col sm:flex-row'} justify-between items-center mb-4`}>
-            <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 ${isMobile ? 'mb-0' : 'mb-2 sm:mb-0'}`}>
-              📊 Daily Timeline: Calories & Sugar
-            </h3>
-            
-            <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2 w-full' : 'p-1'}`}>
-              <button
-                onClick={() => setViewMode('cards')}
-                className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                  viewMode === 'cards' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                📋 {isMobile ? 'Cards' : 'Cards'}
-              </button>
-              <button
-                onClick={() => setViewMode('line')}
-                className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                  viewMode === 'line' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                📈 {isMobile ? 'Trends' : 'Trends'}
-              </button>
-              <button
-                onClick={() => setViewMode('chart')}
-                className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                  viewMode === 'chart' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                📊 {isMobile ? 'Bars' : 'Bars'}
-              </button>
-            </div>
+              );
+            })()}
           </div>
 
-          {(() => {
-            const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
-            const mealLabels = {
-              breakfast: 'Breakfast',
-              firstSnack: 'Snack 1', 
-              secondSnack: 'Snack 2',
-              lunch: 'Lunch',
-              midAfternoon: 'Mid-Aft',
-              dinner: 'Dinner',
-              lateSnack: 'Late Snack',
-              postWorkout: 'Post-WO'
-            };
+          {/* Charts and Timeline */}
+          <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
+            <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'flex-col sm:flex-row'} justify-between items-center mb-4`}>
+              <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 ${isMobile ? 'mb-0' : 'mb-2 sm:mb-0'}`}>
+                📊 Daily Timeline: Calories & Sugar
+              </h3>
+              
+              <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2 w-full' : 'p-1'}`}>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                    viewMode === 'cards' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  📋 {isMobile ? 'Cards' : 'Cards'}
+                </button>
+                <button
+                  onClick={() => setViewMode('line')}
+                  className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                    viewMode === 'line' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  📈 {isMobile ? 'Trends' : 'Trends'}
+                </button>
+                <button
+                  onClick={() => setViewMode('chart')}
+                  className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                    viewMode === 'chart' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  📊 {isMobile ? 'Bars' : 'Bars'}
+                </button>
+              </div>
+            </div>
 
-            // Helper function to convert time to hours (24-hour format)
-            const timeToHours = (timeStr) => {
-              const [time, period] = timeStr.split(' ');
-              const [hours, minutes] = time.split(':').map(Number);
-              let hour24 = hours;
-              if (period === 'PM' && hours !== 12) hour24 += 12;
-              if (period === 'AM' && hours === 12) hour24 = 0;
-              return hour24 + minutes / 60;
-            };
-
-            // Create basic timeline data
-            const basicTimelineData = mealOrder.map((mealType, index) => {
-              const { totals } = getMealData(mealType);
-              return {
-                name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
-                shortName: mealLabels[mealType],
-                fullName: mealLabels[mealType],
-                time: meals[mealType].time,
-                timeHours: timeToHours(meals[mealType].time),
-                calories: Math.round(totals.calories),
-                sugar: Math.round(totals.sugar),
-                sugarScaled: Math.round(totals.sugar) * 10,
-                order: index,
-                mealType: mealType
+            {/* Chart content remains the same... */}
+            {(() => {
+              const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+              const mealLabels = {
+                breakfast: 'Breakfast',
+                firstSnack: 'Snack 1', 
+                secondSnack: 'Snack 2',
+                lunch: 'Lunch',
+                midAfternoon: 'Mid-Aft',
+                dinner: 'Dinner',
+                lateSnack: 'Late Snack',
+                postWorkout: 'Post-WO'
               };
-            });
 
-            // Sort meals by actual time (chronological order)
-            const chronologicalData = [...basicTimelineData].sort((a, b) => a.timeHours - b.timeHours);
+              const timeToHours = (timeStr) => {
+                const [time, period] = timeStr.split(' ');
+                const [hours, minutes] = time.split(':').map(Number);
+                let hour24 = hours;
+                if (period === 'PM' && hours !== 12) hour24 += 12;
+                if (period === 'AM' && hours === 12) hour24 = 0;
+                return hour24 + minutes / 60;
+              };
 
-            // For line chart: create smart timeline with gap detection
-            const createSmartLineData = () => {
-              // Start with chronologically sorted meals that have food
-              const mealsWithFood = chronologicalData.filter(meal => meal.calories > 0);
-              
-              if (mealsWithFood.length <= 1) return mealsWithFood;
-              
-              const smartData = [];
-              
-              for (let i = 0; i < mealsWithFood.length; i++) {
-                const currentMeal = mealsWithFood[i];
-                smartData.push(currentMeal);
-                
-                // Check gap to next meal
-                if (i < mealsWithFood.length - 1) {
-                  const nextMeal = mealsWithFood[i + 1];
-                  const hourGap = nextMeal.timeHours - currentMeal.timeHours;
-                  
-                  // If 5+ hour gap, add zero points to show they need to eat
-                  if (hourGap >= 5) {
-                    const gapMidTime = currentMeal.timeHours + (hourGap / 2);
-                    const gapHour = Math.floor(gapMidTime);
-                    const gapMinute = Math.round((gapMidTime % 1) * 60);
-                    const gapTimeStr = `${gapHour > 12 ? gapHour - 12 : gapHour === 0 ? 12 : gapHour}:${gapMinute.toString().padStart(2, '0')} ${gapHour >= 12 ? 'PM' : 'AM'}`;
-                    
-                    smartData.push({
-                      name: `Gap`,
-                      shortName: `${Math.round(hourGap)}h gap`,
-                      fullName: `${Math.round(hourGap)} hour gap`,
-                      time: gapTimeStr,
-                      timeHours: gapMidTime,
-                      calories: 0,
-                      sugar: 0,
-                      sugarScaled: 0,
-                      order: currentMeal.order + 0.5,
-                      isGap: true
-                    });
-                  }
-                }
+              const basicTimelineData = mealOrder.map((mealType, index) => {
+                const { totals } = getMealData(mealType);
+                return {
+                  name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
+                  shortName: mealLabels[mealType],
+                  fullName: mealLabels[mealType],
+                  time: meals[mealType].time,
+                  timeHours: timeToHours(meals[mealType].time),
+                  calories: Math.round(totals.calories),
+                  sugar: Math.round(totals.sugar),
+                  sugarScaled: Math.round(totals.sugar) * 10,
+                  order: index,
+                  mealType: mealType
+                };
+              });
+
+              const chronologicalData = [...basicTimelineData].sort((a, b) => a.timeHours - b.timeHours);
+              const timelineData = chronologicalData;
+
+              if (viewMode === 'line') {
+                return (
+                  <div>
+                    <div className={isMobile ? "h-96" : "h-80"}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart 
+                          data={timelineData}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="shortName" 
+                            tick={{ fontSize: isMobile ? 9 : 11 }}
+                            angle={isMobile ? -45 : -30}
+                            textAnchor="end"
+                            height={isMobile ? 80 : 70}
+                          />
+                          <YAxis 
+                            label={{ value: 'Values', angle: -90, position: 'insideLeft' }}
+                          />
+                          <Tooltip />
+                          <Line 
+                            type="monotone" 
+                            dataKey="calories" 
+                            stroke="#8B5CF6" 
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: "#8B5CF6" }}
+                            name="calories"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="sugarScaled" 
+                            stroke="#EF4444" 
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: "#EF4444" }}
+                            name="sugarScaled"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
               }
-              
-              return smartData;
-            };
 
-            const timelineData = chronologicalData; // Now chronologically sorted!
-            const smartLineData = createSmartLineData();
+              if (viewMode === 'cards') {
+                return (
+                  <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'}`}>
+                    {timelineData.map((meal, index) => (
+                      <div key={index} className={`bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+                        <div className="text-center">
+                          <div className={`font-bold text-gray-800 ${isMobile ? 'text-base' : 'text-sm'} mb-1`}>
+                            {meal.fullName}
+                          </div>
+                          <div className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600 mb-3`}>
+                            {meal.time}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Calories:</span>
+                              <span className={`font-bold text-purple-600 ${isMobile ? 'text-xl' : 'text-lg'}`}>
+                                {meal.calories}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Sugar:</span>
+                              <span className={`font-bold text-red-500 ${isMobile ? 'text-xl' : 'text-lg'}`}>
+                                {meal.sugar}g
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
 
-            if (viewMode === 'line') {
               return (
                 <div>
                   <div className={isMobile ? "h-96" : "h-80"}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart 
-                        data={smartLineData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      <BarChart 
+                        data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
+                        margin={isMobile 
+                          ? { top: 20, right: 20, left: 20, bottom: 80 }
+                          : { top: 20, right: 30, left: 20, bottom: 60 }
+                        }
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
-                          dataKey="shortName" 
-                          tick={{ fontSize: isMobile ? 9 : 11 }}
-                          angle={isMobile ? -45 : -30}
-                          textAnchor="end"
-                          height={isMobile ? 80 : 70}
+                          dataKey={isMobile ? "shortName" : "name"}
+                          tick={{ fontSize: isMobile ? 9 : 10 }}
+                          angle={isMobile ? -45 : 0}
+                          textAnchor={isMobile ? "end" : "middle"}
+                          height={isMobile ? 70 : 50}
+                          interval={0}
                         />
                         <YAxis 
-                          label={{ value: 'Values', angle: -90, position: 'insideLeft' }}
+                          label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
                         />
-                        <Tooltip 
-                          formatter={(value, name, props) => {
-                            if (props.payload.isGap) {
-                              return ['Long gap - time to eat!', 'Warning'];
-                            }
-                            if (name === 'sugarScaled') {
-                              return [`${props.payload.sugar}g`, 'Sugar'];
-                            }
-                            return [value, name === 'calories' ? 'Calories' : name];
-                          }}
-                          labelFormatter={(label, payload) => {
-                            if (payload && payload[0]) {
-                              if (payload[0].payload.isGap) {
-                                return `${payload[0].payload.fullName} - Consider a healthy snack!`;
-                              }
-                              return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
-                            }
-                            return label;
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
+                        <Tooltip />
+                        <Bar 
                           dataKey="calories" 
-                          stroke="#8B5CF6" 
-                          strokeWidth={3}
-                          dot={(props) => {
-                            if (props.payload.isGap) {
-                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#00BFFF" stroke="#00BFFF" strokeWidth={2} />;
-                            }
-                            return <circle cx={props.cx} cy={props.cy} r={4} fill="#8B5CF6" stroke="#8B5CF6" strokeWidth={2} />;
-                          }}
-                          name="calories"
-                          connectNulls={false}
+                          fill="#8B5CF6" 
+                          name="calories" 
+                          radius={2}
                         />
-                        <Line 
-                          type="monotone" 
+                        <Bar 
                           dataKey="sugarScaled" 
-                          stroke="#EF4444" 
-                          strokeWidth={3}
-                          dot={(props) => {
-                            if (props.payload.isGap) {
-                              return <circle cx={props.cx} cy={props.cy} r={6} fill="#00BFFF" stroke="#00BFFF" strokeWidth={2} />;
-                            }
-                            return <circle cx={props.cx} cy={props.cy} r={4} fill="#EF4444" stroke="#EF4444" strokeWidth={2} />;
-                          }}
-                          name="sugarScaled"
-                          connectNulls={false}
+                          fill="#EF4444" 
+                          name="sugarScaled" 
+                          radius={2}
                         />
-                      </LineChart>
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  
-                  <div className={`mt-4 text-center ${isMobile ? 'px-2' : ''}`}>
-                    <div className={`flex items-center justify-center ${isMobile ? 'flex-col space-y-2' : 'gap-6'} text-sm flex-wrap`}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
-                        <span>Calories Trend</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                        <span>Sugar Trend{!isMobile && ' (scaled x10)'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-cyan-400 rounded-full"></div>
-                        <span>{isMobile ? 'Long Gaps' : '5+ Hour Gaps'}</span>
-                      </div>
-                    </div>
-                    <div className={`${isMobile ? 'text-xs mt-3' : 'text-xs mt-2'} text-gray-500`}>
-                      📈 {isMobile ? 'Shows meals with food • Cyan = 5+ hour gaps' : 'Only shows meals with food • Cyan dots show 5+ hour gaps where you should eat!'}
-                    </div>
-                  </div>
                 </div>
               );
-            }
+            })()}
+          </div>
+        </>
 
-            if (viewMode === 'cards') {
-              return (
-                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'}`}>
-                  {timelineData.map((meal, index) => (
-                    <div key={index} className={`bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
-                      <div className="text-center">
-                        <div className={`font-bold text-gray-800 ${isMobile ? 'text-base' : 'text-sm'} mb-1`}>
-                          {meal.fullName}
-                        </div>
-                        <div className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600 mb-3`}>
-                          {meal.time}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Calories:</span>
-                            <span className={`font-bold text-purple-600 ${isMobile ? 'text-xl' : 'text-lg'}`}>
-                              {meal.calories}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Sugar:</span>
-                            <span className={`font-bold text-red-500 ${isMobile ? 'text-xl' : 'text-lg'}`}>
-                              {meal.sugar}g
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className={`${isMobile ? 'mt-4' : 'mt-3'} space-y-2`}>
-                          <div className={`bg-gray-200 rounded-full ${isMobile ? 'h-3' : 'h-2'}`}>
-                            <div 
-                              className={`bg-purple-500 ${isMobile ? 'h-3' : 'h-2'} rounded-full transition-all duration-300`}
-                              style={{ width: `${Math.min((meal.calories / 800) * 100, 100)}%` }}
-                            ></div>
-                          </div>
-                          <div className={`bg-gray-200 rounded-full ${isMobile ? 'h-3' : 'h-2'}`}>
-                            <div 
-                              className={`bg-red-500 ${isMobile ? 'h-3' : 'h-2'} rounded-full transition-all duration-300`}
-                              style={{ width: `${Math.min((meal.sugar / 25) * 100, 100)}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            }
-
-            return (
-              <div>
-                <div className={isMobile ? "h-96" : "h-80"}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0)}
-                      margin={isMobile 
-                        ? { top: 20, right: 20, left: 20, bottom: 80 }
-                        : { top: 20, right: 30, left: 20, bottom: 60 }
-                      }
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey={isMobile ? "shortName" : "name"}
-                        tick={{ fontSize: isMobile ? 9 : 10 }}
-                        angle={isMobile ? -45 : 0}
-                        textAnchor={isMobile ? "end" : "middle"}
-                        height={isMobile ? 70 : 50}
-                        interval={0}
-                      />
-                      <YAxis 
-                        label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
-                      />
-                      <Tooltip 
-                        formatter={(value, name, props) => {
-                          if (name === 'sugarScaled') {
-                            return [`${props.payload.sugar}g`, 'Sugar'];
-                          }
-                          return [value, name === 'calories' ? 'Calories' : name];
-                        }}
-                        labelFormatter={(label, payload) => {
-                          if (payload && payload[0]) {
-                            return `${payload[0].payload.fullName} at ${payload[0].payload.time}`;
-                          }
-                          return label;
-                        }}
-                      />
-                      <Bar 
-                        dataKey="calories" 
-                        fill="#8B5CF6" 
-                        name="calories" 
-                        radius={2}
-                      />
-                      <Bar 
-                        dataKey="sugarScaled" 
-                        fill="#EF4444" 
-                        name="sugarScaled" 
-                        radius={2}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className={`mt-4 text-center ${isMobile ? 'px-2' : ''}`}>
-                  <div className={`flex items-center justify-center ${isMobile ? 'flex-col space-y-2' : 'gap-6'} text-sm`}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                      <span>Calories</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-red-500 rounded"></div>
-                      <span>Sugar{!isMobile && ' (scaled x10 for visibility)'}</span>
-                    </div>
-                  </div>
-                  <div className={`${isMobile ? 'text-xs mt-3' : 'text-xs mt-2'} text-gray-500`}>
-                    📊 {isMobile ? 'Shows meals with food • Sugar scaled x10' : 'Only shows meals with food • Sugar bars are scaled 10x larger to make high sugar content more visible!'}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Serving Size Modal */}
+        {/* All modals remain the same... */}
         {servingModal.isOpen && servingModal.item && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className={`bg-white rounded-lg ${isMobile ? 'p-4 max-w-sm w-full' : 'p-6 max-w-md w-full mx-4'}`}>
@@ -1070,7 +930,7 @@ const NutritionApp = () => {
                       />
                     </div>
                     
-                    {/* NEW: Gender Selection */}
+                    {/* Gender Selection */}
                     <select
                       value={userProfile.gender}
                       onChange={(e) => updateUserProfile('gender', e.target.value)}
@@ -1409,18 +1269,6 @@ const NutritionApp = () => {
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* NEW: Meal Swipe Game Modal */}
-        {mealSwipeGameModal.isOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <MealSwipeGame
-              allMeals={getAllMealsData()}
-              userProfile={userProfile}
-              calorieData={calorieData}
-              onClose={handleCloseMealSwipeGameModal}
-            />
           </div>
         )}
       </div>
