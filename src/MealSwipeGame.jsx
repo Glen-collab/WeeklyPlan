@@ -363,7 +363,7 @@ const MealSwipeGame = ({
     return (
       <div className="max-w-md mx-auto bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl shadow-lg p-6 text-center border-2 border-pink-200">
         <h2 className="text-xl font-bold text-gray-800 mb-4">🍽️ No Meals to Rate!</h2>
-        <p className="text-gray-600 mb-4">Add some meals to your daily plan first, then come back to rate them!</p>
+        <p className="text-gray-600 mb-4">Add meals first, then you can rate them and see your calorie burn in action!</p>
       </div>
     );
   }
