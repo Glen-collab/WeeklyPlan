@@ -8,7 +8,7 @@ import { FoodDatabase } from './FoodDatabase.js';
 
 const getUserProteinTarget = (userProfile) => {
   switch(userProfile.goal) {
-    case 'dirty-bulk': return 150;
+    case 'dirty-bulk': return Math.round(weight *1.1);
     case 'gain-muscle': return 130;
     case 'maintain': return 100;
     case 'lose': return 120;
