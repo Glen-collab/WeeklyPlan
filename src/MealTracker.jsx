@@ -458,7 +458,30 @@ const MealTracker = ({
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-center mt-2">
+          
+          {/* Macro Legend */}
+          <div className="flex justify-center gap-4 mb-3">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span className="text-sm font-medium text-gray-700">
+                💪 {pieData && pieData[0] ? pieData[0].percentage : 0}%
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-sm font-medium text-gray-700">
+                🌾 {pieData && pieData[1] ? pieData[1].percentage : 0}%
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <span className="text-sm font-medium text-gray-700">
+                🥑 {pieData && pieData[2] ? pieData[2].percentage : 0}%
+              </span>
+            </div>
+          </div>
+          
+          <div className="text-center">
             <div className="text-sm text-gray-600">
               Total: {Math.round(totals.calories)} calories
             </div>
