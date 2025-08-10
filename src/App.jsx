@@ -6,6 +6,7 @@ import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories,
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
+import MealIdeasModal from './MealIdeas.jsx';
 
 // Import the streamlined meal swipe component
 import MealSwipeGame from './MealSwipeGame.jsx';
@@ -41,7 +42,9 @@ const NutritionApp = () => {
   const [showTinderSwipe, setShowTinderSwipe] = useState(false);
   const [showCardsModal, setShowCardsModal] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  
+  // Meal Ideas modal state
+  const [showMealIdeas, setShowMealIdeas] = useState(false);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -352,6 +355,27 @@ const NutritionApp = () => {
     }
   };
 
+  // Meal Ideas modal functions (FIXED: moved outside of handleApplyCustomServing)
+  const openMealIdeas = () => {
+    setShowMealIdeas(true);
+  };
+
+  const closeMealIdeas = () => {
+    setShowMealIdeas(false);
+  };
+
+  const addMealToBreakfast = (mealData) => {
+    // Clear existing breakfast items and replace with the meal idea
+    setMeals(prev => ({
+      ...prev,
+      breakfast: {
+        ...prev.breakfast,
+        items: [...mealData.items]
+      }
+    }));
+    closeMealIdeas();
+  };
+
   // Enhanced Tinder swipe functions
   const openTinderSwipe = () => {
     setShowTinderSwipe(true);
@@ -483,31 +507,57 @@ const NutritionApp = () => {
           </div>
         </div>
 
-        {/* Show meal trackers */}
+        {/* Show meal trackers with special breakfast header */}
         <div className={`space-y-${isMobile ? '3' : '6'}`}>
           {Object.keys(meals).map(mealType => {
             const { totals, pieData } = getMealData(mealType);
             
             return (
-              <MealTracker
-                key={mealType}
-                mealType={mealType}
-                time={meals[mealType].time}
-                setTime={(newTime) => handleTimeChange(mealType, newTime)}
-                items={meals[mealType].items}
-                totals={totals}
-                pieData={pieData}
-                warnings={[]}
-                userProfile={userProfile}
-                calorieData={calorieData || {}}
-                allMeals={getAllMealsData()}
-                onOpenServingModal={handleOpenServingModal}
-                onOpenFoodModal={handleOpenFoodModal}
-                onUpdateFoodItem={handleUpdateFoodItem}
-                onAddFoodItem={handleAddFoodItem}
-                onRemoveFoodItem={handleRemoveFoodItem}
-                isMobile={isMobile}
-              />
+              <div key={mealType}>
+                {/* Special header for breakfast with Meal Ideas button */}
+                {mealType === 'breakfast' && (
+                  <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'} bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🌅</span>
+                      <div>
+                        <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800`}>
+                          Breakfast
+                        </h3>
+                        <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>
+                          Target: {calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 4) : 550} calories
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={openMealIdeas}
+                      className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-md font-medium transition-all duration-300 hover:from-green-600 hover:to-teal-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
+                    >
+                      <span>💡</span>
+                      {isMobile ? 'Ideas' : 'Meal Ideas'}
+                    </button>
+                  </div>
+                )}
+                
+                <MealTracker
+                  mealType={mealType}
+                  time={meals[mealType].time}
+                  setTime={(newTime) => handleTimeChange(mealType, newTime)}
+                  items={meals[mealType].items}
+                  totals={totals}
+                  pieData={pieData}
+                  warnings={[]}
+                  userProfile={userProfile}
+                  calorieData={calorieData || {}}
+                  allMeals={getAllMealsData()}
+                  onOpenServingModal={handleOpenServingModal}
+                  onOpenFoodModal={handleOpenFoodModal}
+                  onUpdateFoodItem={handleUpdateFoodItem}
+                  onAddFoodItem={handleAddFoodItem}
+                  onRemoveFoodItem={handleRemoveFoodItem}
+                  isMobile={isMobile}
+                />
+              </div>
             );
           })}
         </div>
@@ -688,10 +738,6 @@ const NutritionApp = () => {
             })()}
           </div>
         </>
-
-        {/* All existing modals remain the same... */}
-        {/* Serving Modal, Food Modal, Profile Modal, Personal Trainer Modal */}
-        {/* (I'll include the essential ones below) */}
 
         {/* Serving Size Modal */}
         {servingModal.isOpen && servingModal.item && (
@@ -1233,6 +1279,18 @@ const NutritionApp = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Meal Ideas Modal */}
+        {showMealIdeas && (
+          <MealIdeasModal
+            isOpen={showMealIdeas}
+            onClose={closeMealIdeas}
+            onAddMeal={addMealToBreakfast}
+            userProfile={userProfile}
+            calorieData={calorieData}
+            isMobile={isMobile}
+          />
         )}
       </div>
 
