@@ -7,8 +7,8 @@ import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 
-// Import the enhanced Tinder swipe component
-import TinderNutritionSwipe from './TinderNutritionSwipe.jsx';
+// Import the streamlined meal swipe component
+import MealSwipeGame from './MealSwipeGame.jsx';
 
 const defaultUserProfile = {
   firstName: '',
@@ -1257,11 +1257,11 @@ const NutritionApp = () => {
             </button>
             
             {/* Enhanced Tinder Swipe Component */}
-            <TinderNutritionSwipe
+            <MealSwipeGame
               allMeals={getAllMealsData()}
               userProfile={userProfile}
               calorieData={calorieData}
-              onComplete={closeTinderSwipe}
+              onComplete={closeCardsModal}
               isIntegrated={true}
             />
           </div>
