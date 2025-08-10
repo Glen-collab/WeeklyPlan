@@ -73,11 +73,6 @@ const MealSwipeGame = ({
     const carbPercent = totalMacroCalories > 0 ? (totals.carbs * 4) / totalMacroCalories * 100 : 0;
     const fatPercent = totalMacroCalories > 0 ? (totals.fat * 9) / totalMacroCalories * 100 : 0;
 
-    // Macro ratio evaluation (40-40-20 ±5%)
-    const proteinIdeal = Math.abs(proteinPercent - 40) <= 5;
-    const carbIdeal = Math.abs(carbPercent - 40) <= 5;
-    const fatIdeal = Math.abs(fatPercent - 20) <= 5;
-
     // NEW: Sweetheart criteria (40-40-20 ±10%)
     const proteinSweetheart = Math.abs(proteinPercent - 40) <= 10;
     const carbSweetheart = Math.abs(carbPercent - 40) <= 10;
@@ -144,132 +139,151 @@ const MealSwipeGame = ({
   };
 
   // Get contextual response based on swipe and meal quality
-  const getSwipeResponse = (card, swipeDirection, evaluation) => {
-    const { firstName, gender } = userProfile;
-    const { score, issues, strengths, macros } = evaluation;
-    const swipedRight = swipeDirection === 'right';
-    const isGoodMeal = score >= 70;
-    
-    // Gender-specific pronouns
-    const genderPronouns = {
-      male: { they: 'she', possessive: 'her', title: 'queen' },
-      female: { they: 'he', possessive: 'his', title: 'king' },
-      'non-binary': { they: 'they', possessive: 'their', title: 'royalty' }
-    };
-    
-    const pronouns = genderPronouns[gender] || genderPronouns['non-binary'];
-    
-    // Create responses based on grade and scenario
-    if (swipedRight && isGoodMeal) {
-      // Swiped right on good meal - Success!
-      const successMessages = {
-        'A': [
-          `🔥 PERFECT MATCH! That meal is nutrition royalty and you spotted it immediately!`,
-          `💍 It's a match made in macro heaven! You've got elite nutrition instincts!`,
-          `🏆 Expert-level swipe! Your nutrition game is championship tier!`
-        ],
-        'B': [
-          `✨ GREAT MATCH! You've got solid taste in quality nutrition!`,
-          `🎯 Nice choice! You're developing excellent nutrition radar!`,
-          `💪 Good eye! You spotted that quality meal composition!`
-        ],
-        'C': [
-          `😊 Not bad! You recognized decent nutrition when you saw it!`,
-          `👍 Learning! You're starting to spot the good ones!`,
-          `📈 Progress! Your nutrition instincts are improving!`
-        ],
-        'D': [
-          `🙌 Finally! You found a good one! That meal is way above your usual choices!`,
-          `🎉 Miracle match! Somehow you spotted quality nutrition!`,
-          `✨ Dreams do come true! You actually chose well for once!`
-        ]
-      };
-      
-      return successMessages[overallGrade][Math.floor(Math.random() * successMessages[overallGrade].length)];
-    }
-    
-    if (swipedRight && !isGoodMeal) {
-      // Swiped right on bad meal - Rejection!
-      const rejectionMessages = {
-        'A': [
-          `💔 REJECTED! ${firstName}, that meal is way below your standards! ${Math.round(card.totals.sugar)}g sugar is a red flag!`,
-          `🚫 Standards, ${firstName}! You're A-grade - why chase ${Math.round(macros.carbPercent)}% carb disasters?`,
-          `❌ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} said "no thanks" - wrong macros = instant left swipe!`
-        ],
-        'B': [
-          `😬 Ouch! That meal ghosted you - ${Math.round(macros.proteinPercent)}% protein isn't cutting it!`,
-          `🤦‍♀️ ${firstName}, you aimed too high! That ${Math.round(card.totals.calories)}-calorie mess rejected you!`,
-          `💸 Friend-zoned! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} wants better nutrition standards!`
-        ],
-        'C': [
-          `😅 Swing and a miss! That meal wants someone with better nutrition knowledge!`,
-          `🎭 Plot twist: those macros weren't feeling your energy!`,
-          `📱 Read receipt: OFF! That meal doesn't want nutrition confusion!`
-        ],
-        'D': [
-          `🤡 Even terrible meals have standards! That ${Math.round(card.totals.sugar)}g sugar bomb rejected YOU!`,
-          `🙈 Embarrassing! You got turned down by nutritional disaster!`,
-          `🚨 BRUTAL! Even junk food doesn't want to be associated with your choices!`
-        ]
-      };
-      
-      return rejectionMessages[overallGrade][Math.floor(Math.random() * rejectionMessages[overallGrade].length)];
-    }
-    
-    if (!swipedRight && isGoodMeal) {
-      // Swiped left on good meal - Missed opportunity!
-      const missedMessages = {
-        'A': [
-          `😱 WHAT?! ${firstName}, you just rejected perfection! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} had ideal macros!`,
-          `🤯 Expert mistake! That was macro perfection and you let it walk away!`,
-          `💔 Heartbreak! You're so used to A-grade meals you didn't appreciate that masterpiece!`
-        ],
-        'B': [
-          `😕 You missed out! That meal was actually really good for your goals!`,
-          `🚪 One that got away! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} was quality nutrition!`,
-          `📞 ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s telling friends you have commitment issues!`
-        ],
-        'C': [
-          `🤷‍♀️ Your loss! That was decent and you pushed it away!`,
-          `📋 Add it to the list of good meals you've rejected!`,
-          `🎪 Self-sabotage! You can't recognize good nutrition!`
-        ],
-        'D': [
-          `😭 WHY?! That was the best meal you've seen and you said no!`,
-          `🏃‍♀️ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} dodged a bullet! You're not ready for greatness!`,
-          `🎯 Self-destruction! You chose chaos over quality!`
-        ]
-      };
-      
-      return missedMessages[overallGrade][Math.floor(Math.random() * missedMessages[overallGrade].length)];
-    }
-    
-    // Swiped left on bad meal - Good choice!
-    const goodRejectMessages = {
-      'A': [
-        `👑 ROYALTY ENERGY! You spotted that ${Math.round(card.totals.sugar)}g sugar disaster immediately!`,
-        `🛡️ Perfect defense! That ${Math.round(macros.carbPercent)}% carb chaos couldn't fool you!`,
-        `🎯 Flawless execution! You saw through that nutritional catfish!`
-      ],
-      'B': [
-        `💪 Good instincts! You're learning to spot the red flags!`,
-        `🚫 Smart swipe! That meal was definitely trouble!`,
-        `📊 Progress! You're developing better standards!`
-      ],
-      'C': [
-        `👍 Decent call! Even you spotted that disaster!`,
-        `🎲 Lucky guess! That was clearly wrong!`,
-        `📚 Learning! You're recognizing the bad ones!`
-      ],
-      'D': [
-        `🎉 MIRACLE! You actually made a good choice for once!`,
-        `😲 Character development! You're learning to say no to disasters!`,
-        `🔥 There's hope! You rejected something terrible!`
-      ]
-    };
-    
-    return goodRejectMessages[overallGrade][Math.floor(Math.random() * goodRejectMessages[overallGrade].length)];
+const getSwipeResponse = (card, swipeDirection, evaluation) => {
+  const { firstName, gender } = userProfile;
+  const { score, issues, strengths, macros, carbGrams, sugarGrams } = evaluation;
+  const swipedRight = swipeDirection === 'right';
+  const isGoodMeal = score >= 70;
+  
+  // Gender-specific pronouns
+  const genderPronouns = {
+    male: { they: 'she', possessive: 'her', title: 'queen' },
+    female: { they: 'he', possessive: 'his', title: 'king' },
+    'non-binary': { they: 'they', possessive: 'their', title: 'royalty' }
   };
+  
+  const pronouns = genderPronouns[gender] || genderPronouns['non-binary'];
+  
+  // Create responses based on grade and scenario
+  if (swipedRight && isGoodMeal) {
+    // Swiped right on good meal - Success with metabolism focus!
+    if (strengths.includes('sweetheart_macros')) {
+      const sweetheartMessages = [
+        `🔥 SWEETHEART MATCH! That 40-40-20 balance will have your metabolism PURRING like a Ferrari engine!`,
+        `💍 WIFEY/HUBBY MATERIAL! Perfect macros = fat-burning machine activated, ${firstName}!`,
+        `🏆 KEEPER ALERT! That balanced beauty will torch calories for HOURS after eating!`,
+        `✨ MARRIAGE MATERIAL! Your metabolism just found its soulmate - prepare for the calorie burn!`
+      ];
+      return sweetheartMessages[Math.floor(Math.random() * sweetheartMessages.length)];
+    } else if (strengths.includes('metabolism_booster')) {
+      const metabolismMessages = [
+        `💪 METABOLISM ROCKET! That protein will have you burning calories while you sleep!`,
+        `🚀 FAT BURNING ACTIVATED! High protein = thermogenic BEAST MODE engaged!`,
+        `🔥 CALORIE INCINERATOR! Your body is about to work OVERTIME digesting that protein!`,
+        `⚡ METABOLIC LIGHTNING! That protein percentage just turned you into a calorie-burning machine!`
+      ];
+      return metabolismMessages[Math.floor(Math.random() * metabolismMessages.length)];
+    } else {
+      const generalSuccessMessages = [
+        `✅ SOLID CHOICE! Your metabolism approves of this calorie-burning combination!`,
+        `👍 NICE PICK! That meal won't slow down your fat-burning potential!`,
+        `🎯 SMART SWIPE! Your body will actually THANK YOU for this one!`
+      ];
+      return generalSuccessMessages[Math.floor(Math.random() * generalSuccessMessages.length)];
+    }
+  }
+  
+  if (swipedRight && !isGoodMeal) {
+    // Swiped right on bad meal - Rejection with savage sarcasm!
+    if (issues.includes('carb_bloater')) {
+      const carbBloaterMessages = [
+        `💔 REJECTED! ${firstName}, ${Math.round(carbGrams)}g carbs?! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} said "I don't date people who make me look pregnant!"`,
+        `🚫 GHOSTED! That ${Math.round(carbGrams)}g carb bomb just called you "bloat buddy" and ran away!`,
+        `❌ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} swiped LEFT on your stomach! Too many carbs = looking 6 months pregnant tomorrow!`,
+        `💸 FRIEND-ZONED! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} wants someone whose face won't match their bloated belly!`
+      ];
+      return carbBloaterMessages[Math.floor(Math.random() * carbBloaterMessages.length)];
+    } else if (issues.some(issue => issue.startsWith('sugar_bomb'))) {
+      const sugarLevel = issues.find(issue => issue.startsWith('sugar_bomb_level_'))?.split('_')[3] || '1';
+      const sugarSavageMessages = [
+        `🍭 DIABETES ALERT! ${Math.round(sugarGrams)}g sugar just gave you the "I don't date pre-diabetics" speech!`,
+        `💔 SUGAR CRASH REJECTION! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} said "Call me when your blood sugar stabilizes!"`,
+        `🚨 INSULIN SPIKE! That ${Math.round(sugarGrams)}g sugar bomb just blocked you on all social media!`,
+        `🤡 EVEN CANDY doesn't want to be associated with that sugar disaster! Level ${sugarLevel} warning!`
+      ];
+      return sugarSavageMessages[Math.floor(Math.random() * sugarSavageMessages.length)];
+    } else if (issues.includes('metabolism_killer')) {
+      const metabolismKillerMessages = [
+        `💀 METABOLISM MURDER! ${Math.round(macros.proteinPercent)}% protein just KILLED your calorie burn!`,
+        `😴 HIBERNATION MODE! That low protein put your metabolism to sleep permanently!`,
+        `🐌 SLUG SPEED! Your fat-burning potential just crawled into a cave and died!`,
+        `❄️ FROZEN METABOLISM! ${Math.round(macros.proteinPercent)}% protein = ice age calorie burn!`
+      ];
+      return metabolismKillerMessages[Math.floor(Math.random() * metabolismKillerMessages.length)];
+    } else {
+      const generalRejectionMessages = [
+        `😬 STANDARDS CHECK! That nutritional disaster wants someone with WORSE taste!`,
+        `🤦‍♀️ ${firstName}, even junk food has standards! You got rejected by GARBAGE!`,
+        `💸 That meal said "It's not you, it's your metabolism... and your face... and everything!"`,
+        `📱 Read receipt: OFF! That meal doesn't want your digestive chaos!`
+      ];
+      return generalRejectionMessages[Math.floor(Math.random() * generalRejectionMessages.length)];
+    }
+  }
+  
+  if (!swipedRight && isGoodMeal) {
+    // Swiped left on good meal - Missed metabolic opportunity!
+    if (strengths.includes('sweetheart_macros')) {
+      const missedSweetheartMessages = [
+        `😱 WHAT?! ${firstName}, you just rejected METABOLIC PERFECTION! That 40-40-20 was your calorie-burning soulmate!`,
+        `🤯 SELF-SABOTAGE! You let a fat-burning GODDESS walk away! Your metabolism is CRYING!`,
+        `💔 HEARTBREAK! That sweetheart would have torched calories for HOURS and you said no!`,
+        `🏃‍♀️ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} dodged a bullet! You're not ready for that level of metabolic excellence!`
+      ];
+      return missedSweetheartMessages[Math.floor(Math.random() * missedSweetheartMessages.length)];
+    } else if (strengths.includes('metabolism_booster')) {
+      const missedMetabolismMessages = [
+        `😭 MISSED OPPORTUNITY! That protein powerhouse would have turned you into a calorie-burning MACHINE!`,
+        `🚪 One that got away! Your metabolism just lost its best friend forever!`,
+        `💸 You rejected PREMIUM fat-burning fuel! That's like turning down a Ferrari for a bicycle!`,
+        `🤦‍♀️ ${firstName}, you just said no to 6+ hours of elevated calorie burn!`
+      ];
+      return missedMetabolismMessages[Math.floor(Math.random() * missedMetabolismMessages.length)];
+    } else {
+      const generalMissedMessages = [
+        `🤷‍♀️ Your loss! That was decent metabolism fuel and you pushed it away!`,
+        `📋 Add it to the list of good nutrition you've rejected for no reason!`,
+        `🎪 Self-sabotage! You can't recognize calorie-burning gold when you see it!`
+      ];
+      return generalMissedMessages[Math.floor(Math.random() * generalMissedMessages.length)];
+    }
+  }
+  
+  // Swiped left on bad meal - Smart metabolic choice!
+  if (issues.includes('carb_bloater')) {
+    const smartCarbAvoidanceMessages = [
+      `👑 DIGESTIVE ROYALTY! You spotted that ${Math.round(carbGrams)}g bloat-bomb immediately!`,
+      `🛡️ BELLY PROTECTION! You saved yourself from looking 6 months pregnant tomorrow!`,
+      `🎯 SAVAGE INTUITION! You saw through that carb catastrophe like a PRO!`,
+      `💪 METABOLISM DEFENDER! That carb disaster couldn't fool your fat-burning instincts!`
+    ];
+    return smartCarbAvoidanceMessages[Math.floor(Math.random() * smartCarbAvoidanceMessages.length)];
+  } else if (issues.some(issue => issue.startsWith('sugar_bomb'))) {
+    const smartSugarAvoidanceMessages = [
+      `🍭 SUGAR DETECTIVE! You spotted that ${Math.round(sugarGrams)}g diabetes trap from a mile away!`,
+      `🚨 BLOOD SUGAR BODYGUARD! You protected your insulin like a CHAMPION!`,
+      `🎯 METABOLIC GENIUS! That sugar bomb couldn't trick your calorie-burning brain!`,
+      `⚡ ENERGY STABILITY! You chose sustained metabolism over sugar crash chaos!`
+    ];
+    return smartSugarAvoidanceMessages[Math.floor(Math.random() * smartSugarAvoidanceMessages.length)];
+  } else if (issues.includes('metabolism_killer')) {
+    const smartProteinChoiceMessages = [
+      `🔥 METABOLISM PROTECTOR! You refused to let that low-protein disaster kill your calorie burn!`,
+      `💪 FAT-BURNING GUARDIAN! You saved your metabolism from hibernation mode!`,
+      `🚀 SMART SWIPE! You kept your calorie-burning machine running at full speed!`,
+      `⚡ THERMOGENIC WISDOM! You know protein = metabolic FIRE!`
+    ];
+    return smartProteinChoiceMessages[Math.floor(Math.random() * smartProteinChoiceMessages.length)];
+  } else {
+    const generalGoodRejectMessages = [
+      `👍 SOLID INSTINCTS! You're learning to protect your metabolism!`,
+      `🚫 SMART DEFENSE! That nutritional chaos couldn't fool you!`,
+      `📊 PROGRESS! You're developing fat-burning meal standards!`,
+      `🔥 There's hope! You rejected something that would kill your calorie burn!`
+    ];
+    return generalGoodRejectMessages[Math.floor(Math.random() * generalGoodRejectMessages.length)];
+  }
+};
 
   // Enhanced drag handlers for smooth Tinder-style swiping
   const handleDragStart = (e) => {
