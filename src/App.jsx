@@ -562,12 +562,12 @@ const NutritionApp = () => {
               </h3>
               
               <div className="flex gap-3">
-                {/* TINDER HOT OR NOT BUTTON */}
+                {/* TINDER HOT OR NOT BUTTON Burn or Learn */}
                 <button
                   onClick={openTinderSwipe}
                   className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-2 text-sm'} bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-md font-medium transition-all duration-300 hover:from-pink-600 hover:to-red-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
                 >
-                  🔥 Hot or Not
+                  🔥 Burn or Learn
                 </button>
                 
                 {/* Regular Cards Modal Button */}
@@ -1244,7 +1244,7 @@ const NutritionApp = () => {
         )}
       </div>
 
-      {/* ENHANCED: Tinder Hot or Not Modal */}
+      {/* ENHANCED: Tinder Hot or Not Burn or Learn Modal */}
       {showTinderSwipe && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
           <div className="relative w-full max-w-md">
