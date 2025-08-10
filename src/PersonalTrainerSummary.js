@@ -376,12 +376,12 @@ const getJumpstartMessage = (userProfile, calorieData) => {
   const goalRecommendations = {
     'dirty-bulk': [
       `🚀 AIM HIGH: Target ${targetCalories}+ calories daily with ${proteinTarget}g+ protein. Think BIG portions of quality foods!`,
-      `💪 PROTEIN EVERY MEAL: Include 25-35g protein in breakfast, lunch, dinner, plus 15-20g in snacks. Your muscles need constant fuel!`,
+      `💪 PROTEIN EVERY MEAL: Include 40-50g protein in breakfast, lunch, dinner, plus 25-40g in snacks. Your muscles need constant fuel!`,
       `⏰ EAT FREQUENTLY: Plan 6-8 meals/snacks daily. Never go more than 3-4 hours without eating during your bulk phase!`
     ],
     'gain-muscle': [
       `🎯 PRECISION MATTERS: Target ${targetCalories} calories with exactly ${proteinTarget}g protein. Quality over quantity for lean gains!`,
-      `💪 PROTEIN TIMING: Spread ${proteinTarget}g protein across 5-6 meals (20-25g each). Consistency builds muscle, not massive single meals!`,
+      `💪 PROTEIN TIMING: Spread ${proteinTarget}g protein across 5-6 meals (20-25g minimum). Consistency builds muscle, not massive single meals!`,
       `🥗 LEAN & CLEAN: Focus on chicken, fish, lean beef, Greek yogurt, and quality carbs. Every calorie should work toward your goals!`
     ],
     'lose': [
@@ -391,20 +391,20 @@ const getJumpstartMessage = (userProfile, calorieData) => {
     ],
     'maintain': [
       `⚖️ PERFECT BALANCE: Target ${targetCalories} calories with ${proteinTarget}g protein. Maintenance is about consistency, not perfection!`,
-      `💪 STEADY PROTEIN: Aim for 20-25g protein per main meal. This preserves muscle and keeps energy stable.`,
+      `💪 STEADY PROTEIN: Aim for 20-25g protein or more per main meal. This preserves muscle and keeps energy stable.`,
       `🔄 SUSTAINABLE HABITS: Plan meals you can stick with long-term. Maintenance is a lifestyle, not a temporary diet!`
     ]
   };
   
   // Pro tips from top nutritionists and bodybuilders
   const proTips = [
-    `🏆 PHIL HEATH'S SECRET: "Success is in the preparation. Plan your meals the night before and never leave nutrition to chance."`,
-    `🧠 LAIRD HAMILTON WISDOM: "Eat like your life depends on it - because your goals certainly do. Every meal is an investment in your future self."`,
+    `🏆 CHRIS BUMSTEAD SECRET: "There's no right way to start, no right time to start. You just kind of gotta jump right in the mess and figure it out as you go"`,
+    `🧠 KELSEY WELLS WISDOM: "Eat to fuel your strength. Consistency beats perfection every time."`,
     `💡 RONNIE COLEMAN APPROACH: "Everybody wants to be a bodybuilder, but nobody wants to eat consistently. Plan your work, then work your plan!"`,
     `🎯 PRECISION NUTRITION PRINCIPLE: "Small consistent actions trump perfect sporadic efforts. Focus on hitting your targets 80% of the time."`,
     `⚡ SPORTS NUTRITIONIST TIP: "Your body adapts to what you feed it consistently, not what you eat occasionally. Make excellence your habit."`,
-    `🔬 RESEARCH-BACKED: "Protein every 3-4 hours maximizes muscle protein synthesis. Your muscles are either building or breaking down - choose building!"`,
-    `🧪 METABOLIC EXPERT INSIGHT: "Meal timing matters less than meal consistency. Hit your daily targets through regular, planned eating."`,
+    `🔬 DR ANDREW HUBERMAN: "Small consistent actions over time yield the biggest results."`,
+    `🧪 DR STACEY SIMS: "Consume 35 to 60 grams of high-quality protein within 45 minutes post-workout to optimize recovery."`,
     `💪 ELITE ATHLETE STRATEGY: "Treat nutrition like training - with respect, consistency, and unwavering commitment to your goals."`
   ];
   
