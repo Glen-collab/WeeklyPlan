@@ -8,7 +8,6 @@ import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 // NEW IMPORT - Personal Trainer Summary
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
-// MealSwipeGame import removed - component disabled
 
 const defaultUserProfile = {
   firstName: '',
@@ -35,8 +34,11 @@ const createFoodItem = () => ({
 const NutritionApp = () => {
   const [userProfile, setUserProfile] = useState(defaultUserProfile);
   const [isMobile, setIsMobile] = useState(false);
-  const [viewMode, setViewMode] = useState('cards');
-  // MealSwipeGame state removed - component disabled
+  const [viewMode, setViewMode] = useState('chart'); // Removed 'cards' as default, start with chart
+  
+  // NEW: Cards modal state
+  const [showCardsModal, setShowCardsModal] = useState(false);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   
   useEffect(() => {
     const checkMobile = () => {
@@ -174,12 +176,6 @@ const NutritionApp = () => {
       }
     };
   };
-
-  // NEW: Check if user has meals to swipe - DISABLED
-  // const hasMealsToSwipe = () => {
-  //   const allMeals = getAllMealsData();
-  //   return Object.values(allMeals).some(meal => meal.totals && meal.totals.calories > 50);
-  // };
 
   const handleTimeChange = (mealType, newTime) => {
     setMeals(prev => ({
@@ -365,6 +361,58 @@ const NutritionApp = () => {
     }
   };
 
+  // NEW: Cards modal functions with swipe support
+  const openCardsModal = () => {
+    setCurrentCardIndex(0);
+    setShowCardsModal(true);
+  };
+
+  const closeCardsModal = () => {
+    setShowCardsModal(false);
+  };
+
+  // Generate timeline data for cards
+  const getTimelineData = () => {
+    const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+    const mealLabels = {
+      breakfast: 'Breakfast',
+      firstSnack: 'Morning Snack', 
+      secondSnack: 'Mid-Morning Snack',
+      lunch: 'Lunch',
+      midAfternoon: 'Afternoon Snack',
+      dinner: 'Dinner',
+      lateSnack: 'Evening Snack',
+      postWorkout: 'Post-Workout'
+    };
+
+    const timeToHours = (timeStr) => {
+      const [time, period] = timeStr.split(' ');
+      const [hours, minutes] = time.split(':').map(Number);
+      let hour24 = hours;
+      if (period === 'PM' && hours !== 12) hour24 += 12;
+      if (period === 'AM' && hours === 12) hour24 = 0;
+      return hour24 + minutes / 60;
+    };
+
+    const basicTimelineData = mealOrder.map((mealType, index) => {
+      const { totals } = getMealData(mealType);
+      return {
+        name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
+        shortName: mealLabels[mealType],
+        fullName: mealLabels[mealType],
+        time: meals[mealType].time,
+        timeHours: timeToHours(meals[mealType].time),
+        calories: Math.round(totals.calories),
+        sugar: Math.round(totals.sugar),
+        sugarScaled: Math.round(totals.sugar) * 10,
+        order: index,
+        mealType: mealType
+      };
+    });
+
+    return [...basicTimelineData].sort((a, b) => a.timeHours - b.timeHours);
+  };
+
   return (
     <div className={`min-h-screen bg-gray-100 ${isMobile ? 'py-4' : 'py-8'}`}>
       <div className={`container mx-auto ${isMobile ? 'px-3' : 'px-4'}`}>
@@ -416,7 +464,7 @@ const NutritionApp = () => {
               )}
             </div>
             
-            {/* Profile and Personal Trainer Buttons (removed meal swipe game button) */}
+            {/* Profile and Personal Trainer Buttons */}
             <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-3'}`}>
               <button
                 onClick={handleOpenProfileModal}
@@ -437,22 +485,7 @@ const NutritionApp = () => {
           </div>
         </div>
 
-        {/* MealSwipeGame disabled - uncomment below to re-enable */}
-        {/* 
-        {hasMealsToSwipe() && !hasCompletedSwipeGame && userProfile.firstName && userProfile.gender && (
-          <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
-            <MealSwipeGame
-              allMeals={getAllMealsData()}
-              userProfile={userProfile}
-              calorieData={calorieData}
-              onComplete={() => setHasCompletedSwipeGame(true)}
-              isIntegrated={true}
-            />
-          </div>
-        )}
-        */}
-
-        {/* Show meal trackers (MealSwipeGame disabled) */}
+        {/* Show meal trackers */}
         <div className={`space-y-${isMobile ? '3' : '6'}`}>
           {Object.keys(meals).map(mealType => {
             const { totals, pieData } = getMealData(mealType);
@@ -481,7 +514,7 @@ const NutritionApp = () => {
           })}
         </div>
 
-        {/* Summary and charts (MealSwipeGame disabled) */}
+        {/* Summary and charts */}
         <>
           <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
             <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800 mb-4 text-center`}>
@@ -523,88 +556,51 @@ const NutritionApp = () => {
             })()}
           </div>
 
-          {/* Charts and Timeline */}
+          {/* UPDATED: Charts and Timeline with Cards Modal */}
           <div className={`mt-8 bg-white rounded-lg ${isMobile ? 'p-4' : 'p-6'} shadow-md`}>
             <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'flex-col sm:flex-row'} justify-between items-center mb-4`}>
               <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 ${isMobile ? 'mb-0' : 'mb-2 sm:mb-0'}`}>
                 📊 Daily Timeline: Calories & Sugar
               </h3>
               
-              <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2 w-full' : 'p-1'}`}>
+              <div className="flex gap-3">
+                {/* Cards Modal Button */}
                 <button
-                  onClick={() => setViewMode('cards')}
-                  className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                    viewMode === 'cards' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                  onClick={openCardsModal}
+                  className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-2 text-sm'} bg-purple-500 text-white rounded-md font-medium transition-colors hover:bg-purple-600 flex items-center gap-2`}
                 >
-                  📋 {isMobile ? 'Cards' : 'Cards'}
+                  🃏 View Cards
                 </button>
-                <button
-                  onClick={() => setViewMode('line')}
-                  className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                    viewMode === 'line' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  📈 {isMobile ? 'Trends' : 'Trends'}
-                </button>
-                <button
-                  onClick={() => setViewMode('chart')}
-                  className={`${isMobile ? 'flex-1 px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                    viewMode === 'chart' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  📊 {isMobile ? 'Bars' : 'Bars'}
-                </button>
+                
+                {/* View Mode Toggle (Trends vs Bars only) */}
+                <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2' : 'p-1'}`}>
+                  <button
+                    onClick={() => setViewMode('line')}
+                    className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                      viewMode === 'line' 
+                        ? 'bg-blue-500 text-white' 
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    📈 Trends
+                  </button>
+                  <button
+                    onClick={() => setViewMode('chart')}
+                    className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                      viewMode === 'chart' 
+                        ? 'bg-blue-500 text-white' 
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    📊 Bars
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Chart content remains the same... */}
+            {/* Chart content - only trends and bars, no cards */}
             {(() => {
-              const mealOrder = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
-              const mealLabels = {
-                breakfast: 'Breakfast',
-                firstSnack: 'Snack 1', 
-                secondSnack: 'Snack 2',
-                lunch: 'Lunch',
-                midAfternoon: 'Mid-Aft',
-                dinner: 'Dinner',
-                lateSnack: 'Late Snack',
-                postWorkout: 'Post-WO'
-              };
-
-              const timeToHours = (timeStr) => {
-                const [time, period] = timeStr.split(' ');
-                const [hours, minutes] = time.split(':').map(Number);
-                let hour24 = hours;
-                if (period === 'PM' && hours !== 12) hour24 += 12;
-                if (period === 'AM' && hours === 12) hour24 = 0;
-                return hour24 + minutes / 60;
-              };
-
-              const basicTimelineData = mealOrder.map((mealType, index) => {
-                const { totals } = getMealData(mealType);
-                return {
-                  name: isMobile ? mealLabels[mealType] : `${mealLabels[mealType]}\n${meals[mealType].time}`,
-                  shortName: mealLabels[mealType],
-                  fullName: mealLabels[mealType],
-                  time: meals[mealType].time,
-                  timeHours: timeToHours(meals[mealType].time),
-                  calories: Math.round(totals.calories),
-                  sugar: Math.round(totals.sugar),
-                  sugarScaled: Math.round(totals.sugar) * 10,
-                  order: index,
-                  mealType: mealType
-                };
-              });
-
-              const chronologicalData = [...basicTimelineData].sort((a, b) => a.timeHours - b.timeHours);
-              const timelineData = chronologicalData;
+              const timelineData = getTimelineData();
 
               if (viewMode === 'line') {
                 return (
@@ -646,41 +642,6 @@ const NutritionApp = () => {
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
-                );
-              }
-
-              if (viewMode === 'cards') {
-                return (
-                  <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'}`}>
-                    {timelineData.map((meal, index) => (
-                      <div key={index} className={`bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
-                        <div className="text-center">
-                          <div className={`font-bold text-gray-800 ${isMobile ? 'text-base' : 'text-sm'} mb-1`}>
-                            {meal.fullName}
-                          </div>
-                          <div className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600 mb-3`}>
-                            {meal.time}
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Calories:</span>
-                              <span className={`font-bold text-purple-600 ${isMobile ? 'text-xl' : 'text-lg'}`}>
-                                {meal.calories}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <span className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-600`}>Sugar:</span>
-                              <span className={`font-bold text-red-500 ${isMobile ? 'text-xl' : 'text-lg'}`}>
-                                {meal.sugar}g
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 );
               }
@@ -730,7 +691,7 @@ const NutritionApp = () => {
           </div>
         </>
 
-        {/* All modals remain the same... */}
+        {/* All existing modals remain the same... */}
         {servingModal.isOpen && servingModal.item && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className={`bg-white rounded-lg ${isMobile ? 'p-4 max-w-sm w-full' : 'p-6 max-w-md w-full mx-4'}`}>
@@ -1271,6 +1232,207 @@ const NutritionApp = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* NEW: Swipeable Cards Modal */}
+      <SwipeableCardsModal 
+        isOpen={showCardsModal}
+        onClose={closeCardsModal}
+        timelineData={getTimelineData()}
+        currentIndex={currentCardIndex}
+        setCurrentIndex={setCurrentCardIndex}
+        isMobile={isMobile}
+      />
+    </div>
+  );
+};
+
+// NEW: Swipeable Cards Modal Component with Touch Gestures
+const SwipeableCardsModal = ({ 
+  isOpen, 
+  onClose, 
+  timelineData, 
+  currentIndex, 
+  setCurrentIndex, 
+  isMobile 
+}) => {
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Filter out meals with no food data
+  const filteredData = timelineData.filter(meal => meal.calories > 0 || meal.sugar > 0);
+
+  // Reset index if it's out of bounds
+  React.useEffect(() => {
+    if (currentIndex >= filteredData.length && filteredData.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [filteredData.length, currentIndex, setCurrentIndex]);
+
+  if (!isOpen || filteredData.length === 0) {
+    return null;
+  }
+
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && currentIndex < filteredData.length - 1) {
+      navigateToCard(currentIndex + 1);
+    }
+    if (isRightSwipe && currentIndex > 0) {
+      navigateToCard(currentIndex - 1);
+    }
+  };
+
+  const navigateToCard = (newIndex) => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setCurrentIndex(newIndex);
+    
+    // Reset transition state
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  const currentMeal = filteredData[currentIndex];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className={`bg-white rounded-lg ${isMobile ? 'w-full h-full max-w-sm' : 'w-full max-w-lg h-[600px]'} overflow-hidden flex flex-col`}>
+        
+        {/* Modal Header */}
+        <div className="flex justify-between items-center p-4 border-b bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+          <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold`}>
+            🃏 Meal Cards ({currentIndex + 1} of {filteredData.length})
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-200 p-1"
+          >
+            <X size={isMobile ? 20 : 24} />
+          </button>
+        </div>
+
+        {/* Cards Container with Touch Support */}
+        <div 
+          className="flex-1 relative overflow-hidden"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="h-full flex flex-col">
+            
+            {/* Current Card Display */}
+            <div className="flex-1 p-6 flex items-center justify-center">
+              <div className={`w-full max-w-sm bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 shadow-lg transition-all duration-300 ${
+                isTransitioning ? 'scale-95 opacity-80' : 'scale-100 opacity-100'
+              }`}>
+                
+                {/* Card Header */}
+                <div className="text-center mb-6">
+                  <div className="text-2xl font-bold text-gray-800 mb-2">
+                    {currentMeal.fullName}
+                  </div>
+                  <div className="text-lg text-gray-600">{currentMeal.time}</div>
+                </div>
+                
+                {/* Main Metrics */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                    <span className="text-gray-600 font-medium">Calories:</span>
+                    <span className="font-bold text-purple-600 text-2xl">{currentMeal.calories}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                    <span className="text-gray-600 font-medium">Sugar:</span>
+                    <span className={`font-bold text-2xl ${
+                      currentMeal.sugar > 15 ? 'text-red-500' : 
+                      currentMeal.sugar > 8 ? 'text-yellow-500' : 'text-green-500'
+                    }`}>
+                      {currentMeal.sugar}g
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Sugar Warning */}
+                {currentMeal.sugar > 8 && (
+                  <div className={`p-3 rounded-lg text-center text-sm font-medium ${
+                    currentMeal.sugar > 15 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {currentMeal.sugar > 15 ? '⚠️ High Sugar Content!' : '⚡ Moderate Sugar Level'}
+                  </div>
+                )}
+
+                {/* Swipe Instructions for Mobile */}
+                {isMobile && (
+                  <div className="mt-4 text-center text-xs text-gray-500">
+                    👈 Swipe left/right to navigate 👉
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Navigation */}
+            <div className="p-4 border-t bg-gray-50">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => navigateToCard(Math.max(0, currentIndex - 1))}
+                  disabled={currentIndex === 0 || isTransitioning}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    currentIndex === 0 || isTransitioning
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-500 text-white hover:bg-purple-600'
+                  }`}
+                >
+                  ← Previous
+                </button>
+                
+                {/* Dots Indicator */}
+                <div className="flex space-x-2">
+                  {filteredData.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => !isTransitioning && navigateToCard(index)}
+                      disabled={isTransitioning}
+                      className={`w-3 h-3 rounded-full transition-colors ${
+                        index === currentIndex ? 'bg-purple-500' : 'bg-gray-300'
+                      } ${isTransitioning ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    />
+                  ))}
+                </div>
+                
+                <button
+                  onClick={() => navigateToCard(Math.min(filteredData.length - 1, currentIndex + 1))}
+                  disabled={currentIndex === filteredData.length - 1 || isTransitioning}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    currentIndex === filteredData.length - 1 || isTransitioning
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-500 text-white hover:bg-purple-600'
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
