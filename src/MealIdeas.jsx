@@ -873,10 +873,13 @@ const MealIdeasModal = ({
   };
 
   const getMealTypeInfo = (type) => {
+    // Calculate the correct base target calories for lose goal (BMR + 50)
+    const baseTarget = goal === 'lose' && bmr ? (bmr + 50) : targetCalories;
+    
     switch(type) {
-      case 'breakfast': return { emoji: '🌅', name: 'Breakfast', target: Math.round(targetCalories / (goal === 'lose' ? 6 : goal === 'dirty-bulk' ? 3 : 5)) };
-      case 'lunch': return { emoji: '☀️', name: 'Lunch', target: Math.round(targetCalories / (goal === 'lose' ? 5 : goal === 'dirty-bulk' ? 3 : 4)) };
-      case 'dinner': return { emoji: '🌙', name: 'Dinner', target: Math.round(targetCalories / (goal === 'lose' ? 4 : goal === 'dirty-bulk' ? 3 : 3.3)) };
+      case 'breakfast': return { emoji: '🌅', name: 'Breakfast', target: Math.round(baseTarget / (goal === 'lose' ? 6 : goal === 'dirty-bulk' ? 3 : 5)) };
+      case 'lunch': return { emoji: '☀️', name: 'Lunch', target: Math.round(baseTarget / (goal === 'lose' ? 5 : goal === 'dirty-bulk' ? 3 : 4)) };
+      case 'dinner': return { emoji: '🌙', name: 'Dinner', target: Math.round(baseTarget / (goal === 'lose' ? 4 : goal === 'dirty-bulk' ? 3 : 3.3)) };
       default: return { emoji: '🍽️', name: 'Meal', target: 400 };
     }
   };
