@@ -82,7 +82,7 @@ const NutritionApp = () => {
       items: [createFoodItem()]
     },
     postWorkout: {
-      time: '5:00 PM',
+      time: '5:00 AM',
       items: [createFoodItem()]
     }
   });
