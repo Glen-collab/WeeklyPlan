@@ -569,15 +569,7 @@ const NutritionApp = () => {
                 >
                   🔥 Burn or Learn
                 </button>
-                
-                {/* Regular Cards Modal Button */}
-                <button
-                  onClick={openCardsModal}
-                  className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-2 text-sm'} bg-purple-500 text-white rounded-md font-medium transition-colors hover:bg-purple-600 flex items-center gap-2`}
-                >
-                  🃏 View Cards
-                </button>
-                
+                                             
                 {/* View Mode Toggle */}
                 <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2' : 'p-1'}`}>
                   <button
