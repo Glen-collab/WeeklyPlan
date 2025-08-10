@@ -42,8 +42,13 @@ const NutritionApp = () => {
   const [showTinderSwipe, setShowTinderSwipe] = useState(false);
   const [showCardsModal, setShowCardsModal] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  
   // Meal Ideas modal state
   const [showMealIdeas, setShowMealIdeas] = useState(false);
+  const [currentMealType, setCurrentMealType] = useState('breakfast');
+  
+  // Fruit budget tracking (max 3 servings per day for maintain goal)
+  const [dailyFruitServings, setDailyFruitServings] = useState(0);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -355,8 +360,9 @@ const NutritionApp = () => {
     }
   };
 
-  // Meal Ideas modal functions (FIXED: moved outside of handleApplyCustomServing)
-  const openMealIdeas = () => {
+  // Meal Ideas modal functions
+  const openMealIdeas = (mealType = 'breakfast') => {
+    setCurrentMealType(mealType);
     setShowMealIdeas(true);
   };
 
@@ -364,17 +370,26 @@ const NutritionApp = () => {
     setShowMealIdeas(false);
   };
 
-  const addMealToBreakfast = (mealData) => {
-    // Clear existing breakfast items and replace with the meal idea
+  const addMealToMeal = (mealData) => {
+    // Clear existing meal items and replace with the meal idea
     setMeals(prev => ({
       ...prev,
-      breakfast: {
-        ...prev.breakfast,
+      [currentMealType]: {
+        ...prev[currentMealType],
         items: [...mealData.items]
       }
     }));
+    
+    // Update fruit budget if meal contains fruit
+    if (mealData.fruitCount > 0) {
+      setDailyFruitServings(prev => Math.min(3, prev + mealData.fruitCount));
+    }
+    
     closeMealIdeas();
   };
+
+  // Calculate remaining fruit budget
+  const fruitBudgetRemaining = Math.max(0, 3 - dailyFruitServings);
 
   // Enhanced Tinder swipe functions
   const openTinderSwipe = () => {
@@ -507,30 +522,68 @@ const NutritionApp = () => {
           </div>
         </div>
 
-        {/* Show meal trackers with special breakfast header */}
+        {/* Show meal trackers with special headers for breakfast, lunch, dinner */}
         <div className={`space-y-${isMobile ? '3' : '6'}`}>
           {Object.keys(meals).map(mealType => {
             const { totals, pieData } = getMealData(mealType);
             
+            // Define meal info for special headers
+            const getMealInfo = (type) => {
+              switch(type) {
+                case 'breakfast': 
+                  return { 
+                    emoji: '🌅', 
+                    name: 'Breakfast', 
+                    target: calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 5) : 440,
+                    showButton: true 
+                  };
+                case 'lunch': 
+                  return { 
+                    emoji: '☀️', 
+                    name: 'Lunch', 
+                    target: calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 4) : 550,
+                    showButton: true 
+                  };
+                case 'dinner': 
+                  return { 
+                    emoji: '🌙', 
+                    name: 'Dinner', 
+                    target: calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 3.3) : 665,
+                    showButton: true 
+                  };
+                default: 
+                  return { emoji: '', name: '', target: 0, showButton: false };
+              }
+            };
+
+            const mealInfo = getMealInfo(mealType);
+            
             return (
               <div key={mealType}>
-                {/* Special header for breakfast with Meal Ideas button */}
-                {mealType === 'breakfast' && (
+                {/* Special header for main meals with Meal Ideas button */}
+                {mealInfo.showButton && (
                   <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'} bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">🌅</span>
+                      <span className="text-2xl">{mealInfo.emoji}</span>
                       <div>
                         <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800`}>
-                          Breakfast
+                          {mealInfo.name}
                         </h3>
-                        <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>
-                          Target: {calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 5) : 440} calories
-                        </p>
+                        <div className="flex items-center gap-4">
+                          <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>
+                            Target: {mealInfo.target} calories
+                          </p>
+                          {userProfile.goal === 'maintain' && (
+                            <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 flex items-center gap-1`}>
+                              🍎 Fruit: {fruitBudgetRemaining}/3 remaining
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
                     <button
-                      onClick={openMealIdeas}
+                      onClick={() => openMealIdeas(mealType)}
                       className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-md font-medium transition-all duration-300 hover:from-green-600 hover:to-teal-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
                     >
                       <span>💡</span>
@@ -1286,10 +1339,12 @@ const NutritionApp = () => {
           <MealIdeasModal
             isOpen={showMealIdeas}
             onClose={closeMealIdeas}
-            onAddMeal={addMealToBreakfast}
+            onAddMeal={addMealToMeal}
             userProfile={userProfile}
             calorieData={calorieData}
             isMobile={isMobile}
+            mealType={currentMealType}
+            fruitBudgetRemaining={fruitBudgetRemaining}
           />
         )}
       </div>
