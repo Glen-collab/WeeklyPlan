@@ -9,8 +9,8 @@ const createScaledMeals = (targetCalories, mealType, fruitBudgetRemaining, goal 
   let mealTarget;
   
   if (goal === 'lose') {
-    // Weight loss: Use BMR + 300 for aggressive fat loss instead of TDEE-based target
-    const loseTarget = bmr ? (bmr + 300) : Math.round(targetCalories * 0.7); // fallback if no BMR
+    // Weight loss: Use BMR + 50 for aggressive fat loss instead of TDEE-based target
+    const loseTarget = bmr ? (bmr + 50) : Math.round(targetCalories * 0.7); // fallback if no BMR
     if (mealType === 'breakfast') mealTarget = Math.round(loseTarget / 6); // ~17%
     else if (mealType === 'lunch') mealTarget = Math.round(loseTarget / 5); // 20%
     else if (mealType === 'dinner') mealTarget = Math.round(loseTarget / 4); // 25%
