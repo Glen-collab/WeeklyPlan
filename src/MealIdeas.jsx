@@ -3,16 +3,17 @@ import { X, Clock, Zap, Apple } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Function to create scaled meals based on target calories, meal type, and goal
-const createScaledMeals = (targetCalories, mealType, fruitBudgetRemaining, goal = 'maintain') => {
+// Function to create scaled meals based on target calories, meal type, goal, and BMR
+const createScaledMeals = (targetCalories, mealType, fruitBudgetRemaining, goal = 'maintain', bmr = null) => {
   // Calculate meal-specific target calories based on goal
   let mealTarget;
   
   if (goal === 'lose') {
-    // Weight loss: smaller portions
-    if (mealType === 'breakfast') mealTarget = Math.round(targetCalories / 6); // ~17%
-    else if (mealType === 'lunch') mealTarget = Math.round(targetCalories / 5); // 20%
-    else if (mealType === 'dinner') mealTarget = Math.round(targetCalories / 4); // 25%
+    // Weight loss: Use BMR + 300 for aggressive fat loss instead of TDEE-based target
+    const loseTarget = bmr ? (bmr + 300) : Math.round(targetCalories * 0.7); // fallback if no BMR
+    if (mealType === 'breakfast') mealTarget = Math.round(loseTarget / 6); // ~17%
+    else if (mealType === 'lunch') mealTarget = Math.round(loseTarget / 5); // 20%
+    else if (mealType === 'dinner') mealTarget = Math.round(loseTarget / 4); // 25%
   } else if (goal === 'gain-muscle') {
     // Muscle gain: same as maintain but protein-focused
     if (mealType === 'breakfast') mealTarget = Math.round(targetCalories / 5); // 20%
@@ -49,9 +50,9 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "1 min", itemCount: 2, difficulty: "Super Easy", icon: "🍳",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 250) return 214; // 2 eggs + 1 toast
-        else if (targetCalories <= 300) return 288; // 2 eggs + 2 toast
-        else return 358; // 3 eggs + 2 toast
+        if (targetCalories <= 200) return 144; // 1 egg + 1 toast
+        else if (targetCalories <= 250) return 214; // 2 eggs + 1 toast
+        else return 288; // 2 eggs + 2 toast
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 350) return 358; // 3 eggs + 2 toast
         else if (targetCalories <= 450) return 498; // 5 eggs + 2 toast
@@ -74,9 +75,9 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let eggs, toast;
       
       if (goal === 'lose') {
-        if (targetCalories <= 250) { eggs = 2; toast = 1; }
-        else if (targetCalories <= 300) { eggs = 2; toast = 2; }
-        else { eggs = 3; toast = 2; }
+        if (targetCalories <= 200) { eggs = 1; toast = 1; }
+        else if (targetCalories <= 250) { eggs = 2; toast = 1; }
+        else { eggs = 2; toast = 2; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 350) { eggs = 3; toast = 2; }
         else if (targetCalories <= 450) { eggs = 5; toast = 2; }
@@ -110,11 +111,11 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     estimatedCalories: (() => {
       if (goal === 'lose') {
         if (fruitBudgetRemaining === 0) {
-          if (targetCalories <= 250) return 120; // 1 scoop
+          if (targetCalories <= 200) return 120; // 1 scoop
           else return 240; // 2 scoops
         } else {
-          if (targetCalories <= 250) return 209; // 1 scoop + 1 banana
-          else return 298; // 1 scoop + 2 bananas
+          if (targetCalories <= 200) return 209; // 1 scoop + 1 banana
+          else return 329; // 2 scoops + 1 banana
         }
       } else if (goal === 'gain-muscle') {
         // Focus on protein - less fruit
@@ -122,9 +123,9 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
         else if (targetCalories <= 450) return 480; // 4 scoops
         else return 600; // 5 scoops
       } else if (goal === 'dirty-bulk') {
-        if (targetCalories <= 600) return 598; // 4 scoops + 2 bananas + PB
-        else if (targetCalories <= 800) return 786; // 5 scoops + 3 bananas + PB
-        else return 974; // 6 scoops + 4 bananas + PB
+        if (targetCalories <= 600) return 569; // 4 scoops + 1 banana + PB
+        else if (targetCalories <= 800) return 689; // 5 scoops + 1 banana + 2 PB
+        else return 809; // 6 scoops + 1 banana + 2 PB
       } else {
         // maintain
         if (fruitBudgetRemaining === 0) {
@@ -132,11 +133,11 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
           else if (targetCalories <= 400) return 360;
           else return 480;
         } else {
-          if (targetCalories <= 300) return 298;
-          else if (targetCalories <= 400) return 387;
-          else if (targetCalories <= 500) return 418;
-          else if (targetCalories <= 600) return 507;
-          else return 538;
+          if (targetCalories <= 300) return 209; // 1 scoop + 1 banana
+          else if (targetCalories <= 400) return 209; // 1 scoop + 1 banana  
+          else if (targetCalories <= 500) return 329; // 2 scoops + 1 banana
+          else if (targetCalories <= 600) return 329; // 2 scoops + 1 banana
+          else return 449; // 3 scoops + 1 banana
         }
       }
     })(),
@@ -146,11 +147,11 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       
       if (goal === 'lose') {
         if (fruitBudgetRemaining === 0) {
-          if (targetCalories <= 250) { scoops = 1; bananas = 0; }
+          if (targetCalories <= 200) { scoops = 1; bananas = 0; }
           else { scoops = 2; bananas = 0; }
         } else {
-          if (targetCalories <= 250) { scoops = 1; bananas = 1; }
-          else { scoops = 1; bananas = 2; }
+          if (targetCalories <= 200) { scoops = 1; bananas = 1; }
+          else { scoops = 2; bananas = 1; }
         }
       } else if (goal === 'gain-muscle') {
         // All protein focus
@@ -158,9 +159,9 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
         else if (targetCalories <= 450) { scoops = 4; bananas = 0; }
         else { scoops = 5; bananas = 0; }
       } else if (goal === 'dirty-bulk') {
-        if (targetCalories <= 600) { scoops = 4; bananas = 2; pbServings = 1; }
-        else if (targetCalories <= 800) { scoops = 5; bananas = 3; pbServings = 1; }
-        else { scoops = 6; bananas = 4; pbServings = 1; }
+        if (targetCalories <= 600) { scoops = 4; bananas = 1; pbServings = 1; }
+        else if (targetCalories <= 800) { scoops = 5; bananas = 1; pbServings = 2; }
+        else { scoops = 6; bananas = 1; pbServings = 2; }
       } else {
         // maintain (existing logic)
         if (fruitBudgetRemaining === 0) {
@@ -168,11 +169,11 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
           else if (targetCalories <= 400) { scoops = 3; bananas = 0; }
           else { scoops = 4; bananas = 0; }
         } else {
-          if (targetCalories <= 300) { scoops = 1; bananas = 2; }
-          else if (targetCalories <= 400) { scoops = 1; bananas = 3; }
-          else if (targetCalories <= 500) { scoops = 2; bananas = 2; }
-          else if (targetCalories <= 600) { scoops = 2; bananas = 3; }
-          else { scoops = 3; bananas = 2; }
+          if (targetCalories <= 300) { scoops = 1; bananas = 1; }
+          else if (targetCalories <= 400) { scoops = 1; bananas = 1; }
+          else if (targetCalories <= 500) { scoops = 2; bananas = 1; }
+          else if (targetCalories <= 600) { scoops = 2; bananas = 1; }
+          else { scoops = 3; bananas = 1; }
         }
       }
       
@@ -200,8 +201,8 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "2 min", itemCount: goal === 'dirty-bulk' ? 4 : 3, difficulty: "Easy", icon: "🥣",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 250) return 213; // 1 cup yogurt + 0.5 almonds
-        else return 295; // 1 cup yogurt + 1 almonds
+        if (targetCalories <= 200) return 163; // 1 cup yogurt + 0.25 almonds
+        else return 213; // 1 cup yogurt + 0.5 almonds
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 350) return 343; // 1.5 cups yogurt + 1 almonds
         else if (targetCalories <= 450) return 425; // 2 cups yogurt + 1 almonds
@@ -217,11 +218,11 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
           else if (targetCalories <= 400) return 384;
           else return 466;
         } else {
-          if (targetCalories <= 300) return 308;
-          else if (targetCalories <= 400) return 383;
-          else if (targetCalories <= 500) return 472;
-          else if (targetCalories <= 600) return 554;
-          else return 537;
+          if (targetCalories <= 300) return 308; // 1 cup yogurt + 1 banana + 0.5 almonds
+          else if (targetCalories <= 400) return 383; // 1 cup yogurt + 1 banana + 1 almonds
+          else if (targetCalories <= 500) return 448; // 1.5 cups yogurt + 1 banana + 1 almonds
+          else if (targetCalories <= 600) return 513; // 1.5 cups yogurt + 1 banana + 1.5 almonds
+          else return 508; // 2 cups yogurt + 1 banana + 1 almonds
         }
       }
     })(),
@@ -229,8 +230,8 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     items: (() => {
       if (goal === 'lose') {
         let cups, almonds;
-        if (targetCalories <= 250) { cups = 1; almonds = 0.5; }
-        else { cups = 1; almonds = 1; }
+        if (targetCalories <= 200) { cups = 1; almonds = 0.25; }
+        else { cups = 1; almonds = 0.5; }
         
         return [
           { id: generateId(), category: 'protein', food: 'Greek Yogurt (non-fat)', serving: cups, displayServing: cups.toString(), displayUnit: 'cups' },
@@ -274,9 +275,9 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
           let cups, bananas, almondOz;
           if (targetCalories <= 300) { cups = 1; bananas = 1; almondOz = 0.5; }
           else if (targetCalories <= 400) { cups = 1; bananas = 1; almondOz = 1; }
-          else if (targetCalories <= 500) { cups = 1; bananas = 2; almondOz = 1; }
-          else if (targetCalories <= 600) { cups = 1; bananas = 2; almondOz = 1.5; }
-          else { cups = 1.5; bananas = 2; almondOz = 1; }
+          else if (targetCalories <= 500) { cups = 1.5; bananas = 1; almondOz = 1; }
+          else if (targetCalories <= 600) { cups = 1.5; bananas = 1; almondOz = 1.5; }
+          else { cups = 2; bananas = 1; almondOz = 1; }
           
           return [
             { id: generateId(), category: 'protein', food: 'Greek Yogurt (non-fat)', serving: cups, displayServing: cups.toString(), displayUnit: 'cups' },
@@ -324,16 +325,16 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "4 min", itemCount: goal === 'dirty-bulk' ? 5 : 4, difficulty: "Moderate", icon: "💪",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 250) return 245; // small portions
-        else return 320; // slightly bigger
+        if (targetCalories <= 200) return 187; // small portions
+        else return 245; // slightly bigger
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 350) return 345; // high protein
         else if (targetCalories <= 450) return 465; // more protein
         else return 585; // max protein
       } else if (goal === 'dirty-bulk') {
-        if (targetCalories <= 600) return 615; // big portions
-        else if (targetCalories <= 800) return 803; // huge portions
-        else return 991; // massive portions
+        if (targetCalories <= 600) return 527; // reduced from 3 bananas to 1
+        else if (targetCalories <= 800) return 715; // reduced from 3 bananas to 1, added PB
+        else return 873; // reduced from 4 bananas to 1, added almonds
       } else {
         // maintain (existing)
         if (targetCalories <= 300) return 298;
@@ -348,16 +349,16 @@ const createBreakfastMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let oatCups, scoops, bananas, pbTbsp, almonds = 0;
       
       if (goal === 'lose') {
-        if (targetCalories <= 250) { oatCups = 0.25; scoops = 0.5; bananas = 1; pbTbsp = 0.5; }
-        else { oatCups = 0.5; scoops = 0.5; bananas = 1; pbTbsp = 1; }
+        if (targetCalories <= 200) { oatCups = 0.25; scoops = 0.25; bananas = 1; pbTbsp = 0.5; }
+        else { oatCups = 0.25; scoops = 0.5; bananas = 1; pbTbsp = 0.5; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 350) { oatCups = 0.25; scoops = 1.5; bananas = 0; pbTbsp = 1; }
         else if (targetCalories <= 450) { oatCups = 0.5; scoops = 2; bananas = 0; pbTbsp = 1; }
         else { oatCups = 0.75; scoops = 2.5; bananas = 0; pbTbsp = 1; }
       } else if (goal === 'dirty-bulk') {
-        if (targetCalories <= 600) { oatCups = 0.75; scoops = 1.5; bananas = 2; pbTbsp = 2; almonds = 1; }
-        else if (targetCalories <= 800) { oatCups = 1; scoops = 2; bananas = 3; pbTbsp = 2; almonds = 1; }
-        else { oatCups = 1.25; scoops = 2.5; bananas = 4; pbTbsp = 2; almonds = 1; }
+        if (targetCalories <= 600) { oatCups = 0.75; scoops = 1.5; bananas = 1; pbTbsp = 2; almonds = 1; }
+        else if (targetCalories <= 800) { oatCups = 1; scoops = 2; bananas = 1; pbTbsp = 3; almonds = 1; }
+        else { oatCups = 1.25; scoops = 2.5; bananas = 1; pbTbsp = 3; almonds = 1.5; }
       } else {
         // maintain (existing logic)
         if (targetCalories <= 300) { oatCups = 0.25; scoops = 0.5; bananas = 1; pbTbsp = 1; }
@@ -400,9 +401,9 @@ const createLunchMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "5 min", itemCount: 2, difficulty: "Super Easy", icon: "🍗",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 300) return 277; // 100g chicken + 0.5 cups rice
-        else if (targetCalories <= 400) return 389; // 150g chicken + 1 cup rice
-        else return 501; // 200g chicken + 1.5 cups rice
+        if (targetCalories <= 240) return 221; // 80g chicken + 0.5 cups rice
+        else if (targetCalories <= 300) return 277; // 100g chicken + 0.5 cups rice
+        else return 333; // 120g chicken + 1 cup rice
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 400) return 413; // 200g chicken + 1 cup rice
         else if (targetCalories <= 500) return 525; // 250g chicken + 1.5 cups rice
@@ -424,9 +425,9 @@ const createLunchMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let chicken, rice;
       
       if (goal === 'lose') {
-        if (targetCalories <= 300) { chicken = 100; rice = 0.5; }
-        else if (targetCalories <= 400) { chicken = 150; rice = 1; }
-        else { chicken = 200; rice = 1.5; }
+        if (targetCalories <= 240) { chicken = 80; rice = 0.5; }
+        else if (targetCalories <= 300) { chicken = 100; rice = 0.5; }
+        else { chicken = 120; rice = 1; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 400) { chicken = 200; rice = 1; }
         else if (targetCalories <= 500) { chicken = 250; rice = 1.5; }
@@ -458,9 +459,9 @@ const createLunchMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "2 min", itemCount: goal === 'dirty-bulk' ? 3 : 2, difficulty: "Super Easy", icon: "🐟",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 300) return 216; // 2 tuna
-        else if (targetCalories <= 400) return 324; // 3 tuna
-        else return 432; // 4 tuna
+        if (targetCalories <= 240) return 108; // 1 tuna
+        else if (targetCalories <= 300) return 216; // 2 tuna
+        else return 324; // 3 tuna
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 400) return 432; // 4 tuna
         else if (targetCalories <= 500) return 540; // 5 tuna
@@ -481,9 +482,9 @@ const createLunchMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     items: (() => {
       if (goal === 'lose') {
         let tuna;
-        if (targetCalories <= 300) { tuna = 2; }
-        else if (targetCalories <= 400) { tuna = 3; }
-        else { tuna = 4; }
+        if (targetCalories <= 240) { tuna = 1; }
+        else if (targetCalories <= 300) { tuna = 2; }
+        else { tuna = 3; }
         
         return [
           { id: generateId(), category: 'protein', food: 'Tuna (canned in water)', serving: tuna, displayServing: tuna.toString(), displayUnit: 'servings' }
@@ -547,9 +548,9 @@ const createLunchMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "6 min", itemCount: 3, difficulty: "Easy", icon: "🐠",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 300) return 294; // 80g salmon + 0.5 quinoa + 1 spinach
-        else if (targetCalories <= 400) return 414; // 120g salmon + 1 quinoa + 1 spinach
-        else return 534; // 160g salmon + 1.5 quinoa + 1 spinach
+        if (targetCalories <= 240) return 234; // 60g salmon + 0.5 quinoa + 1 spinach
+        else if (targetCalories <= 300) return 294; // 80g salmon + 0.5 quinoa + 1 spinach
+        else return 354; // 100g salmon + 1 quinoa + 1 spinach
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 400) return 437; // 160g salmon + 1 quinoa + 2 spinach
         else if (targetCalories <= 500) return 541; // 200g salmon + 1.5 quinoa + 2 spinach
@@ -571,9 +572,9 @@ const createLunchMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let salmon, quinoa, spinach, oil = 0;
       
       if (goal === 'lose') {
-        if (targetCalories <= 300) { salmon = 80; quinoa = 0.5; spinach = 1; }
-        else if (targetCalories <= 400) { salmon = 120; quinoa = 1; spinach = 1; }
-        else { salmon = 160; quinoa = 1.5; spinach = 1; }
+        if (targetCalories <= 240) { salmon = 60; quinoa = 0.5; spinach = 1; }
+        else if (targetCalories <= 300) { salmon = 80; quinoa = 0.5; spinach = 1; }
+        else { salmon = 100; quinoa = 1; spinach = 1; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 400) { salmon = 160; quinoa = 1; spinach = 2; }
         else if (targetCalories <= 500) { salmon = 200; quinoa = 1.5; spinach = 2; }
@@ -619,9 +620,9 @@ const createDinnerMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "10 min", itemCount: 2, difficulty: "Easy", icon: "🥩",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 350) return 337; // 100g beef + 1 potato
-        else if (targetCalories <= 450) return 459; // 150g beef + 1.5 potato
-        else return 581; // 200g beef + 2 potato
+        if (targetCalories <= 300) return 298; // 80g beef + 0.5 potato
+        else if (targetCalories <= 375) return 337; // 100g beef + 1 potato
+        else return 420; // 120g beef + 1.5 potato
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 500) return 528; // 200g beef + 1.5 potato
         else if (targetCalories <= 600) return 650; // 250g beef + 2 potato
@@ -643,9 +644,9 @@ const createDinnerMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let beef, potato;
       
       if (goal === 'lose') {
-        if (targetCalories <= 350) { beef = 100; potato = 1; }
-        else if (targetCalories <= 450) { beef = 150; potato = 1.5; }
-        else { beef = 200; potato = 2; }
+        if (targetCalories <= 300) { beef = 80; potato = 0.5; }
+        else if (targetCalories <= 375) { beef = 100; potato = 1; }
+        else { beef = 120; potato = 1.5; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 500) { beef = 200; potato = 1.5; }
         else if (targetCalories <= 600) { beef = 250; potato = 2; }
@@ -677,9 +678,9 @@ const createDinnerMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "12 min", itemCount: 2, difficulty: "Easy", icon: "🐟",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 350) return 346; // 120g salmon + 2 sweet potato
-        else if (targetCalories <= 450) return 450; // 160g salmon + 3 sweet potato
-        else return 554; // 200g salmon + 4 sweet potato
+        if (targetCalories <= 300) return 294; // 80g salmon + 2.5 sweet potato
+        else if (targetCalories <= 375) return 346; // 120g salmon + 2 sweet potato
+        else return 398; // 160g salmon + 2.5 sweet potato
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 500) return 512; // 200g salmon + 3.5 sweet potato
         else if (targetCalories <= 600) return 616; // 240g salmon + 4.5 sweet potato
@@ -701,9 +702,9 @@ const createDinnerMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let salmon, sweetPotato;
       
       if (goal === 'lose') {
-        if (targetCalories <= 350) { salmon = 120; sweetPotato = 2; }
-        else if (targetCalories <= 450) { salmon = 160; sweetPotato = 3; }
-        else { salmon = 200; sweetPotato = 4; }
+        if (targetCalories <= 300) { salmon = 80; sweetPotato = 2.5; }
+        else if (targetCalories <= 375) { salmon = 120; sweetPotato = 2; }
+        else { salmon = 160; sweetPotato = 2.5; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 500) { salmon = 200; sweetPotato = 3.5; }
         else if (targetCalories <= 600) { salmon = 240; sweetPotato = 4.5; }
@@ -735,9 +736,9 @@ const createDinnerMeals = (targetCalories, fruitBudgetRemaining, goal) => {
     prepTime: "8 min", itemCount: 3, difficulty: "Easy", icon: "🥘",
     estimatedCalories: (() => {
       if (goal === 'lose') {
-        if (targetCalories <= 350) return 327; // 150g chicken + 2 peppers + 0.5 oil
-        else if (targetCalories <= 450) return 446; // 200g chicken + 2 peppers + 1 oil
-        else return 565; // 250g chicken + 2 peppers + 1.5 oil
+        if (targetCalories <= 300) return 272; // 100g chicken + 2 peppers + 0.5 oil
+        else if (targetCalories <= 375) return 327; // 150g chicken + 2 peppers + 0.5 oil
+        else return 389; // 180g chicken + 2 peppers + 0.5 oil
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 500) return 506; // 250g chicken + 2 peppers + 1 oil
         else if (targetCalories <= 600) return 625; // 300g chicken + 2 peppers + 1.5 oil
@@ -759,9 +760,9 @@ const createDinnerMeals = (targetCalories, fruitBudgetRemaining, goal) => {
       let chicken, peppers, oil;
       
       if (goal === 'lose') {
-        if (targetCalories <= 350) { chicken = 150; peppers = 2; oil = 0.5; }
-        else if (targetCalories <= 450) { chicken = 200; peppers = 2; oil = 1; }
-        else { chicken = 250; peppers = 2; oil = 1.5; }
+        if (targetCalories <= 300) { chicken = 100; peppers = 2; oil = 0.5; }
+        else if (targetCalories <= 375) { chicken = 150; peppers = 2; oil = 0.5; }
+        else { chicken = 180; peppers = 2; oil = 0.5; }
       } else if (goal === 'gain-muscle') {
         if (targetCalories <= 500) { chicken = 250; peppers = 2; oil = 1; }
         else if (targetCalories <= 600) { chicken = 300; peppers = 2; oil = 1.5; }
@@ -806,10 +807,11 @@ const MealIdeasModal = ({
 
   // Calculate target calories for the specific meal
   const targetCalories = calorieData?.targetCalories ? calorieData.targetCalories : 2200;
+  const bmr = calorieData?.bmr || null;
   const goal = userProfile?.goal || 'maintain';
   
-  // Generate meals based on meal type, goal, and fruit budget
-  const mealOptions = createScaledMeals(targetCalories, mealType, fruitBudgetRemaining, goal);
+  // Generate meals based on meal type, goal, BMR, and fruit budget
+  const mealOptions = createScaledMeals(targetCalories, mealType, fruitBudgetRemaining, goal, bmr);
 
   useEffect(() => {
     if (currentIndex >= mealOptions.length) {
