@@ -14,8 +14,10 @@ const MealSwipeGame = ({
   const [swipeResults, setSwipeResults] = useState([]);
   const [gameComplete, setGameComplete] = useState(false);
   const [overallGrade, setOverallGrade] = useState('');
-  const [showResults, setShowResults] = useState(false);
   const [lastResponse, setLastResponse] = useState('');
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState('');
 
   // Initialize game cards from actual meal data
   useEffect(() => {
@@ -133,11 +135,11 @@ const MealSwipeGame = ({
     const swipedRight = swipeDirection === 'right';
     const isGoodMeal = score >= 70;
     
-    // Gender-specific pronouns and metaphors
+    // Gender-specific pronouns
     const genderPronouns = {
-      male: { they: 'she', possessive: 'her', article: 'a', title: 'queen' },
-      female: { they: 'he', possessive: 'his', article: 'a', title: 'king' },
-      'non-binary': { they: 'they', possessive: 'their', article: 'a', title: 'royalty' }
+      male: { they: 'she', possessive: 'her', title: 'queen' },
+      female: { they: 'he', possessive: 'his', title: 'king' },
+      'non-binary': { they: 'they', possessive: 'their', title: 'royalty' }
     };
     
     const pronouns = genderPronouns[gender] || genderPronouns['non-binary'];
@@ -147,24 +149,24 @@ const MealSwipeGame = ({
       // Swiped right on good meal - Success!
       const successMessages = {
         'A': [
-          `🔥 MATCH! That meal is ${pronouns.article} perfect 10, and ${pronouns.they} swiped back! Elite nutrition game, ${firstName}!`,
-          `💍 It's a match made in macro heaven! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s got that 40-40-20 glow and you knew it!`,
-          `🏆 Expert-level swipe! That meal is ${pronouns.article} ${pronouns.title} and you've got the nutrition IQ to match!`
+          `🔥 PERFECT MATCH! That meal is nutrition royalty and you spotted it immediately!`,
+          `💍 It's a match made in macro heaven! You've got elite nutrition instincts!`,
+          `🏆 Expert-level swipe! Your nutrition game is championship tier!`
         ],
         'B': [
-          `✨ NICE MATCH! You've got good taste - that meal is definitely date-worthy nutrition!`,
-          `🎯 Solid choice! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s got those balanced macros you can bring home to your goals!`,
-          `💪 Great eye! You spotted quality nutrition when you saw it!`
+          `✨ GREAT MATCH! You've got solid taste in quality nutrition!`,
+          `🎯 Nice choice! You're developing excellent nutrition radar!`,
+          `💪 Good eye! You spotted that quality meal composition!`
         ],
         'C': [
-          `😊 Not bad! You recognized a decent meal when you saw one - progress!`,
-          `👍 Good call! That meal might not be perfect, but ${pronouns.they}'s got potential!`,
-          `📈 Learning! You're starting to spot the good ones!`
+          `😊 Not bad! You recognized decent nutrition when you saw it!`,
+          `👍 Learning! You're starting to spot the good ones!`,
+          `📈 Progress! Your nutrition instincts are improving!`
         ],
         'D': [
-          `🙌 Finally! You found a good one! That meal is way out of your usual league!`,
-          `🎉 Miracle match! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s perfect and somehow interested in your nutrition chaos!`,
-          `✨ Dreams do come true! Quality nutrition said yes to you!`
+          `🙌 Finally! You found a good one! That meal is way above your usual choices!`,
+          `🎉 Miracle match! Somehow you spotted quality nutrition!`,
+          `✨ Dreams do come true! You actually chose well for once!`
         ]
       };
       
@@ -175,24 +177,24 @@ const MealSwipeGame = ({
       // Swiped right on bad meal - Rejection!
       const rejectionMessages = {
         'A': [
-          `💔 REJECTED! ${firstName}, that meal is way below your standards! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s got ${Math.round(card.totals.sugar)}g sugar - total red flag!`,
-          `🚫 Standards, ${firstName}! You're an A-grade nutrition expert - why are you chasing ${Math.round(macros.carbPercent)}% carb disasters?`,
-          `❌ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s not interested! ${issues.includes('high_sugar') ? 'Too much sugar' : 'Wrong macros'} = immediate left swipe from quality meals!`
+          `💔 REJECTED! ${firstName}, that meal is way below your standards! ${Math.round(card.totals.sugar)}g sugar is a red flag!`,
+          `🚫 Standards, ${firstName}! You're A-grade - why chase ${Math.round(macros.carbPercent)}% carb disasters?`,
+          `❌ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} said "no thanks" - wrong macros = instant left swipe!`
         ],
         'B': [
-          `😬 Ouch! That meal saw your swipe coming and ${pronouns.they} said "no thanks" - ${Math.round(macros.proteinPercent)}% protein isn't cutting it!`,
-          `🤦‍♀️ ${firstName}, you aimed too high! That ${Math.round(card.totals.calories)}-calorie mess is out of your league!`,
-          `💸 Friend-zoned! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} wants someone who understands balanced nutrition!`
+          `😬 Ouch! That meal ghosted you - ${Math.round(macros.proteinPercent)}% protein isn't cutting it!`,
+          `🤦‍♀️ ${firstName}, you aimed too high! That ${Math.round(card.totals.calories)}-calorie mess rejected you!`,
+          `💸 Friend-zoned! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} wants better nutrition standards!`
         ],
         'C': [
-          `😅 Swing and a miss! That meal is looking for someone with better nutrition game than you've got!`,
-          `🎭 Plot twist: ${pronouns.they} ghosted you! Those macros weren't feeling your energy!`,
-          `📱 Read receipt: OFF! That meal doesn't want to deal with your nutrition confusion!`
+          `😅 Swing and a miss! That meal wants someone with better nutrition knowledge!`,
+          `🎭 Plot twist: those macros weren't feeling your energy!`,
+          `📱 Read receipt: OFF! That meal doesn't want nutrition confusion!`
         ],
         'D': [
-          `🤡 Come on, ${firstName}! Even terrible meals have standards! That ${Math.round(card.totals.sugar)}g sugar bomb rejected YOU!`,
-          `🙈 Embarrassing! You got turned down by a nutritional disaster - time to level up your game!`,
-          `🚨 BRUTAL! Even junk food doesn't want to be associated with your nutrition choices!`
+          `🤡 Even terrible meals have standards! That ${Math.round(card.totals.sugar)}g sugar bomb rejected YOU!`,
+          `🙈 Embarrassing! You got turned down by nutritional disaster!`,
+          `🚨 BRUTAL! Even junk food doesn't want to be associated with your choices!`
         ]
       };
       
@@ -203,24 +205,24 @@ const MealSwipeGame = ({
       // Swiped left on good meal - Missed opportunity!
       const missedMessages = {
         'A': [
-          `😱 WHAT?! ${firstName}, you just rejected ${pronouns.article} perfect 10! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} had ideal macros and you said no?!`,
-          `🤯 Expert mistake! That meal was macro perfection and you let ${pronouns.possessive} walk away!`,
-          `💔 Heartbreak! You're so used to A-grade meals you didn't appreciate that ${Math.round(macros.proteinPercent)}% protein masterpiece!`
+          `😱 WHAT?! ${firstName}, you just rejected perfection! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} had ideal macros!`,
+          `🤯 Expert mistake! That was macro perfection and you let it walk away!`,
+          `💔 Heartbreak! You're so used to A-grade meals you didn't appreciate that masterpiece!`
         ],
         'B': [
-          `😕 You missed out! That meal was actually really good - ${pronouns.they} would've been great for your goals!`,
-          `🚪 One that got away! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} was quality nutrition and you weren't ready!`,
-          `📞 ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s telling ${pronouns.possessive} friends you have commitment issues with good meals!`
+          `😕 You missed out! That meal was actually really good for your goals!`,
+          `🚪 One that got away! ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} was quality nutrition!`,
+          `📞 ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)}'s telling friends you have commitment issues!`
         ],
         'C': [
-          `🤷‍♀️ Your loss! That was actually a decent meal and you pushed ${pronouns.possessive} away!`,
-          `📋 Add it to the list of good meals you've rejected! Maybe you're not ready for quality nutrition?`,
-          `🎪 Self-sabotage! You're so used to mediocre meals you can't recognize a good one!`
+          `🤷‍♀️ Your loss! That was decent and you pushed it away!`,
+          `📋 Add it to the list of good meals you've rejected!`,
+          `🎪 Self-sabotage! You can't recognize good nutrition!`
         ],
         'D': [
-          `😭 WHY?! That was literally the best meal you've seen all day and you said no! You need therapy!`,
-          `🏃‍♀️ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} dodged a bullet! You're not ready for that level of nutrition excellence!`,
-          `🎯 Self-destruction! You had a chance at greatness and chose chaos instead!`
+          `😭 WHY?! That was the best meal you've seen and you said no!`,
+          `🏃‍♀️ ${pronouns.they.charAt(0).toUpperCase() + pronouns.they.slice(1)} dodged a bullet! You're not ready for greatness!`,
+          `🎯 Self-destruction! You chose chaos over quality!`
         ]
       };
       
@@ -230,28 +232,81 @@ const MealSwipeGame = ({
     // Swiped left on bad meal - Good choice!
     const goodRejectMessages = {
       'A': [
-        `👑 QUEEN/KING ENERGY! You spotted that ${Math.round(card.totals.sugar)}g sugar disaster immediately! Elite standards, ${firstName}!`,
-        `🛡️ Perfect defense! That ${Math.round(macros.carbPercent)}% carb chaos couldn't fool an expert like you!`,
-        `🎯 Flawless execution! You saw through that nutritional catfish instantly!`
+        `👑 ROYALTY ENERGY! You spotted that ${Math.round(card.totals.sugar)}g sugar disaster immediately!`,
+        `🛡️ Perfect defense! That ${Math.round(macros.carbPercent)}% carb chaos couldn't fool you!`,
+        `🎯 Flawless execution! You saw through that nutritional catfish!`
       ],
       'B': [
-        `💪 Good instincts! You're learning to spot the red flags - ${Math.round(card.totals.calories)} calories of trouble!`,
-        `🚫 Smart swipe! That meal was definitely not worth your time or your goals!`,
-        `📊 Progress! You're developing better nutrition standards!`
+        `💪 Good instincts! You're learning to spot the red flags!`,
+        `🚫 Smart swipe! That meal was definitely trouble!`,
+        `📊 Progress! You're developing better standards!`
       ],
       'C': [
-        `👍 Decent call! Even you can spot when something's obviously wrong with those macros!`,
-        `🎲 Lucky guess! That meal was clearly a disaster and you figured it out!`,
-        `📚 Learning moment! You're starting to recognize the bad ones!`
+        `👍 Decent call! Even you spotted that disaster!`,
+        `🎲 Lucky guess! That was clearly wrong!`,
+        `📚 Learning! You're recognizing the bad ones!`
       ],
       'D': [
-        `🎉 MIRACLE! You actually made a good choice! Even a broken clock is right twice a day!`,
-        `😲 Shock! You rejected something terrible for once! There's hope for you yet, ${firstName}!`,
-        `🔥 Character development! You're finally learning to say no to nutritional disasters!`
+        `🎉 MIRACLE! You actually made a good choice for once!`,
+        `😲 Character development! You're learning to say no to disasters!`,
+        `🔥 There's hope! You rejected something terrible!`
       ]
     };
     
     return goodRejectMessages[overallGrade][Math.floor(Math.random() * goodRejectMessages[overallGrade].length)];
+  };
+
+  // Enhanced drag handlers for smooth Tinder-style swiping
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    setDragPosition({ x: clientX, y: clientY });
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const deltaX = clientX - dragPosition.x;
+    const deltaY = clientY - dragPosition.y;
+    
+    // Update card position
+    const card = document.getElementById('swipe-card');
+    if (card) {
+      const rotation = deltaX * 0.1;
+      card.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rotation}deg)`;
+      
+      // Show swipe direction indicators
+      if (Math.abs(deltaX) > 50) {
+        setSwipeDirection(deltaX > 0 ? 'right' : 'left');
+      } else {
+        setSwipeDirection('');
+      }
+    }
+  };
+
+  const handleDragEnd = (e) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const deltaX = clientX - dragPosition.x;
+    
+    const card = document.getElementById('swipe-card');
+    if (card) {
+      card.style.transform = '';
+    }
+    
+    setSwipeDirection('');
+    
+    // Determine swipe action based on distance
+    if (Math.abs(deltaX) > 100) {
+      handleSwipe(deltaX > 0 ? 'right' : 'left');
+    }
   };
 
   const handleSwipe = (direction) => {
@@ -277,7 +332,7 @@ const MealSwipeGame = ({
         if (isIntegrated) {
           onComplete();
         }
-      }, 3000); // Show final message for 3 seconds
+      }, 3000);
     } else {
       setCurrentCardIndex(prev => prev + 1);
     }
@@ -287,7 +342,6 @@ const MealSwipeGame = ({
     setCurrentCardIndex(0);
     setSwipeResults([]);
     setGameComplete(false);
-    setShowResults(false);
     setLastResponse('');
   };
 
@@ -322,29 +376,27 @@ const MealSwipeGame = ({
     return (
       <div className="max-w-md mx-auto bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl shadow-lg p-6 border-2 border-pink-200">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">🎯 Dating Game Complete!</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">🎯 Swipe Complete!</h1>
           <div className="text-lg text-gray-600">Your Nutrition Dating Score: {finalScore}%</div>
         </div>
 
         <div className="bg-white rounded-lg p-4 mb-4">
           <h3 className="font-bold text-gray-800 mb-3">Final Verdict:</h3>
           <p className="text-gray-700 text-sm italic">
-            {finalScore >= 80 ? `${userProfile.firstName}, you've got excellent taste in nutrition! You know quality when you see it!` :
-             finalScore >= 60 ? `Not bad, ${userProfile.firstName}! You're learning to spot good nutrition vs. the disasters.` :
-             `${userProfile.firstName}, your nutrition dating game needs work! Time to learn what quality meals look like!`}
+            {finalScore >= 80 ? `${userProfile.firstName}, you've got excellent nutrition instincts! You know quality when you see it!` :
+             finalScore >= 60 ? `Not bad, ${userProfile.firstName}! You're learning to spot good nutrition.` :
+             `${userProfile.firstName}, your nutrition game needs work! Time to learn what quality meals look like!`}
           </p>
         </div>
 
         {!isIntegrated && (
-          <div className="flex gap-3">
-            <button
-              onClick={resetGame}
-              className="flex-1 bg-pink-500 text-white py-3 px-4 rounded-lg hover:bg-pink-600 transition-colors font-medium flex items-center justify-center gap-2"
-            >
-              <RotateCcw size={18} />
-              Date Again
-            </button>
-          </div>
+          <button
+            onClick={resetGame}
+            className="w-full bg-pink-500 text-white py-3 px-4 rounded-lg hover:bg-pink-600 transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <RotateCcw size={18} />
+            Swipe Again
+          </button>
         )}
       </div>
     );
@@ -354,17 +406,17 @@ const MealSwipeGame = ({
     <div className="max-w-md mx-auto">
       {/* Game Header */}
       <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-t-xl p-4 text-center">
-        <h1 className="text-xl font-bold mb-1">🍽️ Nutrition Dating</h1>
+        <h1 className="text-xl font-bold mb-1">🔥 Swipe Your Meals</h1>
         <div className="text-sm opacity-90">
-          Rate Your Meals • {currentCardIndex + 1} of {gameCards.length}
+          {currentCardIndex + 1} of {gameCards.length} • Grade: {overallGrade}
         </div>
         <div className="text-xs opacity-75 mt-1">
-          Your Grade: {overallGrade} • Swipe like your goals depend on it!
+          Swipe like your goals depend on it!
         </div>
       </div>
 
-      {/* Card Stack Container */}
-      <div className="relative bg-white rounded-b-xl shadow-lg p-6 min-h-[500px]">
+      {/* Card Container with Tinder-style stacking */}
+      <div className="relative bg-white rounded-b-xl shadow-lg min-h-[500px] overflow-hidden">
         
         {/* Background Cards (stacked effect) */}
         {gameCards.slice(currentCardIndex + 1, currentCardIndex + 3).map((card, index) => (
@@ -379,9 +431,32 @@ const MealSwipeGame = ({
           />
         ))}
 
-        {/* Current Card */}
+        {/* Current Card with Drag Support */}
         {currentCard && (
-          <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-lg border-2 border-gray-200 p-6 shadow-lg" style={{ zIndex: 20 }}>
+          <div 
+            id="swipe-card"
+            className="relative bg-gradient-to-br from-white to-gray-50 rounded-lg border-2 border-gray-200 p-6 shadow-lg cursor-grab active:cursor-grabbing"
+            style={{ zIndex: 20 }}
+            onMouseDown={handleDragStart}
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onTouchStart={handleDragStart}
+            onTouchMove={handleDragMove}
+            onTouchEnd={handleDragEnd}
+          >
+            
+            {/* Swipe Direction Indicators */}
+            {swipeDirection && (
+              <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
+                swipeDirection === 'right' ? 'bg-green-500' : 'bg-red-500'
+              } bg-opacity-20 rounded-lg`}>
+                <div className={`text-6xl font-bold ${
+                  swipeDirection === 'right' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {swipeDirection === 'right' ? '❤️' : '❌'}
+                </div>
+              </div>
+            )}
             
             {/* Card Header */}
             <div className="text-center mb-4">
@@ -449,14 +524,14 @@ const MealSwipeGame = ({
             </div>
 
             <div className="text-center text-xs text-gray-500">
-              ❌ Pass • ❤️ Accept
+              ❌ Pass • ❤️ Accept • 👆 Drag to swipe
             </div>
           </div>
         )}
 
         {/* Last Response */}
         {lastResponse && (
-          <div className="mt-4 bg-pink-50 border border-pink-200 rounded-lg p-3">
+          <div className="absolute bottom-4 left-4 right-4 bg-pink-50 border border-pink-200 rounded-lg p-3 z-30">
             <div className="text-sm font-medium text-pink-800 mb-1">
               💭 Dating Coach Says:
             </div>
