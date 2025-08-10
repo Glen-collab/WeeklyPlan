@@ -78,53 +78,68 @@ const MealSwipeGame = ({
     const carbIdeal = Math.abs(carbPercent - 40) <= 5;
     const fatIdeal = Math.abs(fatPercent - 20) <= 5;
 
-    if (proteinIdeal && carbIdeal && fatIdeal) {
-      score += 40;
-      strengths.push('perfect_macros');
-    } else if (proteinPercent >= 35) {
-      score += 25;
-      strengths.push('good_protein');
-    } else if (proteinPercent < 20) {
-      issues.push('low_protein');
-    }
+    // NEW: Sweetheart criteria (40-40-20 ±10%)
+    const proteinSweetheart = Math.abs(proteinPercent - 40) <= 10;
+    const carbSweetheart = Math.abs(carbPercent - 40) <= 10;
+    const fatSweetheart = Math.abs(fatPercent - 20) <= 10;
 
-    // Sugar evaluation
-    if (totals.sugar <= 10) {
-      score += 25;
-      strengths.push('low_sugar');
-    } else if (totals.sugar <= 25) {
-      score += 15;
-    } else if (totals.sugar > 30) {
+    if (proteinSweetheart && carbSweetheart && fatSweetheart) {
+      score += 50;
+      strengths.push('sweetheart_macros');
+    } else if (proteinPercent >= 45) {
+      score += 35;
+      strengths.push('metabolism_booster');
+    } else if (proteinPercent < 25) {
       score -= 20;
-      issues.push('high_sugar');
+      issues.push('metabolism_killer');
     }
 
-    // Calorie appropriateness
-    if (totals.calories >= 100 && totals.calories <= 800) {
-      score += 20;
-    } else if (totals.calories > 1000) {
-      score -= 15;
-      issues.push('too_many_calories');
-    }
-
-    // Protein adequacy for body weight
-    const targetWeight = parseInt(userProfile.weight) || 150;
-    const mealProteinTarget = card.mealType === 'breakfast' || card.mealType === 'lunch' || card.mealType === 'dinner' 
-      ? targetWeight * 0.15 // 15% of bodyweight in grams for main meals
-      : targetWeight * 0.05; // 5% for snacks
-
-    if (totals.protein >= mealProteinTarget) {
+    // NEW: High carb = digestive destroyer
+    if (totals.carbs > 55) {
+      score -= 30;
+      issues.push('carb_bloater');
+    } else if (totals.carbs <= 30) {
       score += 15;
-      strengths.push('adequate_protein');
-    } else {
-      issues.push('insufficient_protein');
+      strengths.push('lean_machine');
+    }
+
+    // NEW: Sugar evaluation with stricter single-item limits
+    if (totals.sugar <= 15) {
+      score += 25;
+      strengths.push('sugar_angel');
+    } else if (totals.sugar <= 25) {
+      score += 10;
+      strengths.push('manageable_sugar');
+    } else if (totals.sugar > 25) {
+      // Single item sugar warning system
+      const sugarOverage = totals.sugar - 25;
+      const warningLevel = Math.floor(sugarOverage / 10) + 1; // +1 for base warning
+      score -= (15 + (warningLevel * 10));
+      issues.push(`sugar_bomb_level_${warningLevel}`);
+    }
+
+    // Calorie burn potential
+    if (totals.calories >= 100 && totals.calories <= 600) {
+      score += 15;
+      strengths.push('calorie_burn_friendly');
+    } else if (totals.calories > 800) {
+      score -= 20;
+      issues.push('calorie_bomb');
+    }
+
+    // Protein metabolism boost bonus
+    if (proteinPercent >= 50) {
+      score += 20;
+      strengths.push('fat_burning_machine');
     }
 
     return {
       score: Math.max(0, Math.min(100, score)),
       issues,
       strengths,
-      macros: { proteinPercent, carbPercent, fatPercent }
+      macros: { proteinPercent, carbPercent, fatPercent },
+      carbGrams: totals.carbs,
+      sugarGrams: totals.sugar
     };
   };
 
