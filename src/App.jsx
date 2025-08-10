@@ -524,7 +524,7 @@ const NutritionApp = () => {
                           Breakfast
                         </h3>
                         <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>
-                          Target: {calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 4) : 550} calories
+                          Target: {calorieData?.targetCalories ? Math.round(calorieData.targetCalories / 5) : 440} calories
                         </p>
                       </div>
                     </div>
