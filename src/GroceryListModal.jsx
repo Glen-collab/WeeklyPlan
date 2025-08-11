@@ -16,10 +16,13 @@ const GroceryListModal = ({
 
     const printStyles = `
       @media print {
-        body * {
-          visibility: hidden;
+        /* Hide everything first */
+        body *, .printable-content, .printable-content * {
+          visibility: hidden !important;
+          display: none !important;
         }
         
+        /* Show only grocery printable content */
         .grocery-printable,
         .grocery-printable * {
           visibility: visible !important;
@@ -38,23 +41,31 @@ const GroceryListModal = ({
           font-size: 11px !important;
           line-height: 1.3 !important;
           overflow: hidden !important;
+          z-index: 9999 !important;
         }
         
+        /* Hide grocery modal elements */
         .grocery-hide {
           display: none !important;
           visibility: hidden !important;
         }
         
+        /* Grocery header styling */
         .grocery-header {
           text-align: center !important;
           margin-bottom: 15px !important;
           border-bottom: 2px solid #333 !important;
           padding-bottom: 8px !important;
+          display: block !important;
+          visibility: visible !important;
         }
         
+        /* Grocery section styling */
         .grocery-section {
           margin-bottom: 12px !important;
           page-break-inside: avoid !important;
+          display: block !important;
+          visibility: visible !important;
         }
         
         .grocery-section h3 {
@@ -64,13 +75,17 @@ const GroceryListModal = ({
           padding: 4px 8px !important;
           margin: 0 0 6px 0 !important;
           border: 1px solid #333 !important;
+          display: block !important;
+          visibility: visible !important;
         }
         
+        /* Grocery item styling */
         .grocery-item {
           display: flex !important;
           align-items: center !important;
           padding: 2px 0 !important;
           font-size: 10px !important;
+          visibility: visible !important;
         }
         
         .grocery-checkbox {
@@ -79,6 +94,8 @@ const GroceryListModal = ({
           border: 1px solid #333 !important;
           margin-right: 6px !important;
           display: inline-block !important;
+          visibility: visible !important;
+          flex-shrink: 0 !important;
         }
         
         .grocery-dual-check {
@@ -87,25 +104,44 @@ const GroceryListModal = ({
           gap: 8px !important;
           padding: 2px 0 !important;
           font-size: 10px !important;
+          visibility: visible !important;
         }
         
         .grocery-dual-label {
           font-size: 9px !important;
           margin-left: 2px !important;
+          display: inline-block !important;
+          visibility: visible !important;
         }
         
+        /* Page settings */
         @page {
           margin: 0.5in !important;
           size: letter !important;
         }
         
+        /* Column layout */
         .grocery-columns {
           display: flex !important;
           gap: 15px !important;
+          visibility: visible !important;
         }
         
         .grocery-column {
           flex: 1 !important;
+          display: block !important;
+          visibility: visible !important;
+        }
+        
+        /* Override any conflicting nutrition plan styles */
+        .print-hide {
+          display: none !important;
+          visibility: hidden !important;
+        }
+        
+        .print-table, .print-header, .print-summary, .print-footer {
+          display: none !important;
+          visibility: hidden !important;
         }
       }
     `;
