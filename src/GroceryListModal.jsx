@@ -10,90 +10,9 @@ const GroceryListModal = ({
 }) => {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
-  // Add print styles for grocery list
+  // No print styles needed since we're using new window approach
   useEffect(() => {
-    if (!isOpen) return;
-
-    const printStyles = `
-      @media print {
-        /* Hide everything except grocery content */
-        body > *:not(.grocery-printable) {
-          display: none !important;
-        }
-        
-        /* Hide nutrition plan elements specifically */
-        .printable-content {
-          display: none !important;
-        }
-        
-        /* Show grocery content */
-        .grocery-printable {
-          display: block !important;
-          position: static !important;
-          width: 100% !important;
-          background: white !important;
-          font-family: Arial, sans-serif !important;
-          color: black !important;
-          font-size: 12px !important;
-          line-height: 1.4 !important;
-        }
-        
-        /* Hide modal controls */
-        .grocery-hide {
-          display: none !important;
-        }
-        
-        /* Basic styling for print */
-        .grocery-printable h1 {
-          font-size: 18px !important;
-          text-align: center !important;
-          margin-bottom: 10px !important;
-          border-bottom: 2px solid black !important;
-          padding-bottom: 5px !important;
-        }
-        
-        .grocery-printable h3 {
-          font-size: 14px !important;
-          font-weight: bold !important;
-          background-color: #f0f0f0 !important;
-          padding: 5px !important;
-          margin: 10px 0 5px 0 !important;
-          border: 1px solid black !important;
-        }
-        
-        .grocery-printable p {
-          margin: 5px 0 !important;
-        }
-        
-        /* Simple layout for print */
-        .grocery-columns {
-          display: block !important;
-        }
-        
-        .grocery-column {
-          display: block !important;
-          margin-bottom: 20px !important;
-        }
-        
-        /* Page settings */
-        @page {
-          margin: 0.75in;
-          size: letter;
-        }
-      }
-    `;
-
-    const styleElement = document.createElement('style');
-    styleElement.textContent = printStyles;
-    styleElement.setAttribute('data-grocery-styles', 'true');
-    document.head.appendChild(styleElement);
-
-    return () => {
-      const existingStyle = document.querySelector('[data-grocery-styles="true"]');
-      if (existingStyle) {
-        existingStyle.remove();
-      }
-    };
+    // Component mounted - no special print styles needed
   }, [isOpen]);
 
   // Extract and categorize foods from meal plan
@@ -107,16 +26,11 @@ const GroceryListModal = ({
       supplements: new Map()
     };
 
-    // Debug: Log what we're getting
-    console.log('All meals data:', allMeals);
-
     // Process all meals and extract unique foods with quantities
     Object.values(allMeals).forEach(meal => {
       if (!meal.items) return;
       
       meal.items.forEach(item => {
-        console.log('Processing item:', item);
-        
         if (!item.food || !item.serving) return;
         
         // If item doesn't have category, try to infer it from FoodDatabase
@@ -130,13 +44,8 @@ const GroceryListModal = ({
           });
         }
         
-        console.log(`Item: ${item.food}, Category: ${category}`);
-        
         const categoryMap = groceryList[category];
-        if (!categoryMap) {
-          console.log(`No category map found for: ${category}`);
-          return;
-        }
+        if (!categoryMap) return;
 
         // Calculate weekly quantity (7 days)
         const weeklyServing = item.serving * 7;
@@ -147,12 +56,6 @@ const GroceryListModal = ({
           categoryMap.set(item.food, weeklyServing);
         }
       });
-    });
-
-    // Debug: Log final grocery list
-    console.log('Final grocery list:', groceryList);
-    Object.entries(groceryList).forEach(([cat, map]) => {
-      console.log(`${cat}:`, Array.from(map.entries()));
     });
 
     return groceryList;
@@ -238,7 +141,78 @@ const GroceryListModal = ({
   const groceryList = extractGroceryList();
 
   const handlePrint = () => {
-    window.print();
+    // Generate simple HTML for printing
+    const groceryList = extractGroceryList();
+    
+    const formatDate = () => {
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return `${today.toLocaleDateString()} - ${nextWeek.toLocaleDateString()}`;
+    };
+
+    const categoryLabels = {
+      protein: '🥩 Proteins',
+      carbohydrate: '🍞 Carbohydrates', 
+      fruits: '🍎 Fruits',
+      vegetables: '🥬 Vegetables',
+      fat: '🥑 Healthy Fats'
+    };
+
+    let htmlContent = `
+      <html>
+        <head>
+          <title>Weekly Grocery List</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
+            h1 { text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
+            h3 { background-color: #f0f0f0; padding: 8px; border: 1px solid black; margin: 15px 0 8px 0; }
+            .item { margin: 5px 0; padding-left: 20px; }
+            .footer { margin-top: 30px; text-align: center; border-top: 1px solid black; padding-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>🛒 Weekly Grocery Shopping List</h1>
+          <p style="text-align: center; margin-bottom: 25px;">Shopping Period: ${formatDate()}</p>
+    `;
+
+    // Add food categories
+    Object.entries(categoryLabels).forEach(([category, label]) => {
+      const items = groceryList[category];
+      if (items && items.size > 0) {
+        htmlContent += `<h3>${label}</h3>`;
+        Array.from(items.entries()).forEach(([food, quantity]) => {
+          htmlContent += `<div class="item">☐ ${getGroceryQuantity(food, category, quantity)} • ${food}</div>`;
+        });
+      }
+    });
+
+    // Add condiments
+    htmlContent += `<h3>🧂 Condiments & Seasonings</h3>`;
+    allCondiments.forEach(condiment => {
+      htmlContent += `<div class="item">☐ Need  ☐ Have  ${condiment}</div>`;
+    });
+
+    // Add supplements  
+    htmlContent += `<h3>💊 Supplements</h3>`;
+    allSupplements.forEach(supplement => {
+      htmlContent += `<div class="item">☐ Need  ☐ Have  ${supplement}</div>`;
+    });
+
+    htmlContent += `
+          <div class="footer">
+            <p>✓ Check off items as you shop • Generated from your nutrition plan</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Open in new window and print
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   const handlePreview = () => {
@@ -291,7 +265,7 @@ const GroceryListModal = ({
                   getGroceryQuantity={getGroceryQuantity}
                   allCondiments={allCondiments}
                   allSupplements={allSupplements}
-                  isPrintMode={true}
+                  isScreenView={true}
                 />
               </div>
             </div>
@@ -334,17 +308,6 @@ const GroceryListModal = ({
           </div>
         )}
       </div>
-
-      {/* Hidden Printable Content */}
-      <div className="grocery-printable" style={{ display: 'none' }}>
-        <GroceryListContent 
-          groceryList={groceryList}
-          getGroceryQuantity={getGroceryQuantity}
-          allCondiments={allCondiments}
-          allSupplements={allSupplements}
-          isPrintMode={true}
-        />
-      </div>
     </div>
   );
 };
@@ -355,8 +318,7 @@ const GroceryListContent = ({
   allCondiments, 
   allSupplements, 
   isScreenView = false,
-  isMobile = false,
-  isPrintMode = false
+  isMobile = false
 }) => {
   const categoryLabels = {
     protein: '🥩 Proteins',
@@ -372,60 +334,7 @@ const GroceryListContent = ({
     return `${today.toLocaleDateString()} - ${nextWeek.toLocaleDateString()}`;
   };
 
-  if (isPrintMode) {
-    // Simple print layout
-    return (
-      <div>
-        <h1>🛒 Weekly Grocery Shopping List</h1>
-        <p style={{ textAlign: 'center', marginBottom: '20px' }}>
-          Shopping Period: {formatDate()}
-        </p>
-
-        {/* Food Categories */}
-        {Object.entries(categoryLabels).map(([category, label]) => {
-          const items = groceryList[category];
-          if (!items || items.size === 0) return null;
-
-          return (
-            <div key={category} style={{ marginBottom: '15px' }}>
-              <h3>{label}</h3>
-              {Array.from(items.entries()).map(([food, quantity]) => (
-                <p key={food} style={{ margin: '3px 0', paddingLeft: '20px' }}>
-                  ☐ {getGroceryQuantity(food, category, quantity)} • {food}
-                </p>
-              ))}
-            </div>
-          );
-        })}
-
-        {/* Condiments */}
-        <div style={{ marginBottom: '15px' }}>
-          <h3>🧂 Condiments & Seasonings</h3>
-          {allCondiments.map(condiment => (
-            <p key={condiment} style={{ margin: '3px 0', paddingLeft: '20px' }}>
-              ☐ Need  ☐ Have  {condiment}
-            </p>
-          ))}
-        </div>
-
-        {/* Supplements */}
-        <div style={{ marginBottom: '15px' }}>
-          <h3>💊 Supplements</h3>
-          {allSupplements.map(supplement => (
-            <p key={supplement} style={{ margin: '3px 0', paddingLeft: '20px' }}>
-              ☐ Need  ☐ Have  {supplement}
-            </p>
-          ))}
-        </div>
-
-        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', borderTop: '1px solid #333', paddingTop: '10px' }}>
-          <p>✓ Check off items as you shop • Generated from your nutrition plan</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Screen view layout (existing code)
+  // Screen view layout
   return (
     <div>
       {/* Header */}
