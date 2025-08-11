@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Printer, X } from 'lucide-react';
+import { Printer, X, ShoppingCart } from 'lucide-react';
 import { servingSizeConversions } from './FoodDatabase.js';
+import GroceryListModal from './GroceryListModal.jsx';
 
 const PrintableNutritionPlan = ({ 
   allMeals = {}, 
@@ -9,6 +10,7 @@ const PrintableNutritionPlan = ({
   isMobile = false 
 }) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [showGroceryList, setShowGroceryList] = useState(false);
 
   // Handle null calorieData by providing safe defaults
   const safeCalorieData = calorieData || {
@@ -210,6 +212,14 @@ const PrintableNutritionPlan = ({
             <Printer size={20} />
             Print Plan
           </button>
+          
+          <button
+            onClick={() => setShowGroceryList(true)}
+            className={`${isMobile ? 'w-full py-3' : 'px-6 py-3'} bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium flex items-center justify-center gap-2`}
+          >
+            <ShoppingCart size={20} />
+            Grocery List
+          </button>
         </div>
         
         <p className={`${isMobile ? 'text-sm' : 'text-sm'} text-gray-600 text-center`}>
@@ -261,6 +271,14 @@ const PrintableNutritionPlan = ({
           calorieData={safeCalorieData}
         />
       </div>
+
+      {/* Grocery List Modal */}
+      <GroceryListModal
+        isOpen={showGroceryList}
+        onClose={() => setShowGroceryList(false)}
+        allMeals={allMeals}
+        isMobile={isMobile}
+      />
     </div>
   );
 };
