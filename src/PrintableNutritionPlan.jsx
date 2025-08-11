@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Printer, X } from 'lucide-react';
+import { servingSizeConversions } from './FoodDatabase.js';
 
 const PrintableNutritionPlan = ({ 
   allMeals = {}, 
@@ -292,6 +293,121 @@ const PrintableContent = ({
     return labels[mealType] || mealType;
   };
 
+  // Smart serving size display - chooses the most logical unit for each food
+  const getSmartServingSize = (item) => {
+    if (!item.food || !item.category || !item.serving) {
+      return `${item.displayServing || '1'} ${item.displayUnit || 'servings'}`;
+    }
+
+    const foodName = item.food.toLowerCase();
+    const conversions = servingSizeConversions[item.category]?.[item.food];
+    
+    if (!conversions) {
+      return `${item.displayServing || '1'} ${item.displayUnit || 'servings'}`;
+    }
+
+    // Specific food logic for best display units
+    if (foodName.includes('egg whites')) {
+      // Show as number of egg whites (each egg white = ~33g, base is 33g = 1 egg white)
+      const numEggWhites = Math.round(item.serving);
+      return numEggWhites === 1 ? '1 egg white' : `${numEggWhites} egg whites`;
+    }
+    
+    if (foodName.includes('eggs') && foodName.includes('whole')) {
+      // Show as number of whole eggs
+      const numEggs = Math.round(item.serving);
+      return numEggs === 1 ? '1 egg' : `${numEggs} eggs`;
+    }
+
+    if (foodName.includes('hard-boiled egg')) {
+      // Show as number of eggs
+      const numEggs = Math.round(item.serving);
+      return numEggs === 1 ? '1 egg' : `${numEggs} eggs`;
+    }
+    
+    if (foodName.includes('greek yogurt') || foodName.includes('cottage cheese')) {
+      // Show in cups
+      const totalCups = (conversions.cups * item.serving).toFixed(1);
+      const displayCups = totalCups.endsWith('.0') ? totalCups.slice(0, -2) : totalCups;
+      return displayCups === '1' ? '1 cup' : `${displayCups} cups`;
+    }
+
+    // Meats and fish - show in ounces
+    if (foodName.includes('chicken') || foodName.includes('salmon') || foodName.includes('tuna') || 
+        foodName.includes('turkey') || foodName.includes('beef') || foodName.includes('cod') || 
+        foodName.includes('tilapia') || foodName.includes('shrimp')) {
+      const totalOunces = (conversions.ounces * item.serving).toFixed(1);
+      const displayOunces = totalOunces.endsWith('.0') ? totalOunces.slice(0, -2) : totalOunces;
+      return `${displayOunces} oz`;
+    }
+
+    // Protein powders and bars - show as scoops/bars
+    if (foodName.includes('protein') && (foodName.includes('whey') || foodName.includes('scoop'))) {
+      const numScoops = item.serving.toFixed(1);
+      const displayScoops = numScoops.endsWith('.0') ? numScoops.slice(0, -2) : numScoops;
+      return displayScoops === '1' ? '1 scoop' : `${displayScoops} scoops`;
+    }
+
+    if (foodName.includes('bar')) {
+      const numBars = item.serving.toFixed(1);
+      const displayBars = numBars.endsWith('.0') ? numBars.slice(0, -2) : numBars;
+      return displayBars === '1' ? '1 bar' : `${displayBars} bars`;
+    }
+
+    // Rice, oats, pasta - show in cups
+    if (foodName.includes('rice') || foodName.includes('oats') || foodName.includes('pasta') || foodName.includes('quinoa')) {
+      const totalCups = (conversions.cups * item.serving).toFixed(1);
+      const displayCups = totalCups.endsWith('.0') ? totalCups.slice(0, -2) : totalCups;
+      return displayCups === '1' ? '1 cup' : `${displayCups} cups`;
+    }
+
+    // Bread - show as slices
+    if (foodName.includes('bread')) {
+      const numSlices = Math.round(item.serving);
+      return numSlices === 1 ? '1 slice' : `${numSlices} slices`;
+    }
+
+    // Fruits - show as pieces for whole fruits, cups for others
+    if (item.category === 'fruits') {
+      if (foodName.includes('apple') || foodName.includes('banana') || foodName.includes('orange') || 
+          foodName.includes('kiwi') || foodName.includes('lemon') || foodName.includes('lime')) {
+        const numPieces = item.serving.toFixed(1);
+        const displayPieces = numPieces.endsWith('.0') ? numPieces.slice(0, -2) : numPieces;
+        return displayPieces === '1' ? `1 ${foodName}` : `${displayPieces} ${foodName}s`;
+      } else {
+        // Berries, grapes, etc. - show in cups
+        const totalCups = (conversions.cups * item.serving).toFixed(1);
+        const displayCups = totalCups.endsWith('.0') ? totalCups.slice(0, -2) : totalCups;
+        return displayCups === '1' ? '1 cup' : `${displayCups} cups`;
+      }
+    }
+
+    // Nuts, seeds, oils - show in tablespoons or ounces
+    if (item.category === 'fat') {
+      if (foodName.includes('oil') || foodName.includes('butter')) {
+        // Small amounts in tablespoons (convert from ounces: 1 oz = 2 tbsp)
+        const totalTbsp = (conversions.ounces * item.serving * 2).toFixed(1);
+        const displayTbsp = totalTbsp.endsWith('.0') ? totalTbsp.slice(0, -2) : totalTbsp;
+        return displayTbsp === '1' ? '1 tbsp' : `${displayTbsp} tbsp`;
+      } else {
+        // Nuts and seeds in ounces
+        const totalOunces = (conversions.ounces * item.serving).toFixed(1);
+        const displayOunces = totalOunces.endsWith('.0') ? totalOunces.slice(0, -2) : totalOunces;
+        return `${displayOunces} oz`;
+      }
+    }
+
+    // Default fallback - use original display or best available unit
+    if (conversions.ounces && typeof conversions.ounces === 'number') {
+      const totalOunces = (conversions.ounces * item.serving).toFixed(1);
+      const displayOunces = totalOunces.endsWith('.0') ? totalOunces.slice(0, -2) : totalOunces;
+      return `${displayOunces} oz`;
+    }
+
+    // Final fallback to original
+    return `${item.displayServing || '1'} ${item.displayUnit || 'servings'}`;
+  };
+
   return (
     <div>
       {/* Header */}
@@ -334,7 +450,7 @@ const PrintableContent = ({
                   <tr key={index}>
                     <td>{index === 0 ? meal.time : ''}</td>
                     <td>{item.food}</td>
-                    <td>{item.displayServing} {item.displayUnit}</td>
+                    <td>{getSmartServingSize(item)}</td>
                   </tr>
                 ))}
               </React.Fragment>
