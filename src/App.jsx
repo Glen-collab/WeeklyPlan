@@ -9,6 +9,7 @@ import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 import MealIdeasModal from './MealIdeas.jsx';
 import WeekPlanModal from './WeekPlanModal.jsx';
 import PrintableNutritionPlan from './PrintableNutritionPlan.jsx';
+import GroceryListModal from './GroceryListModal.jsx';
 
 // Import the streamlined meal swipe component
 import MealSwipeGame from './MealSwipeGame.jsx';
