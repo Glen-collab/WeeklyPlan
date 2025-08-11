@@ -192,38 +192,38 @@ const PrintableNutritionPlan = ({
     <div className="w-full">
       {/* Screen View - Print Buttons */}
       <div className="print-hide space-y-4 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
-        <h3 className="text-xl font-bold text-gray-800 text-center">
+        <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 text-center`}>
           📄 Print Your Nutrition Plan
         </h3>
         
-        <div className={`flex ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'} gap-3 justify-center`}>
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 sm:grid-cols-3 gap-3'} justify-center`}>
           <button
             onClick={handlePreview}
-            className={`${isMobile ? 'w-full py-3' : 'px-6 py-3'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2`}
+            className={`${isMobile ? 'w-full py-4 text-base' : 'px-6 py-3'} bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2`}
           >
             <span>👁️</span>
-            Preview Plan
+            {isMobile ? 'Preview Plan' : 'Preview Plan'}
           </button>
           
           <button
             onClick={handlePrint}
-            className={`${isMobile ? 'w-full py-3' : 'px-6 py-3'} bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium flex items-center justify-center gap-2`}
+            className={`${isMobile ? 'w-full py-4 text-base' : 'px-6 py-3'} bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium flex items-center justify-center gap-2`}
           >
             <Printer size={20} />
-            Print Plan
+            {isMobile ? 'Print Plan' : 'Print Plan'}
           </button>
           
           <button
             onClick={() => setShowGroceryList(true)}
-            className={`${isMobile ? 'w-full py-3' : 'px-6 py-3'} bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium flex items-center justify-center gap-2`}
+            className={`${isMobile ? 'w-full py-4 text-base' : 'px-6 py-3'} bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium flex items-center justify-center gap-2`}
           >
             <ShoppingCart size={20} />
-            Grocery List
+            {isMobile ? 'Grocery List' : 'Grocery List'}
           </button>
         </div>
         
         <p className={`${isMobile ? 'text-sm' : 'text-sm'} text-gray-600 text-center`}>
-          Works with network printers, wireless printers, and mobile printing services
+          {isMobile ? 'Tap Grocery List for your shopping checklist!' : 'Works with network printers, wireless printers, and mobile printing services'}
         </p>
       </div>
 
