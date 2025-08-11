@@ -16,56 +16,73 @@ const GroceryListModal = ({
 
     const printStyles = `
       @media print {
-        /* Hide everything first */
-        body *, .printable-content, .printable-content * {
-          visibility: hidden !important;
+        /* Hide everything initially */
+        body * {
+          visibility: hidden;
+        }
+        
+        /* Hide nutrition plan specific elements */
+        .printable-content,
+        .printable-content *,
+        .print-table,
+        .print-header,
+        .print-summary,
+        .print-footer {
           display: none !important;
+          visibility: hidden !important;
         }
         
-        /* Show only grocery printable content */
-        .grocery-printable,
-        .grocery-printable * {
-          visibility: visible !important;
-          display: block !important;
-        }
-        
+        /* Show grocery content */
         .grocery-printable {
           position: absolute !important;
           left: 0 !important;
           top: 0 !important;
           width: 100% !important;
-          height: 100% !important;
+          height: auto !important;
           background: white !important;
           font-family: Arial, sans-serif !important;
           color: black !important;
           font-size: 11px !important;
           line-height: 1.3 !important;
-          overflow: hidden !important;
+          visibility: visible !important;
+          display: block !important;
           z-index: 9999 !important;
         }
         
-        /* Hide grocery modal elements */
+        .grocery-printable * {
+          visibility: visible !important;
+        }
+        
+        /* Hide modal controls */
         .grocery-hide {
           display: none !important;
           visibility: hidden !important;
         }
         
-        /* Grocery header styling */
+        /* Header */
         .grocery-header {
-          text-align: center !important;
-          margin-bottom: 15px !important;
-          border-bottom: 2px solid #333 !important;
-          padding-bottom: 8px !important;
-          display: block !important;
-          visibility: visible !important;
+          text-align: center;
+          margin-bottom: 15px;
+          border-bottom: 2px solid #333;
+          padding-bottom: 8px;
         }
         
-        /* Grocery section styling */
+        .grocery-header h1 {
+          font-size: 18px !important;
+          margin: 0 0 8px 0 !important;
+          font-weight: bold;
+        }
+        
+        .grocery-header p {
+          font-size: 12px !important;
+          margin: 0 !important;
+          color: #666;
+        }
+        
+        /* Sections */
         .grocery-section {
-          margin-bottom: 12px !important;
-          page-break-inside: avoid !important;
-          display: block !important;
-          visibility: visible !important;
+          margin-bottom: 12px;
+          page-break-inside: avoid;
         }
         
         .grocery-section h3 {
@@ -75,73 +92,59 @@ const GroceryListModal = ({
           padding: 4px 8px !important;
           margin: 0 0 6px 0 !important;
           border: 1px solid #333 !important;
-          display: block !important;
-          visibility: visible !important;
         }
         
-        /* Grocery item styling */
+        /* Food items with checkboxes */
         .grocery-item {
-          display: flex !important;
-          align-items: center !important;
-          padding: 2px 0 !important;
+          display: block !important;
+          padding: 3px 0 !important;
           font-size: 10px !important;
-          visibility: visible !important;
+          border-bottom: none !important;
         }
         
-        .grocery-checkbox {
-          width: 12px !important;
-          height: 12px !important;
-          border: 1px solid #333 !important;
-          margin-right: 6px !important;
-          display: inline-block !important;
-          visibility: visible !important;
-          flex-shrink: 0 !important;
+        .grocery-item::before {
+          content: "☐ ";
+          font-size: 12px;
+          margin-right: 6px;
         }
         
+        /* Dual checkbox items (condiments/supplements) */
         .grocery-dual-check {
-          display: flex !important;
-          align-items: center !important;
-          gap: 8px !important;
-          padding: 2px 0 !important;
+          display: block !important;
+          padding: 3px 0 !important;
           font-size: 10px !important;
-          visibility: visible !important;
         }
         
-        .grocery-dual-label {
-          font-size: 9px !important;
-          margin-left: 2px !important;
-          display: inline-block !important;
-          visibility: visible !important;
+        .grocery-dual-check::before {
+          content: "☐ Need  ☐ Have  ";
+          font-size: 10px;
+          margin-right: 6px;
+        }
+        
+        /* Column layout for print */
+        .grocery-columns {
+          display: block !important;
+        }
+        
+        .grocery-column {
+          display: block !important;
+          margin-bottom: 15px !important;
         }
         
         /* Page settings */
         @page {
-          margin: 0.5in !important;
-          size: letter !important;
+          margin: 0.5in;
+          size: letter;
         }
         
-        /* Column layout */
-        .grocery-columns {
-          display: flex !important;
-          gap: 15px !important;
-          visibility: visible !important;
-        }
-        
-        .grocery-column {
-          flex: 1 !important;
-          display: block !important;
-          visibility: visible !important;
-        }
-        
-        /* Override any conflicting nutrition plan styles */
-        .print-hide {
-          display: none !important;
-          visibility: hidden !important;
-        }
-        
-        .print-table, .print-header, .print-summary, .print-footer {
-          display: none !important;
-          visibility: hidden !important;
+        /* Footer */
+        .grocery-printable > div:last-child {
+          margin-top: 15px;
+          text-align: center;
+          font-size: 10px;
+          color: #666;
+          border-top: 1px solid #333;
+          padding-top: 8px;
         }
       }
     `;
