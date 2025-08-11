@@ -8,6 +8,7 @@ import { MealMessages } from './MealMessages/index.js';
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 import MealIdeasModal from './MealIdeas.jsx';
 import WeekPlanModal from './WeekPlanModal.jsx';
+import PrintableNutritionPlan from './PrintableNutritionPlan.jsx';
 
 // Import the streamlined meal swipe component
 import MealSwipeGame from './MealSwipeGame.jsx';
@@ -1431,7 +1432,7 @@ const NutritionApp = () => {
         </div>
       )}
 
-      {/* Regular Cards Modal */}
+     {/* Regular Cards Modal */}
       <SwipeableCardsModal 
         isOpen={showCardsModal}
         onClose={closeCardsModal}
@@ -1440,6 +1441,17 @@ const NutritionApp = () => {
         setCurrentIndex={setCurrentCardIndex}
         isMobile={isMobile}
       />
+
+      {/* Print Functionality */}
+      <div className="mt-8">
+        <PrintableNutritionPlan
+          allMeals={getAllMealsData()}
+          userProfile={userProfile}
+          calorieData={calorieData}
+          isMobile={isMobile}
+        />
+      </div>
+
     </div>
   );
 };
