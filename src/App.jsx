@@ -7,6 +7,7 @@ import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 import MealIdeasModal from './MealIdeas.jsx';
+import WeekPlanModal from './WeekPlanModal.jsx';
 
 // Import the streamlined meal swipe component
 import MealSwipeGame from './MealSwipeGame.jsx';
@@ -46,6 +47,9 @@ const NutritionApp = () => {
   // Meal Ideas modal state
   const [showMealIdeas, setShowMealIdeas] = useState(false);
   const [currentMealType, setCurrentMealType] = useState('breakfast');
+  
+  // Week Plan modal state
+  const [isWeekPlanModalOpen, setIsWeekPlanModalOpen] = useState(false);
   
   // Fruit budget tracking (max 3 servings per day for maintain goal)
   const [dailyFruitServings, setDailyFruitServings] = useState(0);
@@ -388,6 +392,40 @@ const NutritionApp = () => {
     closeMealIdeas();
   };
 
+  // Week Plan handler function
+  const handleAddWeekPlan = (weekPlan) => {
+    // Replace current meals with the selected daily plan
+    const mealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+    let totalFruitCount = 0;
+    
+    const newMeals = { ...meals };
+    
+    // Map the week plan meals to our meal structure
+    weekPlan.meals.forEach((planMeal, index) => {
+      if (index < mealTypes.length) {
+        const mealType = mealTypes[index];
+        newMeals[mealType] = {
+          ...newMeals[mealType],
+          items: [...planMeal.items]
+        };
+        
+        // Count fruits in this meal
+        planMeal.items.forEach(item => {
+          if (item.category === 'fruits') {
+            totalFruitCount += item.serving;
+          }
+        });
+      }
+    });
+    
+    setMeals(newMeals);
+    
+    // Update fruit count
+    setDailyFruitServings(Math.min(3, totalFruitCount));
+    
+    setIsWeekPlanModalOpen(false);
+  };
+
   // Calculate remaining fruit budget
   const fruitBudgetRemaining = Math.max(0, 3 - dailyFruitServings);
 
@@ -502,7 +540,7 @@ const NutritionApp = () => {
               )}
             </div>
             
-            {/* Profile and Personal Trainer Buttons */}
+            {/* Profile, Personal Trainer, and Plan My Week Buttons */}
             <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'space-x-3'}`}>
               <button
                 onClick={handleOpenProfileModal}
@@ -517,6 +555,15 @@ const NutritionApp = () => {
               >
                 <span>💪</span>
                 Personal Trainer
+              </button>
+              
+              {/* Plan My Week Button */}
+              <button
+                onClick={() => setIsWeekPlanModalOpen(true)}
+                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-md hover:opacity-90 transition-all duration-300 transform hover:scale-105 font-medium flex items-center justify-center gap-2 shadow-lg`}
+              >
+                <span>📅</span>
+                Plan My Week
               </button>
             </div>
           </div>
@@ -1347,6 +1394,16 @@ const NutritionApp = () => {
             fruitBudgetRemaining={fruitBudgetRemaining}
           />
         )}
+
+        {/* Week Plan Modal */}
+        <WeekPlanModal
+          isOpen={isWeekPlanModalOpen}
+          onClose={() => setIsWeekPlanModalOpen(false)}
+          onAddWeekPlan={handleAddWeekPlan}
+          userProfile={userProfile}
+          calorieData={calorieData}
+          isMobile={isMobile}
+        />
       </div>
 
       {/* ENHANCED: Tinder Hot or Not Burn or Learn Modal */}
