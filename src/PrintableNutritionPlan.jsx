@@ -4,10 +4,17 @@ import { Printer, X } from 'lucide-react';
 const PrintableNutritionPlan = ({ 
   allMeals = {}, 
   userProfile = {}, 
-  calorieData = {},
+  calorieData = null,
   isMobile = false 
 }) => {
   const [showPreview, setShowPreview] = useState(false);
+
+  // Handle null calorieData by providing safe defaults
+  const safeCalorieData = calorieData || {
+    targetCalories: 'Not set',
+    bmr: 'Not set',
+    tdee: 'Not set'
+  };
 
   // Add print styles to document head
   useEffect(() => {
@@ -112,20 +119,6 @@ const PrintableNutritionPlan = ({
     setShowPreview(true);
   };
 
-  const getMealTypeLabel = (mealType) => {
-    const labels = {
-      breakfast: 'Breakfast',
-      lunch: 'Lunch', 
-      dinner: 'Dinner',
-      firstSnack: 'Morning Snack',
-      secondSnack: 'Mid-Morning Snack',
-      midAfternoon: 'Afternoon Snack',
-      lateSnack: 'Evening Snack',
-      postWorkout: 'Post-Workout'
-    };
-    return labels[mealType] || mealType;
-  };
-
   return (
     <div className="w-full">
       {/* Screen View - Print Buttons */}
@@ -185,7 +178,7 @@ const PrintableNutritionPlan = ({
                 <PrintableContent 
                   allMeals={allMeals}
                   userProfile={userProfile}
-                  calorieData={calorieData}
+                  calorieData={safeCalorieData}
                 />
               </div>
             </div>
@@ -198,7 +191,7 @@ const PrintableNutritionPlan = ({
         <PrintableContent 
           allMeals={allMeals}
           userProfile={userProfile}
-          calorieData={calorieData}
+          calorieData={safeCalorieData}
         />
       </div>
     </div>
