@@ -400,13 +400,14 @@ const NutritionApp = () => {
     
     const newMeals = { ...meals };
     
-    // Map the week plan meals to our meal structure
-    weekPlan.meals.forEach((planMeal, index) => {
+    // Map the week plan meals to our meal structure - use allMeals instead of meals
+    weekPlan.allMeals.forEach((planMeal, index) => {
       if (index < mealTypes.length) {
         const mealType = mealTypes[index];
         newMeals[mealType] = {
           ...newMeals[mealType],
-          items: [...planMeal.items]
+          items: [...planMeal.items],
+          time: planMeal.time // Also update the meal time
         };
         
         // Count fruits in this meal
