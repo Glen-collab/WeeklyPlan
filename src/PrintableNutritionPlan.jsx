@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Printer, X } from 'lucide-react';
 
 const PrintableNutritionPlan = ({ 
@@ -8,6 +8,101 @@ const PrintableNutritionPlan = ({
   isMobile = false 
 }) => {
   const [showPreview, setShowPreview] = useState(false);
+
+  // Add print styles to document head
+  useEffect(() => {
+    const printStyles = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        
+        .printable-content,
+        .printable-content * {
+          visibility: visible;
+        }
+        
+        .printable-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: white;
+          font-family: Arial, sans-serif;
+          color: black;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        
+        .print-hide {
+          display: none !important;
+        }
+        
+        .print-header {
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #333;
+          padding-bottom: 10px;
+        }
+        
+        .print-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 15px;
+          page-break-inside: avoid;
+        }
+        
+        .print-table th,
+        .print-table td {
+          border: 1px solid #333;
+          padding: 8px;
+          text-align: left;
+          vertical-align: top;
+        }
+        
+        .print-table th {
+          background-color: #f0f0f0;
+          font-weight: bold;
+        }
+        
+        .meal-header {
+          background-color: #e8e8e8 !important;
+          font-weight: bold;
+        }
+        
+        .print-summary {
+          margin-top: 20px;
+          border-top: 2px solid #333;
+          padding-top: 10px;
+        }
+        
+        .print-footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 10px;
+          color: #666;
+        }
+        
+        @page {
+          margin: 0.5in;
+        }
+      }
+    `;
+
+    // Create style element and add to head
+    const styleElement = document.createElement('style');
+    styleElement.textContent = printStyles;
+    styleElement.setAttribute('data-print-styles', 'true');
+    document.head.appendChild(styleElement);
+
+    // Cleanup function to remove styles when component unmounts
+    return () => {
+      const existingStyle = document.querySelector('[data-print-styles="true"]');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -33,85 +128,6 @@ const PrintableNutritionPlan = ({
 
   return (
     <div className="w-full">
-      {/* Print Styles - Hidden on screen, shown when printing */}
-      <style jsx>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          
-          .printable-content,
-          .printable-content * {
-            visibility: visible;
-          }
-          
-          .printable-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            background: white;
-            font-family: Arial, sans-serif;
-            color: black;
-            font-size: 12px;
-            line-height: 1.4;
-          }
-          
-          .print-hide {
-            display: none !important;
-          }
-          
-          .print-header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-          }
-          
-          .print-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            page-break-inside: avoid;
-          }
-          
-          .print-table th,
-          .print-table td {
-            border: 1px solid #333;
-            padding: 8px;
-            text-align: left;
-            vertical-align: top;
-          }
-          
-          .print-table th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-          }
-          
-          .meal-header {
-            background-color: #e8e8e8 !important;
-            font-weight: bold;
-          }
-          
-          .print-summary {
-            margin-top: 20px;
-            border-top: 2px solid #333;
-            padding-top: 10px;
-          }
-          
-          .print-footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-          }
-          
-          @page {
-            margin: 0.5in;
-          }
-        }
-      `}</style>
-
       {/* Screen View - Print Buttons */}
       <div className="print-hide space-y-4 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
         <h3 className="text-xl font-bold text-gray-800 text-center">
@@ -318,7 +334,7 @@ const PrintableContent = ({
         </p>
       </div>
     </div>
-     );
+  );
 };
 
 export default PrintableNutritionPlan;
