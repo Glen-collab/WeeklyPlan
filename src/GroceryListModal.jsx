@@ -22,8 +22,7 @@ const GroceryListModal = ({
       carbohydrate: new Map(),
       fruits: new Map(),
       vegetables: new Map(),
-      fat: new Map(),
-      supplements: new Map()
+      fat: new Map()
     };
 
     // Process all meals and extract unique foods with quantities
@@ -121,22 +120,7 @@ const GroceryListModal = ({
     return `${totalServings.toFixed(1)} servings`;
   };
 
-  // All condiments list
-  const allCondiments = [
-    'Mustard', 'Hot Sauce', 'Lemon Juice', 'Soy Sauce (low sodium)', 
-    'Salsa', 'Ketchup', 'Sriracha', 'Balsamic Vinegar', 'Apple Cider Vinegar',
-    'Garlic Powder', 'Onion Powder', 'Black Pepper', 'Paprika', 
-    'Italian Seasoning', 'Everything Bagel Seasoning', 'Hummus',
-    'Salt', 'Olive Oil', 'Coconut Oil', 'MCT Oil'
-  ];
-
-  // All supplements list
-  const allSupplements = [
-    'Whey Protein (generic)', 'ON Gold Standard Whey', 'Ryse Protein',
-    'Bucked Up Protein', 'Raw Nutrition Protein', 'Whey Protein Isolate',
-    'Collagen Protein', 'Quest Bar', 'Pure Protein Bar', 'Protein Bar (generic)',
-    'Pure Protein RTD', 'Fairlife Core Power 42g', 'Fairlife Core Power 26g'
-  ];
+  // All condiments and supplements removed for cleaner one-page grocery list
 
   const groceryList = extractGroceryList();
 
@@ -184,18 +168,6 @@ const GroceryListModal = ({
           htmlContent += `<div class="item">☐ ${getGroceryQuantity(food, category, quantity)} • ${food}</div>`;
         });
       }
-    });
-
-    // Add condiments
-    htmlContent += `<h3>🧂 Condiments & Seasonings</h3>`;
-    allCondiments.forEach(condiment => {
-      htmlContent += `<div class="item">☐ Need  ☐ Have  ${condiment}</div>`;
-    });
-
-    // Add supplements  
-    htmlContent += `<h3>💊 Supplements</h3>`;
-    allSupplements.forEach(supplement => {
-      htmlContent += `<div class="item">☐ Need  ☐ Have  ${supplement}</div>`;
     });
 
     htmlContent += `
@@ -263,8 +235,6 @@ const GroceryListModal = ({
                 <GroceryListContent 
                   groceryList={groceryList}
                   getGroceryQuantity={getGroceryQuantity}
-                  allCondiments={allCondiments}
-                  allSupplements={allSupplements}
                   isScreenView={true}
                 />
               </div>
@@ -280,8 +250,6 @@ const GroceryListModal = ({
               <GroceryListContent 
                 groceryList={groceryList}
                 getGroceryQuantity={getGroceryQuantity}
-                allCondiments={allCondiments}
-                allSupplements={allSupplements}
                 isScreenView={true}
                 isMobile={isMobile}
               />
@@ -315,8 +283,6 @@ const GroceryListModal = ({
 const GroceryListContent = ({ 
   groceryList, 
   getGroceryQuantity, 
-  allCondiments, 
-  allSupplements, 
   isScreenView = false,
   isMobile = false
 }) => {
@@ -334,7 +300,6 @@ const GroceryListContent = ({
     return `${today.toLocaleDateString()} - ${nextWeek.toLocaleDateString()}`;
   };
 
-  // Screen view layout
   return (
     <div>
       {/* Header */}
@@ -347,85 +312,30 @@ const GroceryListContent = ({
         </p>
       </div>
 
-      <div className={isScreenView && !isMobile ? 'grid grid-cols-2 gap-6' : 'space-y-4'}>
-        
-        {/* Left Column */}
-        <div className="grocery-column">
-          
-          {/* Food Categories */}
-          {Object.entries(categoryLabels).map(([category, label]) => {
-            const items = groceryList[category];
-            if (!items || items.size === 0) return null;
+      {/* Food Categories Only */}
+      <div className={isScreenView ? 'space-y-6' : 'space-y-4'}>
+        {Object.entries(categoryLabels).map(([category, label]) => {
+          const items = groceryList[category];
+          if (!items || items.size === 0) return null;
 
-            return (
-              <div key={category} className="grocery-section">
-                <h3 className={isScreenView ? 'text-lg font-bold bg-gray-100 p-2 rounded border' : ''}>
-                  {label}
-                </h3>
-                <div className={isScreenView ? 'space-y-1 ml-2' : ''}>
-                  {Array.from(items.entries()).map(([food, quantity]) => (
-                    <div key={food} className={isScreenView ? 'flex items-center gap-3 py-1' : 'grocery-item'}>
-                      <div className={isScreenView ? 'w-4 h-4 border border-gray-400 rounded' : 'grocery-checkbox'}></div>
-                      <span className={isScreenView ? 'flex-1' : ''}>
-                        {getGroceryQuantity(food, category, quantity)} • {food}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+          return (
+            <div key={category} className="grocery-section">
+              <h3 className={isScreenView ? 'text-lg font-bold bg-gray-100 p-2 rounded border' : ''}>
+                {label}
+              </h3>
+              <div className={isScreenView ? 'space-y-1 ml-2' : ''}>
+                {Array.from(items.entries()).map(([food, quantity]) => (
+                  <div key={food} className={isScreenView ? 'flex items-center gap-3 py-1' : 'grocery-item'}>
+                    <div className={isScreenView ? 'w-4 h-4 border border-gray-400 rounded' : 'grocery-checkbox'}></div>
+                    <span className={isScreenView ? 'flex-1' : ''}>
+                      {getGroceryQuantity(food, category, quantity)} • {food}
+                    </span>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-
-        </div>
-
-        {/* Right Column */}
-        <div className="grocery-column">
-          
-          {/* Condiments & Seasonings */}
-          <div className="grocery-section">
-            <h3 className={isScreenView ? 'text-lg font-bold bg-gray-100 p-2 rounded border' : ''}>
-              🧂 Condiments & Seasonings
-            </h3>
-            <div className={isScreenView ? 'space-y-1 ml-2' : ''}>
-              {allCondiments.map(condiment => (
-                <div key={condiment} className={isScreenView ? 'flex items-center gap-2 py-1' : 'grocery-dual-check'}>
-                  <div className={isScreenView ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
-                    <div className={isScreenView ? 'w-3 h-3 border border-gray-400 rounded' : 'grocery-checkbox'}></div>
-                    <span className={isScreenView ? 'text-xs text-gray-600' : 'grocery-dual-label'}>Need</span>
-                  </div>
-                  <div className={isScreenView ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
-                    <div className={isScreenView ? 'w-3 h-3 border border-gray-400 rounded' : 'grocery-checkbox'}></div>
-                    <span className={isScreenView ? 'text-xs text-gray-600' : 'grocery-dual-label'}>Have</span>
-                  </div>
-                  <span className={isScreenView ? 'flex-1 text-sm' : ''}>{condiment}</span>
-                </div>
-              ))}
             </div>
-          </div>
-
-          {/* Supplements */}
-          <div className="grocery-section">
-            <h3 className={isScreenView ? 'text-lg font-bold bg-gray-100 p-2 rounded border' : ''}>
-              💊 Supplements
-            </h3>
-            <div className={isScreenView ? 'space-y-1 ml-2' : ''}>
-              {allSupplements.map(supplement => (
-                <div key={supplement} className={isScreenView ? 'flex items-center gap-2 py-1' : 'grocery-dual-check'}>
-                  <div className={isScreenView ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
-                    <div className={isScreenView ? 'w-3 h-3 border border-gray-400 rounded' : 'grocery-checkbox'}></div>
-                    <span className={isScreenView ? 'text-xs text-gray-600' : 'grocery-dual-label'}>Need</span>
-                  </div>
-                  <div className={isScreenView ? 'flex items-center gap-1' : 'flex items-center gap-2'}>
-                    <div className={isScreenView ? 'w-3 h-3 border border-gray-400 rounded' : 'grocery-checkbox'}></div>
-                    <span className={isScreenView ? 'text-xs text-gray-600' : 'grocery-dual-label'}>Have</span>
-                  </div>
-                  <span className={isScreenView ? 'flex-1 text-sm' : ''}>{supplement}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
+          );
+        })}
       </div>
 
       {/* Footer */}
