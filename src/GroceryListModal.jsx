@@ -16,135 +16,69 @@ const GroceryListModal = ({
 
     const printStyles = `
       @media print {
-        /* Hide everything initially */
-        body * {
-          visibility: hidden;
+        /* Hide everything except grocery content */
+        body > *:not(.grocery-printable) {
+          display: none !important;
         }
         
-        /* Hide nutrition plan specific elements */
-        .printable-content,
-        .printable-content *,
-        .print-table,
-        .print-header,
-        .print-summary,
-        .print-footer {
+        /* Hide nutrition plan elements specifically */
+        .printable-content {
           display: none !important;
-          visibility: hidden !important;
         }
         
         /* Show grocery content */
         .grocery-printable {
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
+          display: block !important;
+          position: static !important;
           width: 100% !important;
-          height: auto !important;
           background: white !important;
           font-family: Arial, sans-serif !important;
           color: black !important;
-          font-size: 11px !important;
-          line-height: 1.3 !important;
-          visibility: visible !important;
-          display: block !important;
-          z-index: 9999 !important;
-        }
-        
-        .grocery-printable * {
-          visibility: visible !important;
+          font-size: 12px !important;
+          line-height: 1.4 !important;
         }
         
         /* Hide modal controls */
         .grocery-hide {
           display: none !important;
-          visibility: hidden !important;
         }
         
-        /* Header */
-        .grocery-header {
-          text-align: center;
-          margin-bottom: 15px;
-          border-bottom: 2px solid #333;
-          padding-bottom: 8px;
-        }
-        
-        .grocery-header h1 {
+        /* Basic styling for print */
+        .grocery-printable h1 {
           font-size: 18px !important;
-          margin: 0 0 8px 0 !important;
-          font-weight: bold;
+          text-align: center !important;
+          margin-bottom: 10px !important;
+          border-bottom: 2px solid black !important;
+          padding-bottom: 5px !important;
         }
         
-        .grocery-header p {
-          font-size: 12px !important;
-          margin: 0 !important;
-          color: #666;
-        }
-        
-        /* Sections */
-        .grocery-section {
-          margin-bottom: 12px;
-          page-break-inside: avoid;
-        }
-        
-        .grocery-section h3 {
-          font-size: 12px !important;
+        .grocery-printable h3 {
+          font-size: 14px !important;
           font-weight: bold !important;
           background-color: #f0f0f0 !important;
-          padding: 4px 8px !important;
-          margin: 0 0 6px 0 !important;
-          border: 1px solid #333 !important;
+          padding: 5px !important;
+          margin: 10px 0 5px 0 !important;
+          border: 1px solid black !important;
         }
         
-        /* Food items with checkboxes */
-        .grocery-item {
-          display: block !important;
-          padding: 3px 0 !important;
-          font-size: 10px !important;
-          border-bottom: none !important;
+        .grocery-printable p {
+          margin: 5px 0 !important;
         }
         
-        .grocery-item::before {
-          content: "☐ ";
-          font-size: 12px;
-          margin-right: 6px;
-        }
-        
-        /* Dual checkbox items (condiments/supplements) */
-        .grocery-dual-check {
-          display: block !important;
-          padding: 3px 0 !important;
-          font-size: 10px !important;
-        }
-        
-        .grocery-dual-check::before {
-          content: "☐ Need  ☐ Have  ";
-          font-size: 10px;
-          margin-right: 6px;
-        }
-        
-        /* Column layout for print */
+        /* Simple layout for print */
         .grocery-columns {
           display: block !important;
         }
         
         .grocery-column {
           display: block !important;
-          margin-bottom: 15px !important;
+          margin-bottom: 20px !important;
         }
         
         /* Page settings */
         @page {
-          margin: 0.5in;
+          margin: 0.75in;
           size: letter;
-        }
-        
-        /* Footer */
-        .grocery-printable > div:last-child {
-          margin-top: 15px;
-          text-align: center;
-          font-size: 10px;
-          color: #666;
-          border-top: 1px solid #333;
-          padding-top: 8px;
         }
       }
     `;
@@ -350,13 +284,16 @@ const GroceryListModal = ({
         <div className="flex-1 overflow-y-auto p-4">
           {showPrintPreview ? (
             /* Print Preview */
-            <div className="bg-white border border-gray-300 p-6 max-w-[8.5in] mx-auto">
-              <GroceryListContent 
-                groceryList={groceryList}
-                getGroceryQuantity={getGroceryQuantity}
-                allCondiments={allCondiments}
-                allSupplements={allSupplements}
-              />
+            <div className="bg-white border border-gray-300 p-6 max-w-[8.5in] mx-auto min-h-[11in]">
+              <div className="grocery-printable">
+                <GroceryListContent 
+                  groceryList={groceryList}
+                  getGroceryQuantity={getGroceryQuantity}
+                  allCondiments={allCondiments}
+                  allSupplements={allSupplements}
+                  isPrintMode={true}
+                />
+              </div>
             </div>
           ) : (
             /* Screen View */
@@ -405,6 +342,7 @@ const GroceryListModal = ({
           getGroceryQuantity={getGroceryQuantity}
           allCondiments={allCondiments}
           allSupplements={allSupplements}
+          isPrintMode={true}
         />
       </div>
     </div>
@@ -417,7 +355,8 @@ const GroceryListContent = ({
   allCondiments, 
   allSupplements, 
   isScreenView = false,
-  isMobile = false 
+  isMobile = false,
+  isPrintMode = false
 }) => {
   const categoryLabels = {
     protein: '🥩 Proteins',
@@ -433,6 +372,60 @@ const GroceryListContent = ({
     return `${today.toLocaleDateString()} - ${nextWeek.toLocaleDateString()}`;
   };
 
+  if (isPrintMode) {
+    // Simple print layout
+    return (
+      <div>
+        <h1>🛒 Weekly Grocery Shopping List</h1>
+        <p style={{ textAlign: 'center', marginBottom: '20px' }}>
+          Shopping Period: {formatDate()}
+        </p>
+
+        {/* Food Categories */}
+        {Object.entries(categoryLabels).map(([category, label]) => {
+          const items = groceryList[category];
+          if (!items || items.size === 0) return null;
+
+          return (
+            <div key={category} style={{ marginBottom: '15px' }}>
+              <h3>{label}</h3>
+              {Array.from(items.entries()).map(([food, quantity]) => (
+                <p key={food} style={{ margin: '3px 0', paddingLeft: '20px' }}>
+                  ☐ {getGroceryQuantity(food, category, quantity)} • {food}
+                </p>
+              ))}
+            </div>
+          );
+        })}
+
+        {/* Condiments */}
+        <div style={{ marginBottom: '15px' }}>
+          <h3>🧂 Condiments & Seasonings</h3>
+          {allCondiments.map(condiment => (
+            <p key={condiment} style={{ margin: '3px 0', paddingLeft: '20px' }}>
+              ☐ Need  ☐ Have  {condiment}
+            </p>
+          ))}
+        </div>
+
+        {/* Supplements */}
+        <div style={{ marginBottom: '15px' }}>
+          <h3>💊 Supplements</h3>
+          {allSupplements.map(supplement => (
+            <p key={supplement} style={{ margin: '3px 0', paddingLeft: '20px' }}>
+              ☐ Need  ☐ Have  {supplement}
+            </p>
+          ))}
+        </div>
+
+        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '12px', borderTop: '1px solid #333', paddingTop: '10px' }}>
+          <p>✓ Check off items as you shop • Generated from your nutrition plan</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Screen view layout (existing code)
   return (
     <div>
       {/* Header */}
