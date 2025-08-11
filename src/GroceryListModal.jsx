@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Printer, X, ShoppingCart } from 'lucide-react';
-import { servingSizeConversions } from './FoodDatabase.js';
+import { servingSizeConversions, FoodDatabase } from './FoodDatabase.js';
 
 const GroceryListModal = ({ 
   isOpen, 
@@ -126,23 +126,44 @@ const GroceryListModal = ({
   // Extract and categorize foods from meal plan
   const extractGroceryList = () => {
     const groceryList = {
-      proteins: new Map(),
-      carbohydrates: new Map(),
+      protein: new Map(),
+      carbohydrate: new Map(),
       fruits: new Map(),
       vegetables: new Map(),
-      fats: new Map(),
+      fat: new Map(),
       supplements: new Map()
     };
+
+    // Debug: Log what we're getting
+    console.log('All meals data:', allMeals);
 
     // Process all meals and extract unique foods with quantities
     Object.values(allMeals).forEach(meal => {
       if (!meal.items) return;
       
       meal.items.forEach(item => {
-        if (!item.food || !item.category || !item.serving) return;
+        console.log('Processing item:', item);
         
-        const categoryMap = groceryList[item.category];
-        if (!categoryMap) return;
+        if (!item.food || !item.serving) return;
+        
+        // If item doesn't have category, try to infer it from FoodDatabase
+        let category = item.category;
+        if (!category && item.food) {
+          // Search through FoodDatabase to find the category
+          Object.keys(FoodDatabase).forEach(cat => {
+            if (FoodDatabase[cat][item.food]) {
+              category = cat;
+            }
+          });
+        }
+        
+        console.log(`Item: ${item.food}, Category: ${category}`);
+        
+        const categoryMap = groceryList[category];
+        if (!categoryMap) {
+          console.log(`No category map found for: ${category}`);
+          return;
+        }
 
         // Calculate weekly quantity (7 days)
         const weeklyServing = item.serving * 7;
@@ -153,6 +174,12 @@ const GroceryListModal = ({
           categoryMap.set(item.food, weeklyServing);
         }
       });
+    });
+
+    // Debug: Log final grocery list
+    console.log('Final grocery list:', groceryList);
+    Object.entries(groceryList).forEach(([cat, map]) => {
+      console.log(`${cat}:`, Array.from(map.entries()));
     });
 
     return groceryList;
@@ -354,11 +381,11 @@ const GroceryListContent = ({
   isMobile = false 
 }) => {
   const categoryLabels = {
-    proteins: '🥩 Proteins',
-    carbohydrates: '🍞 Carbohydrates', 
+    protein: '🥩 Proteins',
+    carbohydrate: '🍞 Carbohydrates', 
     fruits: '🍎 Fruits',
     vegetables: '🥬 Vegetables',
-    fats: '🥑 Healthy Fats'
+    fat: '🥑 Healthy Fats'
   };
 
   const formatDate = () => {
