@@ -394,40 +394,34 @@ const NutritionApp = () => {
     closeMealIdeas();
   };
 
-  // Week Plan handler function
-  const handleAddWeekPlan = (weekPlan) => {
-    // Replace current meals with the selected daily plan
-    const mealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
-    let totalFruitCount = 0;
-    
-    const newMeals = { ...meals };
-    
-    // Map the week plan meals to our meal structure - use allMeals instead of meals
-    weekPlan.allMeals.forEach((planMeal, index) => {
-      if (index < mealTypes.length) {
-        const mealType = mealTypes[index];
-        newMeals[mealType] = {
-          ...newMeals[mealType],
-          items: [...planMeal.items],
-          time: planMeal.time // Also update the meal time
-        };
-        
-        // Count fruits in this meal
-        planMeal.items.forEach(item => {
-          if (item.category === 'fruits') {
-            totalFruitCount += item.serving;
-          }
-        });
-      }
-    });
-    
-    setMeals(newMeals);
-    
-    // Update fruit count
-    setDailyFruitServings(Math.min(3, totalFruitCount));
-    
-    setIsWeekPlanModalOpen(false);
-  };
+  // NEW function (uses pre-rounded fruit count from WeekPlanModal)
+const handleAddWeekPlan = (weekPlan) => {
+  // Replace current meals with the selected daily plan
+  const mealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+  
+  const newMeals = { ...meals };
+  
+  // Map the week plan meals to our meal structure
+  weekPlan.allMeals.forEach((planMeal, index) => {
+    if (index < mealTypes.length) {
+      const mealType = mealTypes[index];
+      newMeals[mealType] = {
+        ...newMeals[mealType],
+        items: [...planMeal.items],
+        time: planMeal.time
+      };
+    }
+  });
+  
+  setMeals(newMeals);
+  
+  // Use the pre-calculated rounded fruit count from WeekPlanModal
+  if (weekPlan.fruitCount !== undefined) {
+    setDailyFruitServings(Math.min(3, weekPlan.fruitCount));
+  }
+  
+  setIsWeekPlanModalOpen(false);
+};
 
   // Calculate remaining fruit budget
   const fruitBudgetRemaining = Math.max(0, 3 - dailyFruitServings);
