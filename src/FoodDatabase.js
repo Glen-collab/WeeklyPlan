@@ -129,6 +129,12 @@ export const FoodDatabase = {
     'Green Beans': { protein: 1.8, carbs: 7, fat: 0.2, sugar: 3.3, calories: 31 },
     'Zucchini': { protein: 1.2, carbs: 3.1, fat: 0.3, sugar: 2.5, calories: 17 }
   },
+  snacks: {
+    'Popcorn (air-popped)': { protein: 3.2, carbs: 19, fat: 1.1, sugar: 0.1, calories: 93 },
+    'Pretzels': { protein: 2.8, carbs: 22, fat: 0.8, sugar: 0.5, calories: 108 },
+    'Rice Cakes (plain)': { protein: 0.7, carbs: 7, fat: 0.4, sugar: 0.1, calories: 35 },
+    'Crackers (whole wheat)': { protein: 1.9, carbs: 11, fat: 1.4, sugar: 0.4, calories: 60 }
+  },
   condiments: {
     'Mustard': { protein: 0.2, carbs: 0.3, fat: 0.2, sugar: 0.1, calories: 3 },
     'Hot Sauce': { protein: 0.1, carbs: 0.1, fat: 0, sugar: 0, calories: 1 },
@@ -144,7 +150,8 @@ export const FoodDatabase = {
     'Black Pepper': { protein: 0.1, carbs: 0.4, fat: 0, sugar: 0, calories: 2 },
     'Paprika': { protein: 0.3, carbs: 1.2, fat: 0.3, sugar: 0.9, calories: 6 },
     'Italian Seasoning': { protein: 0.1, carbs: 0.6, fat: 0.1, sugar: 0.1, calories: 3 },
-    'Everything Bagel Seasoning': { protein: 0.2, carbs: 0.5, fat: 0.2, sugar: 0, calories: 5 }
+    'Everything Bagel Seasoning': { protein: 0.2, carbs: 0.5, fat: 0.2, sugar: 0, calories: 5 },
+    'Hummus': { protein: 2, carbs: 5, fat: 2.5, sugar: 0.5, calories: 50 }
   }
 };
 
@@ -277,6 +284,12 @@ export const servingSizeConversions = {
     'Green Beans': { grams: 100, ounces: 3.5, cups: 1, palm: '1 fist' },
     'Zucchini': { grams: 100, ounces: 3.5, cups: 1, palm: '1 fist' }
   },
+  snacks: {
+    'Popcorn (air-popped)': { grams: 24, ounces: 0.85, cups: 3, palm: '3 cups popped' },
+    'Pretzels': { grams: 30, ounces: 1, cups: 0.5, palm: '1 handful' },
+    'Rice Cakes (plain)': { grams: 9, ounces: 0.3, cups: 0.06, palm: '1 cake' },
+    'Crackers (whole wheat)': { grams: 16, ounces: 0.56, cups: 0.1, palm: '5 crackers' }
+  },
   condiments: {
     'Mustard': { grams: 5, ounces: 0.2, cups: 0.02, palm: '1 tsp' },
     'Hot Sauce': { grams: 5, ounces: 0.2, cups: 0.02, palm: '1 tsp' },
@@ -292,7 +305,8 @@ export const servingSizeConversions = {
     'Black Pepper': { grams: 2.5, ounces: 0.09, cups: 0.02, palm: '1 tsp' },
     'Paprika': { grams: 2.5, ounces: 0.09, cups: 0.02, palm: '1 tsp' },
     'Italian Seasoning': { grams: 2.5, ounces: 0.09, cups: 0.02, palm: '1 tsp' },
-    'Everything Bagel Seasoning': { grams: 2.5, ounces: 0.09, cups: 0.02, palm: '1 tsp' }
+    'Everything Bagel Seasoning': { grams: 2.5, ounces: 0.09, cups: 0.02, palm: '1 tsp' },
+    'Hummus': { grams: 30, ounces: 1, cups: 0.125, palm: '2 tbsp' }
   }
 };
 
