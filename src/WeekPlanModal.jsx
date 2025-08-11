@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Target, Users, Clock } from 'lucide-react';
+import { X, Calendar, Users, Clock } from 'lucide-react';
 
 const WeekPlanModal = ({ 
   isOpen, 
@@ -9,12 +9,15 @@ const WeekPlanModal = ({
   calorieData = null,
   isMobile = false 
 }) => {
-  const [selectedGoal, setSelectedGoal] = useState('maintain');
+  // Remove selectedGoal state since we'll use userProfile.goal
   const [selectedEaterType, setSelectedEaterType] = useState('balanced');
   const [selectedMealFreq, setSelectedMealFreq] = useState(5);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   if (!isOpen) return null;
+
+  // Get goal from user profile instead of local state
+  const currentGoal = userProfile.goal || 'maintain';
 
   const goals = [
     { id: 'maintain', label: 'Maintain Weight', color: 'bg-gray-100', icon: '⚖️' },
@@ -48,7 +51,7 @@ const WeekPlanModal = ({
   const calculateTargetCalories = () => {
     if (!calorieData) return 2200; // fallback
     
-    switch(selectedGoal) {
+    switch(currentGoal) {
       case 'lose':
         // BMR + 50 calories for sustainable weight loss
         return calorieData.bmr + 50;
@@ -63,7 +66,7 @@ const WeekPlanModal = ({
     }
   };
 
-  // Scale meal plan serving sizes to hit target calories
+  // Scale meal plan serving sizes to hit target calories with fruit limit protection
   const scaleMealPlan = (basePlan, targetCalories) => {
     // Calculate total calories in base plan
     const baseTotalCalories = basePlan.allMeals.reduce((total, meal) => {
@@ -79,7 +82,7 @@ const WeekPlanModal = ({
     // Prevent extreme scaling (between 0.5x and 2.0x)
     scalingFactor = Math.max(0.5, Math.min(2.0, scalingFactor));
     
-    // Scale all serving sizes
+    // Scale all serving sizes while protecting fruit limits
     const scaledPlan = {
       ...basePlan,
       allMeals: basePlan.allMeals.map(meal => ({
@@ -88,11 +91,23 @@ const WeekPlanModal = ({
           const newServing = item.serving * scalingFactor;
           const newDisplayServing = parseFloat(item.displayServing) * scalingFactor;
           
+          // Special handling for fruits to maintain limits
+          if (item.category === 'fruits') {
+            // For fruits, cap the serving at 1.0 to maintain "1 fruit per meal" rule
+            const cappedServing = Math.min(newServing, 1.0);
+            const cappedDisplayServing = Math.min(newDisplayServing, 1.0);
+            
+            return {
+              ...item,
+              serving: cappedServing,
+              displayServing: cappedDisplayServing < 0.1 ? '0.1' : cappedDisplayServing.toFixed(1),
+            };
+          }
+          
           return {
             ...item,
             serving: newServing,
             displayServing: newDisplayServing < 0.1 ? '0.1' : newDisplayServing.toFixed(1),
-            // Keep the same display unit
           };
         })
       }))
@@ -167,11 +182,11 @@ const WeekPlanModal = ({
   // Generate meal plan based on selections with dynamic scaling
   const generateMealPlan = () => {
     const mealPlans = getMealPlans();
-    const planKey = `${selectedGoal}-${selectedEaterType}-${selectedMealFreq}`;
+    const planKey = `${currentGoal}-${selectedEaterType}-${selectedMealFreq}`;
     const basePlan = mealPlans[planKey] || mealPlans['maintain-balanced-5']; // fallback
     
     // For lose weight plans, scale to user's BMR + 50 (personalized calorie target)
-    if (selectedGoal === 'lose' && calorieData?.bmr) {
+    if (currentGoal === 'lose' && calorieData?.bmr) {
       const targetCalories = calculateTargetCalories();
       return scaleMealPlan(basePlan, targetCalories);
     }
@@ -187,7 +202,26 @@ const WeekPlanModal = ({
 
   const handleConfirmPlan = () => {
     if (selectedPlan) {
-      onAddWeekPlan(selectedPlan);
+      // Calculate total fruit count with proper rounding
+      let totalFruitCount = 0;
+      selectedPlan.allMeals.forEach((planMeal) => {
+        planMeal.items.forEach(item => {
+          if (item.category === 'fruits') {
+            totalFruitCount += item.serving;
+          }
+        });
+      });
+      
+      // Round to 1 decimal place to prevent rounding errors like 1.8116...
+      totalFruitCount = Math.round(totalFruitCount * 10) / 10;
+      
+      // Pass the plan with fruit count to parent
+      const planWithFruitCount = {
+        ...selectedPlan,
+        fruitCount: totalFruitCount
+      };
+      
+      onAddWeekPlan(planWithFruitCount);
       onClose();
     }
   };
@@ -217,35 +251,33 @@ const WeekPlanModal = ({
             /* Selection Interface */
             <div className="space-y-8">
               
-              {/* Goal Selection */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Target size={20} />
-                  1. Choose Your Goal
-                </h3>
-                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
-                  {goals.map(goal => (
-                    <button
-                      key={goal.id}
-                      onClick={() => setSelectedGoal(goal.id)}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        selectedGoal === goal.id
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : `border-gray-200 ${goal.color} text-gray-700 hover:border-gray-300`
-                      }`}
-                    >
-                      <div className="text-2xl mb-2">{goal.icon}</div>
-                      <div className="font-medium">{goal.label}</div>
-                    </button>
-                  ))}
+              {/* Show Current Goal from Profile */}
+              <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Your Goal from Profile</h3>
+                <div className="flex justify-center">
+                  <span className={`px-4 py-2 rounded-lg border-2 ${
+                    goals.find(g => g.id === currentGoal)?.color || 'bg-gray-100'
+                  } border-blue-300`}>
+                    <div className="text-2xl mb-1">
+                      {goals.find(g => g.id === currentGoal)?.icon || '⚖️'}
+                    </div>
+                    <div className="font-medium text-gray-800">
+                      {goals.find(g => g.id === currentGoal)?.label || 'Maintain Weight'}
+                    </div>
+                  </span>
                 </div>
+                {!userProfile.goal && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    💡 No goal set - please complete your profile first!
+                  </p>
+                )}
               </div>
 
               {/* Eater Type Selection */}
               <div>
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <Users size={20} />
-                  2. Choose Your Eating Style
+                  1. Choose Your Eating Style
                 </h3>
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
                   {eaterTypes.map(type => (
@@ -272,7 +304,7 @@ const WeekPlanModal = ({
               <div>
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <Clock size={20} />
-                  3. Choose Meal Frequency
+                  2. Choose Meal Frequency
                 </h3>
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-3 gap-4'}`}>
                   {mealFrequencies.map(freq => (
@@ -294,12 +326,23 @@ const WeekPlanModal = ({
 
               {/* Generate Plan Button */}
               <div className="text-center pt-4">
-                <button
-                  onClick={handleSelectPlan}
-                  className="px-8 py-3 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors font-medium text-lg"
-                >
-                  🎯 Generate My Meal Plan
-                </button>
+                {userProfile.goal ? (
+                  <button
+                    onClick={handleSelectPlan}
+                    className="px-8 py-3 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors font-medium text-lg"
+                  >
+                    🎯 Generate My Meal Plan
+                  </button>
+                ) : (
+                  <div className="text-center">
+                    <div className="px-8 py-3 bg-gray-300 text-gray-500 rounded-md font-medium text-lg cursor-not-allowed">
+                      🎯 Complete Profile First
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Please set your goal in Edit Profile to generate a meal plan
+                    </p>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -312,7 +355,7 @@ const WeekPlanModal = ({
                 <h3 className="text-xl font-bold text-gray-800 mb-2">Your Custom Meal Plan</h3>
                 <div className="flex flex-wrap justify-center gap-4 text-sm">
                   <span className="bg-blue-100 px-3 py-1 rounded-full">
-                    🎯 {goals.find(g => g.id === selectedGoal)?.label}
+                    🎯 {goals.find(g => g.id === currentGoal)?.label}
                   </span>
                   <span className="bg-purple-100 px-3 py-1 rounded-full">
                     👥 {eaterTypes.find(e => e.id === selectedEaterType)?.label}
@@ -320,13 +363,13 @@ const WeekPlanModal = ({
                   <span className="bg-orange-100 px-3 py-1 rounded-full">
                     ⏰ {selectedMealFreq} Meals/Day
                   </span>
-                  {selectedGoal === 'lose' && calorieData?.bmr && (
+                  {currentGoal === 'lose' && calorieData?.bmr && (
                     <span className="bg-red-100 px-3 py-1 rounded-full">
                       🔥 {calorieData.bmr + 50} calories (BMR + 50)
                     </span>
                   )}
                 </div>
-                {selectedGoal === 'lose' && calorieData?.bmr && (
+                {currentGoal === 'lose' && calorieData?.bmr && (
                   <div className="mt-3 text-sm text-gray-600">
                     <p>🎯 <strong>Personalized for you:</strong> Scaled to your BMR + 50 calories for sustainable weight loss</p>
                   </div>
@@ -725,7 +768,7 @@ const getMealPlans = () => {
     // Note: These plans serve as base templates (~2000 cal) and are dynamically scaled
     // to each user's BMR + 50 calories for personalized, sustainable weight loss
     
-    // LOSE - BALANCED - 3 MEALS (~1750 calories)
+    // LOSE - BALANCED - 3 MEALS (~1750 calories) - 1 FRUIT TOTAL
     'lose-balanced-3': {
       allMeals: [
         {
@@ -734,9 +777,9 @@ const getMealPlans = () => {
           items: [
             createFoodItem('Egg Whites', 'protein', 6, '6', 'egg whites'), // 102 cal
             createFoodItem('Oats (dry)', 'carbohydrate', 0.75, '3/8', 'cup'), // 113 cal
-            createFoodItem('Strawberries', 'fruits', 1.5, '1.5', 'cups'), // 48 cal
+            createFoodItem('Blueberries', 'fruits', 1, '1', 'cup'), // 57 cal - ONLY FRUIT
             createFoodItem('Almonds', 'fat', 0.75, '0.75', 'oz') // 123 cal
-            // Total: ~386 calories
+            // Total: ~395 calories
           ]
         },
         {
@@ -761,11 +804,11 @@ const getMealPlans = () => {
             // Total: ~825 calories
           ]
         }
-        // Grand Total: ~1903 calories
+        // Grand Total: ~1912 calories, 1 fruit
       ]
     },
 
-    // LOSE - BALANCED - 5 MEALS
+    // LOSE - BALANCED - 5 MEALS - 1 FRUIT TOTAL
     'lose-balanced-5': {
       allMeals: [
         {
@@ -774,7 +817,7 @@ const getMealPlans = () => {
           items: [
             createFoodItem('Egg Whites', 'protein', 5, '5', 'egg whites'), // 85 cal
             createFoodItem('Oats (dry)', 'carbohydrate', 0.6, '1/4', 'cup'), // 90 cal
-            createFoodItem('Blueberries', 'fruits', 1, '1', 'cup') // 57 cal
+            createFoodItem('Blueberries', 'fruits', 1, '1', 'cup') // 57 cal - ONLY FRUIT
             // Total: ~232 calories
           ]
         },
@@ -783,9 +826,8 @@ const getMealPlans = () => {
           time: '10:00 AM',
           items: [
             createFoodItem('Greek Yogurt (non-fat)', 'protein', 1, '1', 'cup'), // 130 cal
-            createFoodItem('Strawberries', 'fruits', 1, '1', 'cup'), // 32 cal
             createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
-            // Total: ~244 calories
+            // Total: ~212 calories
           ]
         },
         {
@@ -803,10 +845,9 @@ const getMealPlans = () => {
           mealName: 'Afternoon Snack',
           time: '4:00 PM',
           items: [
-            createFoodItem('Apple', 'fruits', 1, '1', 'medium'), // 52 cal
-            createFoodItem('Peanut Butter', 'fat', 0.75, '3/4', 'tbsp'), // 141 cal
-            createFoodItem('Whey Protein (generic)', 'supplements', 0.75, '3/4', 'scoop') // 90 cal
-            // Total: ~283 calories
+            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
+            createFoodItem('Peanut Butter', 'fat', 0.5, '1/2', 'tbsp') // 94 cal
+            // Total: ~214 calories
           ]
         },
         {
@@ -820,11 +861,11 @@ const getMealPlans = () => {
             // Total: ~758 calories
           ]
         }
-        // Grand Total: ~2095 calories
+        // Grand Total: ~1994 calories, 1 fruit
       ]
     },
 
-    // LOSE - BALANCED - 6 MEALS
+    // LOSE - BALANCED - 6 MEALS - 1 FRUIT TOTAL
     'lose-balanced-6': {
       allMeals: [
         {
@@ -841,7 +882,7 @@ const getMealPlans = () => {
           time: '10:00 AM',
           items: [
             createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.75, '3/4', 'cup'), // 98 cal
-            createFoodItem('Berries', 'fruits', 1, '1', 'cup'), // 52 cal
+            createFoodItem('Berries', 'fruits', 1, '1', 'cup'), // 52 cal - ONLY FRUIT
             createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
             // Total: ~232 calories
           ]
@@ -850,9 +891,8 @@ const getMealPlans = () => {
           mealName: 'Pre-Lunch',
           time: '11:30 AM',
           items: [
-            createFoodItem('Apple', 'fruits', 1, '1', 'medium'), // 52 cal
             createFoodItem('String Cheese', 'supplements', 1, '1', 'stick') // 70 cal
-            // Total: ~122 calories
+            // Total: ~70 calories
           ]
         },
         {
@@ -870,9 +910,8 @@ const getMealPlans = () => {
           mealName: 'Afternoon Snack',
           time: '4:00 PM',
           items: [
-            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
-            createFoodItem('Banana', 'fruits', 0.75, '3/4', 'medium') // 67 cal
-            // Total: ~187 calories
+            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop') // 120 cal
+            // Total: ~120 calories
           ]
         },
         {
@@ -886,11 +925,11 @@ const getMealPlans = () => {
             // Total: ~730 calories
           ]
         }
-        // Grand Total: ~1955 calories
+        // Grand Total: ~1836 calories, 1 fruit
       ]
     },
 
-    // LOSE - PERFORMANCE - 3 MEALS
+    // LOSE - PERFORMANCE - 3 MEALS - 1 FRUIT TOTAL
     'lose-performance-3': {
       allMeals: [
         {
@@ -899,9 +938,9 @@ const getMealPlans = () => {
           items: [
             createFoodItem('Egg Whites', 'protein', 8, '8', 'egg whites'), // 136 cal
             createFoodItem('Oats (dry)', 'carbohydrate', 0.75, '3/8', 'cup'), // 113 cal
-            createFoodItem('Blueberries', 'fruits', 1.25, '1.25', 'cups'), // 71 cal
+            createFoodItem('Blueberries', 'fruits', 1, '1', 'cup'), // 57 cal - ONLY FRUIT
             createFoodItem('Almonds', 'fat', 0.75, '0.75', 'oz') // 123 cal
-            // Total: ~443 calories
+            // Total: ~429 calories
           ]
         },
         {
@@ -926,11 +965,11 @@ const getMealPlans = () => {
             // Total: ~935 calories
           ]
         }
-        // Grand Total: ~2182 calories
+        // Grand Total: ~2168 calories, 1 fruit
       ]
     },
 
-    // LOSE - PERFORMANCE - 5 MEALS
+    // LOSE - PERFORMANCE - 5 MEALS - 1 FRUIT TOTAL
     'lose-performance-5': {
       allMeals: [
         {
@@ -939,8 +978,8 @@ const getMealPlans = () => {
           items: [
             createFoodItem('Egg Whites', 'protein', 6, '6', 'egg whites'), // 102 cal
             createFoodItem('Oats (dry)', 'carbohydrate', 0.6, '1/4', 'cup'), // 90 cal
-            createFoodItem('Banana', 'fruits', 0.75, '3/4', 'medium') // 67 cal
-            // Total: ~259 calories
+            createFoodItem('Banana', 'fruits', 1, '1', 'medium') // 89 cal - ONLY FRUIT
+            // Total: ~281 calories
           ]
         },
         {
@@ -948,9 +987,8 @@ const getMealPlans = () => {
           time: '9:30 AM',
           items: [
             createFoodItem('Whey Protein (generic)', 'supplements', 1.25, '1.25', 'scoop'), // 150 cal
-            createFoodItem('Berries', 'fruits', 1, '1', 'cup'), // 52 cal
             createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
-            // Total: ~284 calories
+            // Total: ~232 calories
           ]
         },
         {
@@ -968,9 +1006,8 @@ const getMealPlans = () => {
           mealName: 'Pre-Workout',
           time: '4:30 PM',
           items: [
-            createFoodItem('Greek Yogurt (non-fat)', 'protein', 1, '1', 'cup'), // 130 cal
-            createFoodItem('Apple', 'fruits', 1, '1', 'medium') // 52 cal
-            // Total: ~182 calories
+            createFoodItem('Greek Yogurt (non-fat)', 'protein', 1, '1', 'cup') // 130 cal
+            // Total: ~130 calories
           ]
         },
         {
@@ -984,11 +1021,11 @@ const getMealPlans = () => {
             // Total: ~804 calories
           ]
         }
-        // Grand Total: ~2148 calories
+        // Grand Total: ~2066 calories, 1 fruit
       ]
     },
 
-    // LOSE - PERFORMANCE - 6 MEALS
+    // LOSE - PERFORMANCE - 6 MEALS - 1 FRUIT TOTAL
     'lose-performance-6': {
       allMeals: [
         {
@@ -1005,8 +1042,8 @@ const getMealPlans = () => {
           time: '9:00 AM',
           items: [
             createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
-            createFoodItem('Berries', 'fruits', 0.75, '3/4', 'cup') // 39 cal
-            // Total: ~159 calories
+            createFoodItem('Berries', 'fruits', 1, '1', 'cup') // 52 cal - ONLY FRUIT
+            // Total: ~172 calories
           ]
         },
         {
@@ -1014,9 +1051,8 @@ const getMealPlans = () => {
           time: '11:30 AM',
           items: [
             createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.75, '3/4', 'cup'), // 98 cal
-            createFoodItem('Apple', 'fruits', 1, '1', 'medium'), // 52 cal
             createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
-            // Total: ~232 calories
+            // Total: ~180 calories
           ]
         },
         {
@@ -1034,9 +1070,8 @@ const getMealPlans = () => {
           mealName: 'Pre-Workout',
           time: '4:30 PM',
           items: [
-            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
-            createFoodItem('Banana', 'fruits', 0.75, '3/4', 'medium') // 67 cal
-            // Total: ~187 calories
+            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop') // 120 cal
+            // Total: ~120 calories
           ]
         },
         {
@@ -1050,7 +1085,7 @@ const getMealPlans = () => {
             // Total: ~788 calories
           ]
         }
-        // Grand Total: ~2125 calories
+        // Grand Total: ~2019 calories, 1 fruit
       ]
     },
 
