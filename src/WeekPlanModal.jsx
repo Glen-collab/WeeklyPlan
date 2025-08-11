@@ -27,7 +27,7 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
 
   const plans = [];
 
-  // PLAN 1: Classic Bodybuilder Day
+  // PLAN 1: Classic Bodybuilder Day (WITH POPCORN!)
   plans.push({
     id: 1,
     name: goal === 'lose' ? "Lean Machine Day" : goal === 'dirty-bulk' ? "Mass Monster Day" : "Classic Bodybuilder Day",
@@ -81,10 +81,19 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
           { id: generateId(), category: 'carbohydrate', food: 'Potato (baked)', serving: goal === 'lose' ? 0.5 : goal === 'dirty-bulk' ? 2.5 : 1.5, displayServing: goal === 'lose' ? '0.5' : goal === 'dirty-bulk' ? '2.5' : '1.5', displayUnit: 'servings' }
         ]
       },
-      // Post-Workout/Evening
+      // Evening: YOUR POPCORN COMBO!
       {
-        name: goal === 'lose' ? "Evening Snack" : "Post-Workout",
+        name: "Evening Snack",
         time: "8:30 PM",
+        items: [
+          { id: generateId(), category: 'snacks', food: 'Popcorn (air-popped)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'servings' },
+          { id: generateId(), category: 'fat', food: 'Olive Oil', serving: goal === 'lose' ? 0.5 : goal === 'dirty-bulk' ? 1.5 : 1, displayServing: goal === 'lose' ? '0.5' : goal === 'dirty-bulk' ? '1.5' : '1', displayUnit: 'servings' }
+        ]
+      },
+      // Post-Workout
+      {
+        name: "Post-Workout",
+        time: "5:00 AM",
         items: [
           { id: generateId(), category: 'supplements', food: 'Pure Protein RTD', serving: 1, displayServing: '1', displayUnit: 'bottle' },
           ...(goal === 'dirty-bulk' ? [{ id: generateId(), category: 'fruits', food: 'Banana', serving: 1, displayServing: '1', displayUnit: 'servings' }] : [])
@@ -150,6 +159,13 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
         items: [
           { id: generateId(), category: 'supplements', food: 'Whey Protein (generic)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'scoops' },
           ...(goal !== 'lose' ? [{ id: generateId(), category: 'fruits', food: 'Strawberries', serving: 1, displayServing: '1', displayUnit: 'cups' }] : [])
+        ]
+      },
+      {
+        name: "Post-Workout",
+        time: "5:00 AM",
+        items: [
+          { id: generateId(), category: 'supplements', food: 'Fairlife Core Power 26g', serving: 1, displayServing: '1', displayUnit: 'bottles' }
         ]
       }
     ]
@@ -217,6 +233,13 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
           { id: generateId(), category: 'fruits', food: 'Orange', serving: 1, displayServing: '1', displayUnit: 'servings' },
           { id: generateId(), category: 'fat', food: 'Cashews', serving: goal === 'lose' ? 0.5 : goal === 'dirty-bulk' ? 1.5 : 1, displayServing: goal === 'lose' ? '0.5' : goal === 'dirty-bulk' ? '1.5' : '1', displayUnit: 'servings' }
         ]
+      },
+      {
+        name: "Post-Workout",
+        time: "5:00 AM",
+        items: [
+          { id: generateId(), category: 'supplements', food: 'Whey Protein (generic)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'scoops' }
+        ]
       }
     ]
   });
@@ -282,11 +305,18 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
           { id: generateId(), category: 'protein', food: 'Cottage Cheese (low-fat)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 3 : 2, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '3' : '2', displayUnit: 'servings' },
           ...(goal === 'dirty-bulk' ? [{ id: generateId(), category: 'fruits', food: 'Strawberries', serving: 1, displayServing: '1', displayUnit: 'cups' }] : [])
         ]
+      },
+      {
+        name: "Pre-Bed",
+        time: "9:30 PM",
+        items: [
+          { id: generateId(), category: 'supplements', food: 'Whey Protein (generic)', serving: goal === 'lose' ? 0.5 : goal === 'dirty-bulk' ? 1.5 : 1, displayServing: goal === 'lose' ? '0.5' : goal === 'dirty-bulk' ? '1.5' : '1', displayUnit: 'scoops' }
+        ]
       }
     ]
   });
 
-  // PLAN 5: Simple & Clean Day
+  // PLAN 5: Simple & Clean Day (WITH PRETZELS & HUMMUS + POPCORN!)
   plans.push({
     id: 5,
     name: goal === 'lose' ? "Clean Cut Day" : goal === 'dirty-bulk' ? "Simple Bulk Day" : "Simple & Clean Day",
@@ -322,12 +352,13 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
           { id: generateId(), category: 'vegetables', food: 'Carrots', serving: 1, displayServing: '1', displayUnit: 'cups' }
         ]
       },
+      // PRETZELS & HUMMUS SNACK!
       {
         name: "Afternoon Snack",
         time: "3:00 PM",
         items: [
-          { id: generateId(), category: 'supplements', food: 'String Cheese', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 3 : 2, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '3' : '2', displayUnit: 'sticks' },
-          { id: generateId(), category: 'supplements', food: 'Hard-Boiled Egg', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 3 : 2, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '3' : '2', displayUnit: 'eggs' }
+          { id: generateId(), category: 'snacks', food: 'Pretzels', serving: goal === 'lose' ? 0.5 : goal === 'dirty-bulk' ? 1.5 : 1, displayServing: goal === 'lose' ? '0.5' : goal === 'dirty-bulk' ? '1.5' : '1', displayUnit: 'servings' },
+          { id: generateId(), category: 'condiments', food: 'Hummus', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 3 : 2, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '3' : '2', displayUnit: 'servings' }
         ]
       },
       {
@@ -339,9 +370,18 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
           { id: generateId(), category: 'vegetables', food: 'Zucchini', serving: 1, displayServing: '1', displayUnit: 'cups' }
         ]
       },
+      // YOUR FAVORITE POPCORN COMBO!
       {
         name: "Evening Snack",
         time: "8:30 PM",
+        items: [
+          { id: generateId(), category: 'snacks', food: 'Popcorn (air-popped)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'servings' },
+          { id: generateId(), category: 'fat', food: 'Olive Oil', serving: goal === 'lose' ? 0.25 : goal === 'dirty-bulk' ? 1 : 0.5, displayServing: goal === 'lose' ? '0.25' : goal === 'dirty-bulk' ? '1' : '0.5', displayUnit: 'servings' }
+        ]
+      },
+      {
+        name: "Pre-Bed",
+        time: "9:30 PM",
         items: [
           { id: generateId(), category: 'protein', food: 'Greek Yogurt (non-fat)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'cups' },
           ...(goal === 'dirty-bulk' ? [{ id: generateId(), category: 'fruits', food: 'Kiwi', serving: 1, displayServing: '1', displayUnit: 'servings' }] : [])
@@ -412,6 +452,13 @@ const createWeekPlanOptions = (targetCalories, goal, bmr) => {
           { id: generateId(), category: 'protein', food: 'Cottage Cheese (low-fat)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 3 : 2, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '3' : '2', displayUnit: 'servings' },
           { id: generateId(), category: 'fat', food: 'Walnuts', serving: goal === 'lose' ? 0.5 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '0.5' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'servings' },
           ...(goal === 'dirty-bulk' ? [{ id: generateId(), category: 'fruits', food: 'Grapes', serving: 1, displayServing: '1', displayUnit: 'cups' }] : [])
+        ]
+      },
+      {
+        name: "Pre-Bed",
+        time: "9:30 PM",
+        items: [
+          { id: generateId(), category: 'supplements', food: 'Whey Protein (generic)', serving: goal === 'lose' ? 1 : goal === 'dirty-bulk' ? 2 : 1, displayServing: goal === 'lose' ? '1' : goal === 'dirty-bulk' ? '2' : '1', displayUnit: 'scoops' }
         ]
       }
     ]
