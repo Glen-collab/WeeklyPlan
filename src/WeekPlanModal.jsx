@@ -44,11 +44,140 @@ const WeekPlanModal = ({
     { id: 6, label: '6 Meals/Day', description: 'Main meals + 2 snacks + post-workout' }
   ];
 
-  // Generate meal plan based on selections
+  // Calculate target calories based on goal and user profile
+  const calculateTargetCalories = () => {
+    if (!calorieData) return 2200; // fallback
+    
+    switch(selectedGoal) {
+      case 'lose':
+        // BMR + 50 calories for sustainable weight loss
+        return calorieData.bmr + 50;
+      case 'maintain':
+        return calorieData.targetCalories || calorieData.tdee;
+      case 'gain-muscle':
+        return calorieData.tdee + 500;
+      case 'dirty-bulk':
+        return calorieData.tdee + 700;
+      default:
+        return calorieData.targetCalories || 2200;
+    }
+  };
+
+  // Scale meal plan serving sizes to hit target calories
+  const scaleMealPlan = (basePlan, targetCalories) => {
+    // Calculate total calories in base plan
+    const baseTotalCalories = basePlan.allMeals.reduce((total, meal) => {
+      return total + meal.items.reduce((mealTotal, item) => {
+        const foodData = getFoodNutrition(item.food, item.category);
+        return mealTotal + (foodData.calories * item.serving);
+      }, 0);
+    }, 0);
+
+    // Calculate scaling factor with safety bounds
+    let scalingFactor = targetCalories / baseTotalCalories;
+    
+    // Prevent extreme scaling (between 0.5x and 2.0x)
+    scalingFactor = Math.max(0.5, Math.min(2.0, scalingFactor));
+    
+    // Scale all serving sizes
+    const scaledPlan = {
+      ...basePlan,
+      allMeals: basePlan.allMeals.map(meal => ({
+        ...meal,
+        items: meal.items.map(item => {
+          const newServing = item.serving * scalingFactor;
+          const newDisplayServing = parseFloat(item.displayServing) * scalingFactor;
+          
+          return {
+            ...item,
+            serving: newServing,
+            displayServing: newDisplayServing < 0.1 ? '0.1' : newDisplayServing.toFixed(1),
+            // Keep the same display unit
+          };
+        })
+      }))
+    };
+
+    return scaledPlan;
+  };
+
+  // Helper function to get food nutrition data
+  const getFoodNutrition = (foodName, category) => {
+    // This matches your FoodDatabase structure - add all foods used in meal plans
+    const foodDatabase = {
+      protein: {
+        'Chicken Breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
+        'Egg Whites': { calories: 17, protein: 3.6, carbs: 0.2, fat: 0.1 },
+        'Salmon': { calories: 208, protein: 20, carbs: 0, fat: 13 },
+        'Greek Yogurt (non-fat)': { calories: 130, protein: 23, carbs: 9, fat: 0 },
+        'Cod': { calories: 89, protein: 20, carbs: 0, fat: 0.7 },
+        'Lean Beef (90/10)': { calories: 176, protein: 26, carbs: 0, fat: 10 },
+        'Turkey Breast': { calories: 135, protein: 29, carbs: 0, fat: 1 },
+        'Tuna (canned in water)': { calories: 108, protein: 23, carbs: 0, fat: 1 },
+      },
+      carbohydrate: {
+        'Oats (dry)': { calories: 150, protein: 5, carbs: 27, fat: 3 },
+        'Brown Rice (cooked)': { calories: 112, protein: 2.6, carbs: 23, fat: 0.9 },
+        'Sweet Potato': { calories: 86, protein: 1.6, carbs: 20, fat: 0.1 },
+        'White Rice (cooked)': { calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
+        'Quinoa (cooked)': { calories: 120, protein: 4.1, carbs: 21, fat: 1.9 },
+        'Whole Wheat Bread': { calories: 74, protein: 4, carbs: 12, fat: 1 },
+      },
+      fruits: {
+        'Banana': { calories: 89, protein: 1.3, carbs: 23, fat: 0.3 },
+        'Apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2 },
+        'Blueberries': { calories: 57, protein: 0.7, carbs: 14, fat: 0.3 },
+        'Strawberries': { calories: 32, protein: 0.7, carbs: 7, fat: 0.3 },
+        'Berries': { calories: 52, protein: 0.7, carbs: 12, fat: 0.3 },
+        'Orange': { calories: 47, protein: 0.9, carbs: 12, fat: 0.1 },
+        'Grapes': { calories: 62, protein: 0.6, carbs: 16, fat: 0.2 },
+      },
+      fat: {
+        'Avocado': { calories: 320, protein: 4, carbs: 17, fat: 29 },
+        'Peanut Butter': { calories: 188, protein: 8, carbs: 6, fat: 16 },
+        'Olive Oil': { calories: 119, protein: 0, carbs: 0, fat: 14 },
+        'Almonds': { calories: 164, protein: 6, carbs: 6, fat: 14 },
+        'Walnuts': { calories: 185, protein: 4, carbs: 4, fat: 18 },
+        'Cashews': { calories: 157, protein: 5, carbs: 9, fat: 12 },
+      },
+      vegetables: {
+        'Broccoli': { calories: 25, protein: 2.8, carbs: 6, fat: 0.4 },
+        'Spinach': { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4 },
+        'Bell Peppers': { calories: 31, protein: 1, carbs: 7, fat: 0.3 },
+        'Asparagus': { calories: 20, protein: 2.2, carbs: 3.9, fat: 0.1 },
+        'Carrots': { calories: 41, protein: 0.9, carbs: 10, fat: 0.2 },
+        'Green Beans': { calories: 31, protein: 1.8, carbs: 7, fat: 0.2 },
+      },
+      supplements: {
+        'Whey Protein (generic)': { calories: 120, protein: 24, carbs: 2, fat: 1.5 },
+        'String Cheese': { calories: 70, protein: 6, carbs: 1, fat: 5 },
+        'Quest Bar': { calories: 190, protein: 20, carbs: 4, fat: 8 },
+        'Pure Protein Bar': { calories: 180, protein: 20, carbs: 17, fat: 2 },
+      },
+      condiments: {
+        'Honey': { calories: 64, protein: 0.1, carbs: 17, fat: 0 },
+        'Mustard': { calories: 3, protein: 0.2, carbs: 0.3, fat: 0.2 },
+        'Hot Sauce': { calories: 1, protein: 0.1, carbs: 0.1, fat: 0 },
+      }
+    };
+
+    return foodDatabase[category]?.[foodName] || { calories: 100, protein: 5, carbs: 10, fat: 3 };
+  };
+
+  // Generate meal plan based on selections with dynamic scaling
   const generateMealPlan = () => {
     const mealPlans = getMealPlans();
     const planKey = `${selectedGoal}-${selectedEaterType}-${selectedMealFreq}`;
-    return mealPlans[planKey] || mealPlans['maintain-balanced-5']; // fallback
+    const basePlan = mealPlans[planKey] || mealPlans['maintain-balanced-5']; // fallback
+    
+    // For lose weight plans, scale to user's BMR + 50 (personalized calorie target)
+    if (selectedGoal === 'lose' && calorieData?.bmr) {
+      const targetCalories = calculateTargetCalories();
+      return scaleMealPlan(basePlan, targetCalories);
+    }
+    
+    // For other goals, return the base plan (already properly sized for average TDEE)
+    return basePlan;
   };
 
   const handleSelectPlan = () => {
@@ -191,7 +320,17 @@ const WeekPlanModal = ({
                   <span className="bg-orange-100 px-3 py-1 rounded-full">
                     ⏰ {selectedMealFreq} Meals/Day
                   </span>
+                  {selectedGoal === 'lose' && calorieData?.bmr && (
+                    <span className="bg-red-100 px-3 py-1 rounded-full">
+                      🔥 {calorieData.bmr + 50} calories (BMR + 50)
+                    </span>
+                  )}
                 </div>
+                {selectedGoal === 'lose' && calorieData?.bmr && (
+                  <div className="mt-3 text-sm text-gray-600">
+                    <p>🎯 <strong>Personalized for you:</strong> Scaled to your BMR + 50 calories for sustainable weight loss</p>
+                  </div>
+                )}
               </div>
 
               {/* Meal Plan Display */}
@@ -582,45 +721,47 @@ const getMealPlans = () => {
       ]
     },
 
-    // ===== LOSE WEIGHT PLANS (TDEE - 500 calories) =====
+    // ===== LOSE WEIGHT PLANS (Base templates - scaled to BMR + 50) =====
+    // Note: These plans serve as base templates (~2000 cal) and are dynamically scaled
+    // to each user's BMR + 50 calories for personalized, sustainable weight loss
     
-    // LOSE - BALANCED - 3 MEALS (~1700 calories)
+    // LOSE - BALANCED - 3 MEALS (~1750 calories)
     'lose-balanced-3': {
       allMeals: [
         {
           mealName: 'Breakfast',
           time: '7:00 AM',
           items: [
-            createFoodItem('Egg Whites', 'protein', 5, '5', 'egg whites'), // 85 cal
-            createFoodItem('Oats (dry)', 'carbohydrate', 0.5, '1/4', 'cup'), // 75 cal
+            createFoodItem('Egg Whites', 'protein', 6, '6', 'egg whites'), // 102 cal
+            createFoodItem('Oats (dry)', 'carbohydrate', 0.75, '3/8', 'cup'), // 113 cal
             createFoodItem('Strawberries', 'fruits', 1.5, '1.5', 'cups'), // 48 cal
-            createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
-            // Total: ~290 calories
+            createFoodItem('Almonds', 'fat', 0.75, '0.75', 'oz') // 123 cal
+            // Total: ~386 calories
           ]
         },
         {
           mealName: 'Lunch',
           time: '12:30 PM',
           items: [
-            createFoodItem('Chicken Breast', 'protein', 2, '7', 'oz'), // 330 cal
-            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.75, '3/8', 'cup'), // 84 cal
-            createFoodItem('Broccoli', 'vegetables', 3, '3', 'cups'), // 75 cal
-            createFoodItem('Olive Oil', 'fat', 0.5, '1/2', 'tbsp') // 60 cal
-            // Total: ~549 calories
+            createFoodItem('Chicken Breast', 'protein', 2.5, '8.75', 'oz'), // 413 cal
+            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 1.25, '5/8', 'cup'), // 140 cal
+            createFoodItem('Broccoli', 'vegetables', 2, '2', 'cups'), // 50 cal
+            createFoodItem('Olive Oil', 'fat', 0.75, '3/4', 'tbsp') // 89 cal
+            // Total: ~692 calories
           ]
         },
         {
           mealName: 'Dinner',
           time: '6:30 PM',
           items: [
-            createFoodItem('Cod', 'protein', 2.5, '8.75', 'oz'), // 223 cal
+            createFoodItem('Salmon', 'protein', 2, '7', 'oz'), // 416 cal
             createFoodItem('Sweet Potato', 'carbohydrate', 1.5, '1.5', 'medium'), // 129 cal
-            createFoodItem('Asparagus', 'vegetables', 3, '3', 'cups'), // 60 cal
-            createFoodItem('Avocado', 'fat', 0.5, '1/2', 'medium') // 160 cal
-            // Total: ~572 calories
+            createFoodItem('Asparagus', 'vegetables', 2, '2', 'cups'), // 40 cal
+            createFoodItem('Avocado', 'fat', 0.75, '3/4', 'medium') // 240 cal
+            // Total: ~825 calories
           ]
         }
-        // Grand Total: ~1411 calories
+        // Grand Total: ~1903 calories
       ]
     },
 
@@ -631,30 +772,31 @@ const getMealPlans = () => {
           mealName: 'Breakfast',
           time: '7:00 AM',
           items: [
-            createFoodItem('Egg Whites', 'protein', 4, '4', 'egg whites'), // 68 cal
-            createFoodItem('Oats (dry)', 'carbohydrate', 0.4, '1/5', 'cup'), // 60 cal
-            createFoodItem('Blueberries', 'fruits', 0.75, '3/4', 'cup') // 43 cal
-            // Total: ~171 calories
+            createFoodItem('Egg Whites', 'protein', 5, '5', 'egg whites'), // 85 cal
+            createFoodItem('Oats (dry)', 'carbohydrate', 0.6, '1/4', 'cup'), // 90 cal
+            createFoodItem('Blueberries', 'fruits', 1, '1', 'cup') // 57 cal
+            // Total: ~232 calories
           ]
         },
         {
           mealName: 'Morning Snack',
           time: '10:00 AM',
           items: [
-            createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.75, '3/4', 'cup'), // 98 cal
-            createFoodItem('Strawberries', 'fruits', 1, '1', 'cup') // 32 cal
-            // Total: ~130 calories
+            createFoodItem('Greek Yogurt (non-fat)', 'protein', 1, '1', 'cup'), // 130 cal
+            createFoodItem('Strawberries', 'fruits', 1, '1', 'cup'), // 32 cal
+            createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
+            // Total: ~244 calories
           ]
         },
         {
           mealName: 'Lunch',
           time: '1:00 PM',
           items: [
-            createFoodItem('Chicken Breast', 'protein', 1.75, '6.1', 'oz'), // 289 cal
-            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.75, '3/8', 'cup'), // 84 cal
-            createFoodItem('Bell Peppers', 'vegetables', 2, '2', 'cups'), // 62 cal
-            createFoodItem('Olive Oil', 'fat', 0.4, '0.4', 'tbsp') // 48 cal
-            // Total: ~483 calories
+            createFoodItem('Chicken Breast', 'protein', 2, '7', 'oz'), // 330 cal
+            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 1, '1/2', 'cup'), // 112 cal
+            createFoodItem('Bell Peppers', 'vegetables', 1.5, '1.5', 'cups'), // 47 cal
+            createFoodItem('Olive Oil', 'fat', 0.75, '3/4', 'tbsp') // 89 cal
+            // Total: ~578 calories
           ]
         },
         {
@@ -662,22 +804,23 @@ const getMealPlans = () => {
           time: '4:00 PM',
           items: [
             createFoodItem('Apple', 'fruits', 1, '1', 'medium'), // 52 cal
+            createFoodItem('Peanut Butter', 'fat', 0.75, '3/4', 'tbsp'), // 141 cal
             createFoodItem('Whey Protein (generic)', 'supplements', 0.75, '3/4', 'scoop') // 90 cal
-            // Total: ~142 calories
+            // Total: ~283 calories
           ]
         },
         {
           mealName: 'Dinner',
           time: '7:00 PM',
           items: [
-            createFoodItem('Cod', 'protein', 2, '7', 'oz'), // 178 cal
-            createFoodItem('Sweet Potato', 'carbohydrate', 1, '1', 'medium'), // 86 cal
-            createFoodItem('Spinach', 'vegetables', 3, '3', 'cups'), // 69 cal
-            createFoodItem('Avocado', 'fat', 0.5, '1/2', 'medium') // 160 cal
-            // Total: ~493 calories
+            createFoodItem('Salmon', 'protein', 1.75, '6.1', 'oz'), // 364 cal
+            createFoodItem('Sweet Potato', 'carbohydrate', 1.25, '1.25', 'medium'), // 108 cal
+            createFoodItem('Spinach', 'vegetables', 2, '2', 'cups'), // 46 cal
+            createFoodItem('Avocado', 'fat', 0.75, '3/4', 'medium') // 240 cal
+            // Total: ~758 calories
           ]
         }
-        // Grand Total: ~1419 calories
+        // Grand Total: ~2095 calories
       ]
     },
 
@@ -689,17 +832,18 @@ const getMealPlans = () => {
           time: '7:00 AM',
           items: [
             createFoodItem('Egg Whites', 'protein', 4, '4', 'egg whites'), // 68 cal
-            createFoodItem('Oats (dry)', 'carbohydrate', 0.3, '1/6', 'cup') // 45 cal
-            // Total: ~113 calories
+            createFoodItem('Oats (dry)', 'carbohydrate', 0.5, '1/4', 'cup') // 75 cal
+            // Total: ~143 calories
           ]
         },
         {
           mealName: 'Morning Snack',
           time: '10:00 AM',
           items: [
-            createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.5, '1/2', 'cup'), // 65 cal
-            createFoodItem('Berries', 'fruits', 0.75, '3/4', 'cup') // 39 cal
-            // Total: ~104 calories
+            createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.75, '3/4', 'cup'), // 98 cal
+            createFoodItem('Berries', 'fruits', 1, '1', 'cup'), // 52 cal
+            createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
+            // Total: ~232 calories
           ]
         },
         {
@@ -707,42 +851,42 @@ const getMealPlans = () => {
           time: '11:30 AM',
           items: [
             createFoodItem('Apple', 'fruits', 1, '1', 'medium'), // 52 cal
-            createFoodItem('Almonds', 'fat', 0.25, '0.25', 'oz') // 41 cal
-            // Total: ~93 calories
+            createFoodItem('String Cheese', 'supplements', 1, '1', 'stick') // 70 cal
+            // Total: ~122 calories
           ]
         },
         {
           mealName: 'Lunch',
           time: '1:00 PM',
           items: [
-            createFoodItem('Chicken Breast', 'protein', 1.75, '6.1', 'oz'), // 289 cal
-            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.5, '1/4', 'cup'), // 56 cal
-            createFoodItem('Broccoli', 'vegetables', 2, '2', 'cups'), // 50 cal
-            createFoodItem('Olive Oil', 'fat', 0.3, '0.3', 'tbsp') // 36 cal
-            // Total: ~431 calories
+            createFoodItem('Chicken Breast', 'protein', 2, '7', 'oz'), // 330 cal
+            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.75, '3/8', 'cup'), // 84 cal
+            createFoodItem('Broccoli', 'vegetables', 1.5, '1.5', 'cups'), // 38 cal
+            createFoodItem('Olive Oil', 'fat', 0.75, '3/4', 'tbsp') // 89 cal
+            // Total: ~541 calories
           ]
         },
         {
           mealName: 'Afternoon Snack',
           time: '4:00 PM',
           items: [
-            createFoodItem('Whey Protein (generic)', 'supplements', 0.75, '3/4', 'scoop'), // 90 cal
-            createFoodItem('Strawberries', 'fruits', 1, '1', 'cup') // 32 cal
-            // Total: ~122 calories
+            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
+            createFoodItem('Banana', 'fruits', 0.75, '3/4', 'medium') // 67 cal
+            // Total: ~187 calories
           ]
         },
         {
           mealName: 'Dinner',
           time: '7:00 PM',
           items: [
-            createFoodItem('Cod', 'protein', 2, '7', 'oz'), // 178 cal
+            createFoodItem('Salmon', 'protein', 1.75, '6.1', 'oz'), // 364 cal
             createFoodItem('Sweet Potato', 'carbohydrate', 1, '1', 'medium'), // 86 cal
             createFoodItem('Asparagus', 'vegetables', 2, '2', 'cups'), // 40 cal
-            createFoodItem('Avocado', 'fat', 0.4, '0.4', 'medium') // 128 cal
-            // Total: ~432 calories
+            createFoodItem('Avocado', 'fat', 0.75, '3/4', 'medium') // 240 cal
+            // Total: ~730 calories
           ]
         }
-        // Grand Total: ~1295 calories
+        // Grand Total: ~1955 calories
       ]
     },
 
@@ -754,34 +898,35 @@ const getMealPlans = () => {
           time: '6:30 AM',
           items: [
             createFoodItem('Egg Whites', 'protein', 8, '8', 'egg whites'), // 136 cal
-            createFoodItem('Oats (dry)', 'carbohydrate', 0.5, '1/4', 'cup'), // 75 cal
-            createFoodItem('Blueberries', 'fruits', 1, '1', 'cup') // 57 cal
-            // Total: ~268 calories
+            createFoodItem('Oats (dry)', 'carbohydrate', 0.75, '3/8', 'cup'), // 113 cal
+            createFoodItem('Blueberries', 'fruits', 1.25, '1.25', 'cups'), // 71 cal
+            createFoodItem('Almonds', 'fat', 0.75, '0.75', 'oz') // 123 cal
+            // Total: ~443 calories
           ]
         },
         {
           mealName: 'Lunch',
           time: '12:00 PM',
           items: [
-            createFoodItem('Chicken Breast', 'protein', 2.5, '8.75', 'oz'), // 413 cal
-            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.75, '3/8', 'cup'), // 84 cal
-            createFoodItem('Broccoli', 'vegetables', 3, '3', 'cups'), // 75 cal
-            createFoodItem('Olive Oil', 'fat', 0.5, '1/2', 'tbsp') // 60 cal
-            // Total: ~632 calories
+            createFoodItem('Chicken Breast', 'protein', 3, '10.5', 'oz'), // 495 cal
+            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 1.25, '5/8', 'cup'), // 140 cal
+            createFoodItem('Broccoli', 'vegetables', 2, '2', 'cups'), // 50 cal
+            createFoodItem('Olive Oil', 'fat', 1, '1', 'tbsp') // 119 cal
+            // Total: ~804 calories
           ]
         },
         {
           mealName: 'Dinner',
           time: '6:00 PM',
           items: [
-            createFoodItem('Cod', 'protein', 3, '10.5', 'oz'), // 267 cal
-            createFoodItem('Sweet Potato', 'carbohydrate', 1, '1', 'medium'), // 86 cal
-            createFoodItem('Spinach', 'vegetables', 3, '3', 'cups'), // 69 cal
-            createFoodItem('Avocado', 'fat', 0.5, '1/2', 'medium') // 160 cal
-            // Total: ~582 calories
+            createFoodItem('Salmon', 'protein', 2.5, '8.75', 'oz'), // 520 cal
+            createFoodItem('Sweet Potato', 'carbohydrate', 1.5, '1.5', 'medium'), // 129 cal
+            createFoodItem('Spinach', 'vegetables', 2, '2', 'cups'), // 46 cal
+            createFoodItem('Avocado', 'fat', 0.75, '3/4', 'medium') // 240 cal
+            // Total: ~935 calories
           ]
         }
-        // Grand Total: ~1482 calories
+        // Grand Total: ~2182 calories
       ]
     },
 
@@ -793,51 +938,53 @@ const getMealPlans = () => {
           time: '6:30 AM',
           items: [
             createFoodItem('Egg Whites', 'protein', 6, '6', 'egg whites'), // 102 cal
-            createFoodItem('Oats (dry)', 'carbohydrate', 0.4, '1/5', 'cup') // 60 cal
-            // Total: ~162 calories
+            createFoodItem('Oats (dry)', 'carbohydrate', 0.6, '1/4', 'cup'), // 90 cal
+            createFoodItem('Banana', 'fruits', 0.75, '3/4', 'medium') // 67 cal
+            // Total: ~259 calories
           ]
         },
         {
           mealName: 'Mid-Morning',
           time: '9:30 AM',
           items: [
-            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
-            createFoodItem('Berries', 'fruits', 0.75, '3/4', 'cup') // 39 cal
-            // Total: ~159 calories
+            createFoodItem('Whey Protein (generic)', 'supplements', 1.25, '1.25', 'scoop'), // 150 cal
+            createFoodItem('Berries', 'fruits', 1, '1', 'cup'), // 52 cal
+            createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
+            // Total: ~284 calories
           ]
         },
         {
           mealName: 'Lunch',
           time: '12:30 PM',
           items: [
-            createFoodItem('Chicken Breast', 'protein', 2, '7', 'oz'), // 330 cal
-            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.75, '3/8', 'cup'), // 84 cal
-            createFoodItem('Bell Peppers', 'vegetables', 2, '2', 'cups'), // 62 cal
-            createFoodItem('Olive Oil', 'fat', 0.4, '0.4', 'tbsp') // 48 cal
-            // Total: ~524 calories
+            createFoodItem('Chicken Breast', 'protein', 2.25, '7.9', 'oz'), // 371 cal
+            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 1, '1/2', 'cup'), // 112 cal
+            createFoodItem('Bell Peppers', 'vegetables', 1.5, '1.5', 'cups'), // 47 cal
+            createFoodItem('Olive Oil', 'fat', 0.75, '3/4', 'tbsp') // 89 cal
+            // Total: ~619 calories
           ]
         },
         {
           mealName: 'Pre-Workout',
           time: '4:30 PM',
           items: [
-            createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.75, '3/4', 'cup'), // 98 cal
-            createFoodItem('Apple', 'fruits', 0.75, '3/4', 'medium') // 39 cal
-            // Total: ~137 calories
+            createFoodItem('Greek Yogurt (non-fat)', 'protein', 1, '1', 'cup'), // 130 cal
+            createFoodItem('Apple', 'fruits', 1, '1', 'medium') // 52 cal
+            // Total: ~182 calories
           ]
         },
         {
           mealName: 'Dinner',
           time: '7:30 PM',
           items: [
-            createFoodItem('Cod', 'protein', 2.5, '8.75', 'oz'), // 223 cal
-            createFoodItem('Sweet Potato', 'carbohydrate', 1, '1', 'medium'), // 86 cal
+            createFoodItem('Salmon', 'protein', 2, '7', 'oz'), // 416 cal
+            createFoodItem('Sweet Potato', 'carbohydrate', 1.25, '1.25', 'medium'), // 108 cal
             createFoodItem('Asparagus', 'vegetables', 2, '2', 'cups'), // 40 cal
-            createFoodItem('Avocado', 'fat', 0.5, '1/2', 'medium') // 160 cal
-            // Total: ~509 calories
+            createFoodItem('Avocado', 'fat', 0.75, '3/4', 'medium') // 240 cal
+            // Total: ~804 calories
           ]
         }
-        // Grand Total: ~1491 calories
+        // Grand Total: ~2148 calories
       ]
     },
 
@@ -848,38 +995,39 @@ const getMealPlans = () => {
           mealName: 'Breakfast',
           time: '6:30 AM',
           items: [
-            createFoodItem('Egg Whites', 'protein', 5, '5', 'egg whites'), // 85 cal
-            createFoodItem('Oats (dry)', 'carbohydrate', 0.3, '1/6', 'cup') // 45 cal
-            // Total: ~130 calories
+            createFoodItem('Egg Whites', 'protein', 6, '6', 'egg whites'), // 102 cal
+            createFoodItem('Oats (dry)', 'carbohydrate', 0.5, '1/4', 'cup') // 75 cal
+            // Total: ~177 calories
           ]
         },
         {
           mealName: 'Mid-Morning',
           time: '9:00 AM',
           items: [
-            createFoodItem('Whey Protein (generic)', 'supplements', 0.75, '3/4', 'scoop'), // 90 cal
-            createFoodItem('Berries', 'fruits', 0.5, '1/2', 'cup') // 26 cal
-            // Total: ~116 calories
+            createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
+            createFoodItem('Berries', 'fruits', 0.75, '3/4', 'cup') // 39 cal
+            // Total: ~159 calories
           ]
         },
         {
           mealName: 'Pre-Lunch',
           time: '11:30 AM',
           items: [
-            createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.5, '1/2', 'cup'), // 65 cal
-            createFoodItem('Apple', 'fruits', 0.75, '3/4', 'medium') // 39 cal
-            // Total: ~104 calories
+            createFoodItem('Greek Yogurt (non-fat)', 'protein', 0.75, '3/4', 'cup'), // 98 cal
+            createFoodItem('Apple', 'fruits', 1, '1', 'medium'), // 52 cal
+            createFoodItem('Almonds', 'fat', 0.5, '0.5', 'oz') // 82 cal
+            // Total: ~232 calories
           ]
         },
         {
           mealName: 'Lunch',
           time: '1:00 PM',
           items: [
-            createFoodItem('Chicken Breast', 'protein', 2, '7', 'oz'), // 330 cal
-            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.5, '1/4', 'cup'), // 56 cal
-            createFoodItem('Broccoli', 'vegetables', 2, '2', 'cups'), // 50 cal
-            createFoodItem('Olive Oil', 'fat', 0.3, '0.3', 'tbsp') // 36 cal
-            // Total: ~472 calories
+            createFoodItem('Chicken Breast', 'protein', 2.25, '7.9', 'oz'), // 371 cal
+            createFoodItem('Brown Rice (cooked)', 'carbohydrate', 0.75, '3/8', 'cup'), // 84 cal
+            createFoodItem('Broccoli', 'vegetables', 1.5, '1.5', 'cups'), // 38 cal
+            createFoodItem('Olive Oil', 'fat', 0.75, '3/4', 'tbsp') // 89 cal
+            // Total: ~582 calories
           ]
         },
         {
@@ -887,22 +1035,22 @@ const getMealPlans = () => {
           time: '4:30 PM',
           items: [
             createFoodItem('Whey Protein (generic)', 'supplements', 1, '1', 'scoop'), // 120 cal
-            createFoodItem('Banana', 'fruits', 0.5, '1/2', 'medium') // 45 cal
-            // Total: ~165 calories
+            createFoodItem('Banana', 'fruits', 0.75, '3/4', 'medium') // 67 cal
+            // Total: ~187 calories
           ]
         },
         {
           mealName: 'Dinner',
           time: '7:30 PM',
           items: [
-            createFoodItem('Cod', 'protein', 2, '7', 'oz'), // 178 cal
-            createFoodItem('Sweet Potato', 'carbohydrate', 0.75, '3/4', 'medium'), // 65 cal
+            createFoodItem('Salmon', 'protein', 2, '7', 'oz'), // 416 cal
+            createFoodItem('Sweet Potato', 'carbohydrate', 1, '1', 'medium'), // 86 cal
             createFoodItem('Spinach', 'vegetables', 2, '2', 'cups'), // 46 cal
-            createFoodItem('Avocado', 'fat', 0.4, '0.4', 'medium') // 128 cal
-            // Total: ~417 calories
+            createFoodItem('Avocado', 'fat', 0.75, '3/4', 'medium') // 240 cal
+            // Total: ~788 calories
           ]
         }
-        // Grand Total: ~1404 calories
+        // Grand Total: ~2125 calories
       ]
     },
 
