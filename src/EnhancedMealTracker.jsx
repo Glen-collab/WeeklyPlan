@@ -59,8 +59,11 @@ const EnhancedMealTracker = ({
     const deltaY = dragOffset.y;
     const deltaX = dragOffset.x;
     
-    // Vertical swipe to remove/restore
-    if (Math.abs(deltaY) > 80) {
+    // Much more strict vertical swipe requirements to prevent accidental removal
+    // Must be: 1) Primarily vertical, 2) Strong swipe (120px+), 3) Not too horizontal
+    const isVerticalSwipe = Math.abs(deltaY) > 120 && Math.abs(deltaY) > Math.abs(deltaX) * 2;
+    
+    if (isVerticalSwipe) {
       const isRemoved = removedFoods.has(`${mealType}-${item.id}`);
       if (isRemoved) {
         onRestoreFood(mealType, item.id);
@@ -157,8 +160,8 @@ const EnhancedMealTracker = ({
               onTouchMove={(e) => handleFoodTouchMove(e, item)}
               onTouchEnd={(e) => handleFoodTouchEnd(e, item)}
             >
-              {/* Swipe Indicators */}
-              {draggedItem === item.id && Math.abs(dragOffset.y) > 30 && (
+              {/* Swipe Indicators - only show for strong vertical swipes */}
+              {draggedItem === item.id && Math.abs(dragOffset.y) > 60 && Math.abs(dragOffset.y) > Math.abs(dragOffset.x) * 2 && (
                 <div className={`absolute inset-0 flex items-center justify-center rounded-lg ${
                   dragOffset.y < 0 
                     ? (isRemoved ? 'bg-green-500' : 'bg-red-500')
@@ -295,7 +298,7 @@ const EnhancedMealTracker = ({
       {/* Swipe Instructions */}
       {isMobile && (
         <div className="mt-4 text-center text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-          👆 Swipe foods up/down to remove/restore • 
+          🎯 Strong swipe foods up/down to remove/restore • 
           {removedFoods.size > 0 && ` ${removedFoods.size} food(s) hidden from totals`}
         </div>
       )}
