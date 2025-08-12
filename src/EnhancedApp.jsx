@@ -163,6 +163,274 @@ const SwipeableMealModal = ({
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 text-center">
             <h2 className="text-2xl font-bold mb-2">
               {mealLabels[currentMealType]}
+            </h2>
+            <p className="text-blue-100">
+              {validCurrentIndex + 1} of {activeMealTypes.length} meals • {meals[currentMealType].time}
+            </p>
+          </div>
+
+          {/* Meal Card Content */}
+          <div className={`p-6 transition-all duration-300 ${isTransitioning ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}`}>
+            
+            {/* Calorie Summary */}
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold text-blue-600 mb-2">
+                {Math.round(totals.calories)}
+              </div>
+              <div className="text-gray-600">calories in this meal</div>
+            </div>
+
+            {/* Macro Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{Math.round(totals.protein)}g</div>
+                <div className="text-sm text-gray-600">Protein</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">{Math.round(totals.carbs)}g</div>
+                <div className="text-sm text-gray-600">Carbs</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{Math.round(totals.fat)}g</div>
+                <div className="text-sm text-gray-600">Fat</div>
+              </div>
+            </div>
+
+            {/* Sugar Warning */}
+            {totals.sugar > 0 && (
+              <div className={`text-center mb-6 p-3 rounded-lg ${
+                totals.sugar > 20 ? 'bg-red-100 border border-red-300' :
+                totals.sugar > 10 ? 'bg-yellow-100 border border-yellow-300' :
+                'bg-green-100 border border-green-300'
+              }`}>
+                <div className="text-lg font-bold">
+                  {Math.round(totals.sugar)}g sugar
+                </div>
+                <div className="text-sm text-gray-600">
+                  {totals.sugar > 20 ? '⚠️ High sugar content' :
+                   totals.sugar > 10 ? '💡 Moderate sugar' :
+                   '✅ Low sugar'}
+                </div>
+              </div>
+            )}
+
+            {/* Food Count */}
+            <div className="text-center mb-6">
+              <div className="text-lg text-gray-600">
+                📊 {activeItems.filter(item => item.food).length} food item(s) selected
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => onRemoveMeal(currentMealType)}
+                className="w-full py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
+              >
+                🗑️ Remove This Meal
+              </button>
+              
+              {removedMeals.size > 0 && (
+                <button
+                  onClick={() => {
+                    const mealToRestore = Array.from(removedMeals)[0];
+                    onRestoreMeal(mealToRestore);
+                  }}
+                  className="w-full py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+                >
+                  🔄 Restore Latest Removed Meal
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Navigation Footer */}
+          <div className="bg-gray-50 p-4">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => navigateToMeal(Math.max(0, validCurrentIndex - 1))}
+                disabled={validCurrentIndex === 0 || isTransitioning}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  validCurrentIndex === 0 || isTransitioning
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                ← Previous
+              </button>
+              
+              <div className="flex space-x-2">
+                {activeMealTypes.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => !isTransitioning && navigateToMeal(index)}
+                    disabled={isTransitioning}
+                    className={`w-3 h-3 rounded-full transition-colors ${
+                      index === validCurrentIndex ? 'bg-blue-500' : 'bg-gray-300'
+                    } ${isTransitioning ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  />
+                ))}
+              </div>
+              
+              <button
+                onClick={() => navigateToMeal(Math.min(activeMealTypes.length - 1, validCurrentIndex + 1))}
+                disabled={validCurrentIndex === activeMealTypes.length - 1 || isTransitioning}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  validCurrentIndex === activeMealTypes.length - 1 || isTransitioning
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                Next →
+              </button>
+            </div>
+            
+            <div className="mt-3 text-center text-xs text-gray-500">
+              👈 Swipe left/right to navigate meals 👉
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Simple Swipeable Meal Cards Modal
+const SwipeableMealModal = ({ 
+  isOpen,
+  onClose,
+  meals, 
+  userProfile, 
+  calorieData, 
+  isMobile,
+  removedFoods,
+  removedMeals,
+  onRemoveMeal,
+  onRestoreMeal
+}) => {
+  const [currentMealIndex, setCurrentMealIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const allMealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+  const mealLabels = {
+    breakfast: 'Breakfast',
+    firstSnack: 'Morning Snack', 
+    secondSnack: 'Mid-Morning Snack',
+    lunch: 'Lunch',
+    midAfternoon: 'Afternoon Snack',
+    dinner: 'Dinner',
+    lateSnack: 'Evening Snack',
+    postWorkout: 'Post-Workout'
+  };
+
+  // Filter out removed meals
+  const activeMealTypes = allMealTypes.filter(mealType => !removedMeals.has(mealType));
+  
+  // Ensure current index is valid
+  const validCurrentIndex = Math.min(currentMealIndex, activeMealTypes.length - 1);
+  const currentMealType = activeMealTypes[validCurrentIndex] || activeMealTypes[0];
+
+  // Get meal data
+  const getMealData = (mealType) => {
+    const meal = meals[mealType];
+    const activeItems = meal.items.filter(item => 
+      !removedFoods.has(`${mealType}-${item.id}`)
+    );
+    const totals = calculateTotals(activeItems);
+    return { totals, activeItems };
+  };
+
+  // Touch handlers for swiping
+  const handleTouchStart = (e) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStart) return;
+    
+    const touchEnd = e.changedTouches[0].clientX;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && validCurrentIndex < activeMealTypes.length - 1) {
+      navigateToMeal(validCurrentIndex + 1);
+    }
+    if (isRightSwipe && validCurrentIndex > 0) {
+      navigateToMeal(validCurrentIndex - 1);
+    }
+    
+    setTouchStart(null);
+  };
+
+  const navigateToMeal = (newIndex) => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setCurrentMealIndex(newIndex);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  if (!isOpen) return null;
+
+  // If no active meals, show restore interface
+  if (activeMealTypes.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4">
+        <div className="relative w-full max-w-md">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-60 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          
+          <div className="bg-white rounded-xl shadow-2xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">🍽️ No Active Meals</h2>
+            <p className="text-gray-600 mb-6">You've removed all meals. Restore some to continue!</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {allMealTypes.map(mealType => (
+                <button
+                  key={mealType}
+                  onClick={() => onRestoreMeal(mealType)}
+                  className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-left"
+                >
+                  <span className="font-medium">🔄 {mealLabels[mealType]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { totals, activeItems } = getMealData(currentMealType);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4">
+      <div className="relative w-full max-w-md">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-60 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
+        >
+          <X size={20} />
+        </button>
+        
+        <div 
+          className="bg-white rounded-xl shadow-2xl overflow-hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 text-center">
+            <h2 className="text-2xl font-bold mb-2">
+              {mealLabels[currentMealType]}
             <button
           onClick={onOpenSwipeModal}
           className={`${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md font-medium transition-all duration-300 hover:from-purple-600 hover:to-pink-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
