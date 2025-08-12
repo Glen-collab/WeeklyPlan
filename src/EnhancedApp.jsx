@@ -4,13 +4,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Toolti
 import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories, getFoodsInCategory } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE, getServingWarnings } from './Utils.js';
-import { MealMessages } from './MealMessages/index.js';
-import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
-import MealIdeasModal from './MealIdeas.jsx';
-import WeekPlanModal from './WeekPlanModal.jsx';
-import PrintableNutritionPlan from './PrintableNutritionPlan.jsx';
-import GroceryListModal from './GroceryListModal.jsx';
-import MealSwipeGame from './MealSwipeGame.jsx';
 
 const defaultUserProfile = {
   firstName: '',
@@ -34,7 +27,7 @@ const createFoodItem = () => ({
   displayUnit: 'servings'
 });
 
-// Simple Static Meal Interface (no swipe confusion) - for main app view
+// Simple Static Meal Interface
 const SimpleMealInterface = ({ 
   meals, 
   onTimeChange, 
@@ -45,16 +38,12 @@ const SimpleMealInterface = ({
   onOpenFoodModal, 
   userProfile, 
   calorieData, 
-  openMealIdeas, 
   isMobile,
   getAllMealsData,
   removedFoods,
-  onRemoveFood,
-  onRestoreFood,
   removedMeals,
   onRemoveMeal,
-  onRestoreMeal,
-  onOpenMealSwipeModal
+  onRestoreMeal
 }) => {
   const allMealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
   const mealLabels = {
@@ -87,14 +76,6 @@ const SimpleMealInterface = ({
         <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800`}>
           🍽️ Your Meals ({activeMealTypes.length} active)
         </h2>
-        
-        <button
-          onClick={onOpenMealSwipeModal}
-          className={`${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md font-medium transition-all duration-300 hover:from-purple-600 hover:to-pink-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
-        >
-          <span>📱</span>
-          {isMobile ? 'Swipe View' : 'Open Swipe Interface'}
-        </button>
       </div>
 
       {/* Meal Summary Cards */}
@@ -128,14 +109,6 @@ const SimpleMealInterface = ({
               </div>
 
               <div className="flex gap-2">
-                {isMainMeal && (
-                  <button
-                    onClick={() => openMealIdeas(mealType)}
-                    className="flex-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
-                  >
-                    💡 Ideas
-                  </button>
-                )}
                 <button
                   onClick={() => onRemoveMeal(mealType)}
                   className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
@@ -165,20 +138,11 @@ const SimpleMealInterface = ({
           </div>
         )}
       </div>
-
-      <div className="mt-4 text-center">
-        <button
-          onClick={onOpenMealSwipeModal}
-          className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          📱 Open Swipe Interface for detailed editing
-        </button>
-      </div>
     </div>
   );
 };
 
-// Daily Summary with Unified Pie Chart (no individual meal pie charts)
+// Daily Summary Component
 const DailySummary = ({ allMeals, userProfile, calorieData, isMobile, removedMeals }) => {
   // Calculate total daily nutrition using only active (non-removed) meals
   const calculateDailyTotals = () => {
@@ -311,16 +275,6 @@ const DailySummary = ({ allMeals, userProfile, calorieData, isMobile, removedMea
               <div className="text-sm text-gray-600">
                 <strong>Goal:</strong> {userProfile.goal.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </div>
-              {userProfile.goal === 'maintain' && dailyTotals.sugar > 45 && (
-                <div className="text-xs text-yellow-600 mt-1">
-                  💡 Consider reducing sugar for better maintenance
-                </div>
-              )}
-              {userProfile.goal === 'lose' && dailyTotals.sugar > 25 && (
-                <div className="text-xs text-red-600 mt-1">
-                  ⚠️ High sugar may slow fat loss progress
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -334,24 +288,6 @@ const NutritionApp = () => {
   const [userProfile, setUserProfile] = useState(defaultUserProfile);
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState('chart');
-  
-  // Enhanced Tinder swipe modal state
-  const [showTinderSwipe, setShowTinderSwipe] = useState(false);
-  const [showCardsModal, setShowCardsModal] = useState(false);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  
-  // NEW: Meal Swipe Modal state
-  const [showMealSwipeModal, setShowMealSwipeModal] = useState(false);
-  
-  // Meal Ideas modal state
-  const [showMealIdeas, setShowMealIdeas] = useState(false);
-  const [currentMealType, setCurrentMealType] = useState('breakfast');
-  
-  // Week Plan modal state
-  const [isWeekPlanModalOpen, setIsWeekPlanModalOpen] = useState(false);
-  
-  // Fruit budget tracking (max 3 servings per day for maintain goal)
-  const [dailyFruitServings, setDailyFruitServings] = useState(0);
   
   // Track removed foods (foods user swiped away)
   const [removedFoods, setRemovedFoods] = useState(new Set());
@@ -422,10 +358,6 @@ const NutritionApp = () => {
     isOpen: false
   });
 
-  const [personalTrainerModal, setPersonalTrainerModal] = useState({
-    isOpen: false
-  });
-
   const [customServing, setCustomServing] = useState({ 
     amount: 1, 
     unit: 'servings' 
@@ -442,20 +374,6 @@ const NutritionApp = () => {
     const totals = calculateTotals(activeItems);
     const pieData = preparePieData(totals);
     return { totals, pieData, activeItems };
-  };
-
-  // Handle removing food items (swipe up/down)
-  const handleRemoveFood = (mealType, itemId) => {
-    setRemovedFoods(prev => new Set([...prev, `${mealType}-${itemId}`]));
-  };
-
-  // Handle restoring removed foods
-  const handleRestoreFood = (mealType, itemId) => {
-    setRemovedFoods(prev => {
-      const newSet = new Set([...prev]);
-      newSet.delete(`${mealType}-${itemId}`);
-      return newSet;
-    });
   };
 
   // Handle removing entire meals (swipe up/down)
@@ -538,7 +456,7 @@ const NutritionApp = () => {
     }));
   };
 
-  // Modal handlers (keeping all existing ones)
+  // Modal handlers
   const handleOpenServingModal = (mealType, item) => {
     setServingModal({
       isOpen: true,
@@ -583,14 +501,6 @@ const NutritionApp = () => {
 
   const handleCloseProfileModal = () => {
     setProfileModal({ isOpen: false });
-  };
-
-  const handleOpenPersonalTrainerModal = () => {
-    setPersonalTrainerModal({ isOpen: true });
-  };
-
-  const handleClosePersonalTrainerModal = () => {
-    setPersonalTrainerModal({ isOpen: false });
   };
 
   const updateUserProfile = (field, value) => {
@@ -669,84 +579,6 @@ const NutritionApp = () => {
       
       handleCloseServingModal();
     }
-  };
-
-  // Meal Ideas modal functions
-  const openMealIdeas = (mealType = 'breakfast') => {
-    setCurrentMealType(mealType);
-    setShowMealIdeas(true);
-  };
-
-  const closeMealIdeas = () => {
-    setShowMealIdeas(false);
-  };
-
-  const addMealToMeal = (mealData) => {
-    setMeals(prev => ({
-      ...prev,
-      [currentMealType]: {
-        ...prev[currentMealType],
-        items: [...mealData.items]
-      }
-    }));
-    
-    if (mealData.fruitCount > 0) {
-      setDailyFruitServings(prev => Math.min(3, prev + mealData.fruitCount));
-    }
-    
-    closeMealIdeas();
-  };
-
-  const handleAddWeekPlan = (weekPlan) => {
-    const mealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
-    
-    const newMeals = { ...meals };
-    
-    weekPlan.allMeals.forEach((planMeal, index) => {
-      if (index < mealTypes.length) {
-        const mealType = mealTypes[index];
-        newMeals[mealType] = {
-          ...newMeals[mealType],
-          items: [...planMeal.items],
-          time: planMeal.time
-        };
-      }
-    });
-    
-    setMeals(newMeals);
-    
-    if (weekPlan.fruitCount !== undefined) {
-      setDailyFruitServings(Math.min(3, weekPlan.fruitCount));
-    }
-    
-    setIsWeekPlanModalOpen(false);
-  };
-
-  const fruitBudgetRemaining = Math.max(0, 3 - dailyFruitServings);
-
-  const openMealSwipeModal = () => {
-    setShowMealSwipeModal(true);
-  };
-
-  const closeMealSwipeModal = () => {
-    setShowMealSwipeModal(false);
-  };
-
-  const openTinderSwipe = () => {
-    setShowTinderSwipe(true);
-  };
-
-  const closeTinderSwipe = () => {
-    setShowTinderSwipe(false);
-  };
-
-  const openCardsModal = () => {
-    setCurrentCardIndex(0);
-    setShowCardsModal(true);
-  };
-
-  const closeCardsModal = () => {
-    setShowCardsModal(false);
   };
 
   const getTimelineData = () => {
@@ -853,22 +685,6 @@ const NutritionApp = () => {
               >
                 {userProfile.firstName ? 'Edit Profile' : 'Setup Profile'}
               </button>
-              
-              <button
-                onClick={handleOpenPersonalTrainerModal}
-                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium flex items-center justify-center gap-2`}
-              >
-                <span>💪</span>
-                Personal Trainer
-              </button>
-              
-              <button
-                onClick={() => setIsWeekPlanModalOpen(true)}
-                className={`${isMobile ? 'w-full py-3' : 'py-2 px-6'} bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-md hover:opacity-90 transition-all duration-300 transform hover:scale-105 font-medium flex items-center justify-center gap-2 shadow-lg`}
-              >
-                <span>📅</span>
-                Plan My Week
-              </button>
             </div>
           </div>
         </div>
@@ -884,27 +700,15 @@ const NutritionApp = () => {
           onOpenFoodModal={handleOpenFoodModal}
           userProfile={userProfile}
           calorieData={calorieData}
-          openMealIdeas={openMealIdeas}
           isMobile={isMobile}
           getAllMealsData={getAllMealsData}
           removedFoods={removedFoods}
-          onRemoveFood={handleRemoveFood}
-          onRestoreFood={handleRestoreFood}
           removedMeals={removedMeals}
           onRemoveMeal={handleRemoveMeal}
           onRestoreMeal={handleRestoreMeal}
-          onOpenMealSwipeModal={openMealSwipeModal}
         />
 
-        {/* SECTION 2.5: MEAL MESSAGES */}
-        <MealMessages 
-          allMeals={getAllMealsData()}
-          userProfile={userProfile}
-          calorieData={calorieData}
-          isMobile={isMobile}
-        />
-
-        {/* SECTION 3: DAILY SUMMARY WITH UNIFIED PIE CHART */}
+        {/* SECTION 3: DAILY SUMMARY */}
         <DailySummary 
           allMeals={getAllMealsData()}
           userProfile={userProfile}
@@ -913,43 +717,34 @@ const NutritionApp = () => {
           removedMeals={removedMeals}
         />
 
-        {/* SECTION 4: CHARTS, TRENDS & BURN OR LEARN */}
+        {/* SECTION 4: CHARTS */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'flex-col sm:flex-row'} justify-between items-center mb-4`}>
             <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 ${isMobile ? 'mb-0' : 'mb-2 sm:mb-0'}`}>
               📊 Daily Timeline: Calories & Sugar
             </h3>
             
-            <div className="flex gap-3">
+            <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2' : 'p-1'}`}>
               <button
-                onClick={openTinderSwipe}
-                className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-2 text-sm'} bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-md font-medium transition-all duration-300 hover:from-pink-600 hover:to-red-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
+                onClick={() => setViewMode('line')}
+                className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                  viewMode === 'line' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
               >
-                🔥 Burn or Learn
+                📈 Trends
               </button>
-                                           
-              <div className={`flex bg-gray-100 rounded-lg ${isMobile ? 'p-2' : 'p-1'}`}>
-                <button
-                  onClick={() => setViewMode('line')}
-                  className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                    viewMode === 'line' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  📈 Trends
-                </button>
-                <button
-                  onClick={() => setViewMode('chart')}
-                  className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
-                    viewMode === 'chart' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  📊 Bars
-                </button>
-              </div>
+              <button
+                onClick={() => setViewMode('chart')}
+                className={`${isMobile ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-sm'} rounded-md font-medium transition-colors ${
+                  viewMode === 'chart' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                📊 Bars
+              </button>
             </div>
           </div>
 
@@ -1045,17 +840,9 @@ const NutritionApp = () => {
           })()}
         </div>
 
-        {/* Print Functionality */}
-        <PrintableNutritionPlan
-          allMeals={getAllMealsData()}
-          userProfile={userProfile}
-          calorieData={calorieData}
-          isMobile={isMobile}
-        />
-
       </div>
 
-      {/* ALL EXISTING MODALS (kept exactly the same) */}
+      {/* MODALS */}
       
       {/* Serving Size Modal */}
       {servingModal.isOpen && servingModal.item && (
@@ -1115,26 +902,6 @@ const NutritionApp = () => {
                   <option value="cups">Cups</option>
                 </select>
               </div>
-
-              {servingModal.item.category && servingModal.item.food && (
-                <div className={`bg-gray-50 ${isMobile ? 'p-3' : 'p-3'} rounded-md`}>
-                  <h4 className={`${isMobile ? 'text-sm' : 'text-sm'} font-medium text-gray-700 mb-2`}>Reference Serving Size:</h4>
-                  <div className={`${isMobile ? 'text-sm' : 'text-sm'} text-gray-600 space-y-1`}>
-                    <div className="flex items-center gap-2">
-                      <Scale size={14} />
-                      <span>{getServingInfo(servingModal.item.category, servingModal.item.food).grams}g</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Coffee size={14} />
-                      <span>{getServingInfo(servingModal.item.category, servingModal.item.food).ounces} oz / {getServingInfo(servingModal.item.category, servingModal.item.food).cups} cups</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Hand size={14} />
-                      <span>{getServingInfo(servingModal.item.category, servingModal.item.food).palm}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'gap-3'} mt-6`}>
                 <button
@@ -1382,292 +1149,6 @@ const NutritionApp = () => {
                 Save Profile
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Personal Trainer Summary Modal */}
-      {personalTrainerModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`bg-white rounded-lg ${isMobile ? 'p-4 w-full max-h-[90vh]' : 'p-6 max-w-4xl w-full mx-4 max-h-[80vh]'} overflow-hidden flex flex-col`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-800 flex items-center gap-2`}>
-                <span>💪</span>
-                Personal Trainer Analysis
-              </h3>
-              <button
-                onClick={handleClosePersonalTrainerModal}
-                className={`text-gray-500 hover:text-gray-700 ${isMobile ? 'p-2' : ''}`}
-              >
-                <X size={isMobile ? 20 : 24} />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto">
-              {(() => {
-                const summary = generatePersonalTrainerSummary(getAllMealsData(), userProfile, calorieData);
-                
-                if (!userProfile.firstName) {
-                  return (
-                    <div className="text-center py-8">
-                      <h3 className="text-xl font-bold text-gray-800 mb-4">Complete Your Profile First</h3>
-                      <p className="text-gray-600 mb-6">Please fill out your profile information to get your personalized trainer analysis!</p>
-                      <button
-                        onClick={() => {
-                          handleClosePersonalTrainerModal();
-                          handleOpenProfileModal();
-                        }}
-                        className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition-colors font-medium"
-                      >
-                        Setup Profile Now
-                      </button>
-                    </div>
-                  );
-                }
-
-                // Handle jumpstart message for users with profile but no food data
-                if (summary.isJumpstart) {
-                  return (
-                    <div className="space-y-6">
-                      {/* Motivational Header */}
-                      <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border">
-                        <div className="text-4xl mb-3">🚀</div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">Ready to Transform?</h3>
-                        <p className="text-gray-700 font-medium">{summary.goalMotivation}</p>
-                        <div className="mt-4 text-sm text-gray-600">
-                          Target: {summary.targets.calories} calories • {summary.targets.protein}g protein daily
-                        </div>
-                      </div>
-
-                      {/* Top 3 Recommendations */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
-                          <span>🎯</span> Your Top 3 Fundamentals
-                        </h4>
-                        <ol className="space-y-3">
-                          {summary.recommendations.map((rec, index) => (
-                            <li key={index} className="text-blue-700 text-sm">
-                              <span className="font-bold">{index + 1}.</span> {rec}
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-
-                      {/* Pro Tips */}
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h4 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
-                          <span>🏆</span> Wisdom from the Pros
-                        </h4>
-                        <div className="space-y-3">
-                          {summary.proTips.map((tip, index) => (
-                            <div key={index} className="text-purple-700 text-sm italic border-l-2 border-purple-300 pl-3">
-                              {tip}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Call to Action */}
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
-                          <span>⚡</span> Your Next Steps
-                        </h4>
-                        <p className="text-yellow-700 text-sm">{summary.callToAction}</p>
-                      </div>
-
-                      {/* Bottom Line */}
-                      <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg p-4 text-center">
-                        <h4 className="font-bold mb-2">🔥 Champion Mindset</h4>
-                        <p className="text-sm">{summary.bottomLine}</p>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Regular analysis for users with food data
-                return (
-                  <div className="space-y-6">
-                    {/* Grade Header */}
-                    <div className="text-center bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border">
-                      <div className={`text-6xl font-bold mb-2 ${
-                        summary.grade === 'A' ? 'text-green-600' :
-                        summary.grade === 'B' ? 'text-blue-600' :
-                        summary.grade === 'C' ? 'text-yellow-600' :
-                        'text-red-600'
-                      }`}>
-                        {summary.grade}
-                      </div>
-                      <div className="text-lg text-gray-600">Daily Score: {summary.score}/100</div>
-                      <div className="text-sm text-gray-500 mt-2">
-                        Daily Totals: {summary.dailyTotals.calories} cal • {summary.dailyTotals.protein}g protein • {summary.dailyTotals.sugar}g sugar
-                      </div>
-                    </div>
-
-                    {/* Strengths */}
-                    {summary.strengths.length > 0 && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
-                          <span>🏆</span> Your Strengths
-                        </h4>
-                        <ul className="space-y-2">
-                          {summary.strengths.map((strength, index) => (
-                            <li key={index} className="text-green-700 text-sm">{strength}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Critical Issues */}
-                    {summary.issues.length > 0 && (
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h4 className="font-bold text-red-800 mb-3 flex items-center gap-2">
-                          <span>🚨</span> Critical Issues
-                        </h4>
-                        <ul className="space-y-2">
-                          {summary.issues.map((issue, index) => (
-                            <li key={index} className="text-red-700 text-sm">{issue}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Analysis Sections */}
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 className="font-bold text-blue-800 mb-2">💪 Protein Analysis</h4>
-                        <p className="text-blue-700 text-sm">{summary.proteinAnalysis}</p>
-                      </div>
-
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                        <h4 className="font-bold text-orange-800 mb-2">🍞 Carb Strategy</h4>
-                        <p className="text-orange-700 text-sm">{summary.carbAnalysis}</p>
-                      </div>
-
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h4 className="font-bold text-purple-800 mb-2">⏰ Meal Timing</h4>
-                        <p className="text-purple-700 text-sm">{summary.timingAnalysis}</p>
-                      </div>
-
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h4 className="font-bold text-gray-800 mb-2">🎯 Goal Alignment</h4>
-                        <p className="text-gray-700 text-sm">{summary.goalAlignment}</p>
-                      </div>
-                    </div>
-
-                    {/* Top Recommendations */}
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2">
-                        <span>💡</span> Top 3 Recommendations
-                      </h4>
-                      <ol className="space-y-2">
-                        {summary.recommendations.map((rec, index) => (
-                          <li key={index} className="text-yellow-700 text-sm">
-                            <span className="font-medium">{index + 1}.</span> {rec}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-
-                    {/* Weekly Advice */}
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                      <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
-                        <span>📅</span> Weekly Consistency Focus
-                      </h4>
-                      <p className="text-indigo-700 text-sm">{summary.weeklyAdvice}</p>
-                    </div>
-
-                    {/* Bottom Line */}
-                    <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg p-4 text-center">
-                      <h4 className="font-bold mb-2">🎯 Bottom Line</h4>
-                      <p className="text-sm">{summary.bottomLine}</p>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div className="mt-6 pt-4 border-t">
-              <button
-                onClick={handleClosePersonalTrainerModal}
-                className={`${isMobile ? 'w-full py-3' : 'w-full py-2 px-4'} bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium`}
-              >
-                Close Analysis
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Meal Ideas Modal */}
-      {showMealIdeas && (
-        <MealIdeasModal
-          isOpen={showMealIdeas}
-          onClose={closeMealIdeas}
-          onAddMeal={addMealToMeal}
-          userProfile={userProfile}
-          calorieData={calorieData}
-          isMobile={isMobile}
-          mealType={currentMealType}
-          fruitBudgetRemaining={fruitBudgetRemaining}
-        />
-      )}
-
-      {/* Week Plan Modal */}
-      <WeekPlanModal
-        isOpen={isWeekPlanModalOpen}
-        onClose={() => setIsWeekPlanModalOpen(false)}
-        onAddWeekPlan={handleAddWeekPlan}
-        userProfile={userProfile}
-        calorieData={calorieData}
-        isMobile={isMobile}
-      />
-
-      {/* Meal Swipe Modal - Simple message since we removed the complex interface */}
-      {showMealSwipeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden">
-            <button
-              onClick={closeMealSwipeModal}
-              className="absolute top-4 right-4 z-60 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto p-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">🍽️ Swipe Interface</h2>
-              <p className="text-gray-600 mb-6">
-                The enhanced swipe interface has been temporarily removed to simplify the app. 
-                You can use the main meal interface above for all meal tracking!
-              </p>
-              <button
-                onClick={closeMealSwipeModal}
-                className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition-colors font-medium"
-              >
-                Back to Meal Tracker
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tinder Hot or Not Burn or Learn Modal */}
-      {showTinderSwipe && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-md">
-            <button
-              onClick={closeTinderSwipe}
-              className="absolute top-4 right-4 z-60 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            
-            <MealSwipeGame
-              allMeals={getAllMealsData()}
-              userProfile={userProfile}
-              calorieData={calorieData}
-              onComplete={closeCardsModal}
-              isIntegrated={true}
-            />
           </div>
         </div>
       )}
