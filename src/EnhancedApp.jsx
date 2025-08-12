@@ -23,6 +23,150 @@ const defaultUserProfile = {
   gender: ''
 };
 
+// Simple Static Meal Interface (no swipe confusion) - for main app view
+const SimpleMealInterface = ({ 
+  meals, 
+  onTimeChange, 
+  onAddFoodItem, 
+  onRemoveFoodItem, 
+  onUpdateFoodItem, 
+  onOpenServingModal, 
+  onOpenFoodModal, 
+  userProfile, 
+  calorieData, 
+  openMealIdeas, 
+  isMobile,
+  getAllMealsData,
+  removedFoods,
+  onRemoveFood,
+  onRestoreFood,
+  removedMeals,
+  onRemoveMeal,
+  onRestoreMeal,
+  onOpenMealSwipeModal
+}) => {
+  const allMealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+  const mealLabels = {
+    breakfast: 'Breakfast',
+    firstSnack: 'Morning Snack', 
+    secondSnack: 'Mid-Morning Snack',
+    lunch: 'Lunch',
+    midAfternoon: 'Afternoon Snack',
+    dinner: 'Dinner',
+    lateSnack: 'Evening Snack',
+    postWorkout: 'Post-Workout'
+  };
+
+  // Filter out removed meals
+  const activeMealTypes = allMealTypes.filter(mealType => !removedMeals.has(mealType));
+
+  const getMealData = (mealType) => {
+    const meal = meals[mealType];
+    const activeItems = meal.items.filter(item => 
+      !removedFoods.has(`${mealType}-${item.id}`)
+    );
+    const totals = calculateTotals(activeItems);
+    return { totals, activeItems };
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800`}>
+          🍽️ Your Meals ({activeMealTypes.length} active)
+        </h2>
+        
+        <button
+          onClick={onOpenMealSwipeModal}
+          className={`${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md font-medium transition-all duration-300 hover:from-purple-600 hover:to-pink-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
+        >
+          <span>📱</span>
+          {isMobile ? 'Swipe View' : 'Open Swipe Interface'}
+        </button>
+      </div>
+
+      {/* Meal Summary Cards */}
+      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+        {activeMealTypes.map(mealType => {
+          const { totals, activeItems } = getMealData(mealType);
+          const isMainMeal = ['breakfast', 'lunch', 'dinner'].includes(mealType);
+          
+          return (
+            <div key={mealType} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-gray-800 text-sm">
+                  {mealLabels[mealType]}
+                </h3>
+                <span className="text-xs text-gray-500">{meals[mealType].time}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="text-center">
+                  <div className="font-bold text-blue-600">{Math.round(totals.calories)}</div>
+                  <div className="text-gray-600">Cal</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-green-600">{Math.round(totals.protein)}g</div>
+                  <div className="text-gray-600">Pro</div>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-600 mb-3">
+                {activeItems.filter(item => item.food).length} food item(s)
+              </div>
+
+              <div className="flex gap-2">
+                {isMainMeal && (
+                  <button
+                    onClick={() => openMealIdeas(mealType)}
+                    className="flex-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                  >
+                    💡 Ideas
+                  </button>
+                )}
+                <button
+                  onClick={() => onRemoveMeal(mealType)}
+                  className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+                >
+                  🗑️ Remove
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Add Removed Meals Back */}
+        {removedMeals.size > 0 && (
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h3 className="font-bold text-blue-800 text-sm mb-3">Restore Meals</h3>
+            <div className="space-y-2">
+              {Array.from(removedMeals).slice(0, 3).map(mealType => (
+                <button
+                  key={mealType}
+                  onClick={() => onRestoreMeal(mealType)}
+                  className="w-full text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors text-left"
+                >
+                  🔄 {mealLabels[mealType]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 text-center">
+        <button
+          onClick={onOpenMealSwipeModal}
+          className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          📱 Open Swipe Interface for detailed editing
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const createFoodItem = () => ({
@@ -34,7 +178,7 @@ const createFoodItem = () => ({
   displayUnit: 'servings'
 });
 
-// Enhanced Meal Swipe Interface Component with Tinder-style swiping and meal removal
+// Modal Meal Swipe Interface Component (isolated and smooth)
 const MealSwipeInterface = ({ 
   meals, 
   onTimeChange, 
@@ -59,10 +203,6 @@ const MealSwipeInterface = ({
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [mealDragDirection, setMealDragDirection] = useState('');
 
   const allMealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
   const mealLabels = {
@@ -84,81 +224,29 @@ const MealSwipeInterface = ({
   const currentMealType = activeMealTypes[validCurrentIndex] || activeMealTypes[0];
   const currentMeal = meals[currentMealType];
 
-  // Enhanced touch handlers for meal swiping with removal
+  // Simple touch handlers for meal navigation only
   const handleTouchStart = (e) => {
     setTouchEnd(null);
-    setIsDragging(true);
-    const clientX = e.touches[0].clientX;
-    const clientY = e.touches[0].clientY;
-    setTouchStart({ x: clientX, y: clientY });
-    setDragPosition({ x: clientX, y: clientY });
-    setMealDragDirection('');
+    setTouchStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    
-    const clientX = e.touches[0].clientX;
-    const clientY = e.touches[0].clientY;
-    setTouchEnd({ x: clientX, y: clientY });
-    
-    const deltaX = clientX - dragPosition.x;
-    const deltaY = clientY - dragPosition.y;
-    
-    setDragOffset({ x: deltaX, y: deltaY });
-
-    // Determine drag direction for visual feedback
-    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 30) {
-      setMealDragDirection('vertical');
-    } else if (Math.abs(deltaX) > 30) {
-      setMealDragDirection(deltaX > 0 ? 'right' : 'left');
-    } else {
-      setMealDragDirection('');
-    }
+    setTouchEnd(e.touches[0].clientX);
   };
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd || !isDragging) {
-      setIsDragging(false);
-      setDragOffset({ x: 0, y: 0 });
-      setMealDragDirection('');
-      return;
-    }
+    if (!touchStart || !touchEnd) return;
     
-    const deltaX = touchEnd.x - touchStart.x;
-    const deltaY = touchEnd.y - touchStart.y;
-    
-    // Vertical swipe to remove/restore meal
-    if (Math.abs(deltaY) > 100 && Math.abs(deltaY) > Math.abs(deltaX)) {
-      const isRemoved = removedMeals.has(currentMealType);
-      if (isRemoved) {
-        onRestoreMeal(currentMealType);
-      } else {
-        onRemoveMeal(currentMealType);
-        // Navigate to next available meal if current one is removed
-        if (activeMealTypes.length > 1) {
-          const nextIndex = validCurrentIndex >= activeMealTypes.length - 1 ? 0 : validCurrentIndex;
-          setCurrentMealIndex(nextIndex);
-        }
-      }
-    }
-    // Horizontal swipe for navigation
-    else if (Math.abs(deltaX) > 50) {
-      const isLeftSwipe = deltaX < 0;
-      const isRightSwipe = deltaX > 0;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
 
-      if (isLeftSwipe && validCurrentIndex < activeMealTypes.length - 1) {
-        navigateToMeal(validCurrentIndex + 1);
-      }
-      if (isRightSwipe && validCurrentIndex > 0) {
-        navigateToMeal(validCurrentIndex - 1);
-      }
+    if (isLeftSwipe && validCurrentIndex < activeMealTypes.length - 1) {
+      navigateToMeal(validCurrentIndex + 1);
     }
-    
-    setIsDragging(false);
-    setDragOffset({ x: 0, y: 0 });
-    setMealDragDirection('');
+    if (isRightSwipe && validCurrentIndex > 0) {
+      navigateToMeal(validCurrentIndex - 1);
+    }
   };
 
   const navigateToMeal = (newIndex) => {
@@ -174,7 +262,6 @@ const MealSwipeInterface = ({
 
   const getMealData = (mealType) => {
     const meal = meals[mealType];
-    // Filter out removed foods
     const activeItems = meal.items.filter(item => 
       !removedFoods.has(`${mealType}-${item.id}`)
     );
@@ -184,26 +271,24 @@ const MealSwipeInterface = ({
   };
 
   const { totals, pieData, activeItems } = getMealData(currentMealType);
-
-  // Check if this is a main meal that should show meal ideas
   const isMainMeal = ['breakfast', 'lunch', 'dinner'].includes(currentMealType);
 
   // If no active meals, show restore interface
   if (activeMealTypes.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg p-6">
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">🍽️ No Active Meals</h2>
           <p className="text-gray-600 mb-6">You've removed all meals. Restore some to continue tracking!</p>
           
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             {allMealTypes.map(mealType => (
               <button
                 key={mealType}
                 onClick={() => onRestoreMeal(mealType)}
-                className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-left"
+                className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-left"
               >
-                <span className="font-medium">🔄 Restore {mealLabels[mealType]}</span>
+                <span className="font-medium">🔄 {mealLabels[mealType]}</span>
               </button>
             ))}
           </div>
@@ -213,11 +298,11 @@ const MealSwipeInterface = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      {/* Header with meal navigation */}
+    <div className="bg-white p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800`}>
+          <h2 className="text-2xl font-bold text-gray-800">
             🍽️ {mealLabels[currentMealType]}
           </h2>
           <span className="text-sm text-gray-500">
@@ -228,40 +313,21 @@ const MealSwipeInterface = ({
         {isMainMeal && (
           <button
             onClick={() => openMealIdeas(currentMealType)}
-            className={`${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-md font-medium transition-all duration-300 hover:from-green-600 hover:to-teal-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
+            className="px-6 py-2 text-sm bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-md font-medium transition-all duration-300 hover:from-green-600 hover:to-teal-600 flex items-center gap-2 transform hover:scale-105 shadow-lg"
           >
             <span>💡</span>
-            {isMobile ? 'Ideas' : 'Meal Ideas'}
+            Meal Ideas
           </button>
         )}
       </div>
 
-      {/* Swipeable content area with enhanced touch handling */}
+      {/* Swipeable content area - SIMPLE horizontal swipe only */}
       <div 
         className="relative"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{
-          transform: isDragging ? `translate(${dragOffset.x * 0.3}px, ${dragOffset.y * 0.3}px)` : 'none',
-          transition: isDragging ? 'none' : 'transform 0.3s ease'
-        }}
       >
-        {/* Swipe Direction Indicators */}
-        {mealDragDirection && (
-          <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-10 rounded-lg ${
-            mealDragDirection === 'vertical' ? 'bg-red-500' : 
-            mealDragDirection === 'right' ? 'bg-blue-500' : 'bg-blue-500'
-          } bg-opacity-20`}>
-            <div className={`text-6xl font-bold ${
-              mealDragDirection === 'vertical' ? 'text-red-600' : 'text-blue-600'
-            }`}>
-              {mealDragDirection === 'vertical' ? '🗑️' : 
-               mealDragDirection === 'right' ? '➡️' : '⬅️'}
-            </div>
-          </div>
-        )}
-
         <div className={`transition-all duration-300 ${isTransitioning ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}`}>
           <EnhancedMealTracker
             mealType={currentMealType}
@@ -324,7 +390,17 @@ const MealSwipeInterface = ({
         </button>
       </div>
 
-      {/* Removed meals indicator and restore option */}
+      {/* Meal removal button */}
+      <div className="mt-4 text-center">
+        <button
+          onClick={() => onRemoveMeal(currentMealType)}
+          className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
+        >
+          🗑️ Remove This Meal Entirely
+        </button>
+      </div>
+
+      {/* Removed meals indicator */}
       {removedMeals.size > 0 && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex justify-between items-center">
@@ -333,7 +409,6 @@ const MealSwipeInterface = ({
             </span>
             <button
               onClick={() => {
-                // Show a simple restore menu
                 const mealToRestore = Array.from(removedMeals)[0];
                 onRestoreMeal(mealToRestore);
               }}
@@ -345,13 +420,152 @@ const MealSwipeInterface = ({
         </div>
       )}
 
-      {isMobile && (
-        <div className="mt-4 text-center text-xs text-gray-500 space-y-1">
-          <div>👈 Swipe left/right to navigate meals 👉</div>
-          <div>☝️ Swipe meal up/down to remove entirely ☟️</div>
-          <div>☝️ Swipe foods up/down to remove/restore ☟️</div>
-        </div>
-      )}
+      <div className="mt-4 text-center text-xs text-gray-500">
+        👈 Swipe left/right to navigate meals 👉<br/>
+        🍎 Strong swipe foods up/down to remove/restore
+      </div>
+    </div>
+  );
+};
+const SimpleMealInterface = ({ 
+  meals, 
+  onTimeChange, 
+  onAddFoodItem, 
+  onRemoveFoodItem, 
+  onUpdateFoodItem, 
+  onOpenServingModal, 
+  onOpenFoodModal, 
+  userProfile, 
+  calorieData, 
+  openMealIdeas, 
+  isMobile,
+  getAllMealsData,
+  removedFoods,
+  onRemoveFood,
+  onRestoreFood,
+  removedMeals,
+  onRemoveMeal,
+  onRestoreMeal,
+  onOpenMealSwipeModal
+}) => {
+  const allMealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
+  const mealLabels = {
+    breakfast: 'Breakfast',
+    firstSnack: 'Morning Snack', 
+    secondSnack: 'Mid-Morning Snack',
+    lunch: 'Lunch',
+    midAfternoon: 'Afternoon Snack',
+    dinner: 'Dinner',
+    lateSnack: 'Evening Snack',
+    postWorkout: 'Post-Workout'
+  };
+
+  // Filter out removed meals
+  const activeMealTypes = allMealTypes.filter(mealType => !removedMeals.has(mealType));
+
+  const getMealData = (mealType) => {
+    const meal = meals[mealType];
+    const activeItems = meal.items.filter(item => 
+      !removedFoods.has(`${mealType}-${item.id}`)
+    );
+    const totals = calculateTotals(activeItems);
+    return { totals, activeItems };
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-800`}>
+          🍽️ Your Meals ({activeMealTypes.length} active)
+        </h2>
+        
+        <button
+          onClick={onOpenMealSwipeModal}
+          className={`${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2 text-sm'} bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md font-medium transition-all duration-300 hover:from-purple-600 hover:to-pink-600 flex items-center gap-2 transform hover:scale-105 shadow-lg`}
+        >
+          <span>📱</span>
+          {isMobile ? 'Swipe View' : 'Open Swipe Interface'}
+        </button>
+      </div>
+
+      {/* Meal Summary Cards */}
+      <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+        {activeMealTypes.map(mealType => {
+          const { totals, activeItems } = getMealData(mealType);
+          const isMainMeal = ['breakfast', 'lunch', 'dinner'].includes(mealType);
+          
+          return (
+            <div key={mealType} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-gray-800 text-sm">
+                  {mealLabels[mealType]}
+                </h3>
+                <span className="text-xs text-gray-500">{meals[mealType].time}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="text-center">
+                  <div className="font-bold text-blue-600">{Math.round(totals.calories)}</div>
+                  <div className="text-gray-600">Cal</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-green-600">{Math.round(totals.protein)}g</div>
+                  <div className="text-gray-600">Pro</div>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-600 mb-3">
+                {activeItems.filter(item => item.food).length} food item(s)
+              </div>
+
+              <div className="flex gap-2">
+                {isMainMeal && (
+                  <button
+                    onClick={() => openMealIdeas(mealType)}
+                    className="flex-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                  >
+                    💡 Ideas
+                  </button>
+                )}
+                <button
+                  onClick={() => onRemoveMeal(mealType)}
+                  className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+                >
+                  🗑️ Remove
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Add Removed Meals Back */}
+        {removedMeals.size > 0 && (
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h3 className="font-bold text-blue-800 text-sm mb-3">Restore Meals</h3>
+            <div className="space-y-2">
+              {Array.from(removedMeals).slice(0, 3).map(mealType => (
+                <button
+                  key={mealType}
+                  onClick={() => onRestoreMeal(mealType)}
+                  className="w-full text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors text-left"
+                >
+                  🔄 {mealLabels[mealType]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 text-center">
+        <button
+          onClick={onOpenMealSwipeModal}
+          className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          📱 Open Swipe Interface for detailed editing
+        </button>
+      </div>
     </div>
   );
 };
@@ -517,6 +731,9 @@ const NutritionApp = () => {
   const [showTinderSwipe, setShowTinderSwipe] = useState(false);
   const [showCardsModal, setShowCardsModal] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  
+  // NEW: Meal Swipe Modal state
+  const [showMealSwipeModal, setShowMealSwipeModal] = useState(false);
   
   // Meal Ideas modal state
   const [showMealIdeas, setShowMealIdeas] = useState(false);
@@ -899,6 +1116,14 @@ const NutritionApp = () => {
 
   const fruitBudgetRemaining = Math.max(0, 3 - dailyFruitServings);
 
+  const openMealSwipeModal = () => {
+    setShowMealSwipeModal(true);
+  };
+
+  const closeMealSwipeModal = () => {
+    setShowMealSwipeModal(false);
+  };
+
   const openTinderSwipe = () => {
     setShowTinderSwipe(true);
   };
@@ -1040,8 +1265,8 @@ const NutritionApp = () => {
           </div>
         </div>
 
-        {/* SECTION 2: MEAL SWIPE INTERFACE */}
-        <MealSwipeInterface 
+        {/* SECTION 2: SIMPLE MEAL INTERFACE */}
+        <SimpleMealInterface 
           meals={meals}
           onTimeChange={handleTimeChange}
           onAddFoodItem={handleAddFoodItem}
@@ -1060,6 +1285,15 @@ const NutritionApp = () => {
           removedMeals={removedMeals}
           onRemoveMeal={handleRemoveMeal}
           onRestoreMeal={handleRestoreMeal}
+          onOpenMealSwipeModal={openMealSwipeModal}
+        />
+
+        {/* SECTION 2.5: MEAL MESSAGES */}
+        <MealMessages 
+          allMeals={getAllMealsData()}
+          userProfile={userProfile}
+          calorieData={calorieData}
+          isMobile={isMobile}
         />
 
         {/* SECTION 3: DAILY SUMMARY WITH UNIFIED PIE CHART */}
@@ -1779,6 +2013,43 @@ const NutritionApp = () => {
         calorieData={calorieData}
         isMobile={isMobile}
       />
+
+      {/* Meal Swipe Modal - Full Screen Focused Interface */}
+      {showMealSwipeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4">
+          <div className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden">
+            <button
+              onClick={closeMealSwipeModal}
+              className="absolute top-4 right-4 z-60 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
+              <MealSwipeInterface 
+                meals={meals}
+                onTimeChange={handleTimeChange}
+                onAddFoodItem={handleAddFoodItem}
+                onRemoveFoodItem={handleRemoveFoodItem}
+                onUpdateFoodItem={handleUpdateFoodItem}
+                onOpenServingModal={handleOpenServingModal}
+                onOpenFoodModal={handleOpenFoodModal}
+                userProfile={userProfile}
+                calorieData={calorieData}
+                openMealIdeas={openMealIdeas}
+                isMobile={isMobile}
+                getAllMealsData={getAllMealsData}
+                removedFoods={removedFoods}
+                onRemoveFood={handleRemoveFood}
+                onRestoreFood={handleRestoreFood}
+                removedMeals={removedMeals}
+                onRemoveMeal={handleRemoveMeal}
+                onRestoreMeal={handleRestoreMeal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tinder Hot or Not Burn or Learn Modal */}
       {showTinderSwipe && (
