@@ -3,7 +3,7 @@ import { X, Scale, Coffee, Hand } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories, getFoodsInCategory } from './FoodDatabase.js';
-import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
+import { calculateTotals, preparePieData, calculateTDEE, getServingWarnings } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
 import { generatePersonalTrainerSummary } from './PersonalTrainerSummary.js';
 import MealIdeasModal from './MealIdeas.jsx';
@@ -178,7 +178,7 @@ const createFoodItem = () => ({
   displayUnit: 'servings'
 });
 
-// Modal Meal Swipe Interface Component (isolated and smooth)
+// Modal Meal Swipe Interface Component (fixed to work with regular MealTracker)
 const MealSwipeInterface = ({ 
   meals, 
   onTimeChange, 
@@ -267,10 +267,11 @@ const MealSwipeInterface = ({
     );
     const totals = calculateTotals(activeItems);
     const pieData = preparePieData(totals);
-    return { totals, pieData, activeItems };
+    const warnings = getServingWarnings(activeItems, mealType, userProfile);
+    return { totals, pieData, activeItems, warnings };
   };
 
-  const { totals, pieData, activeItems } = getMealData(currentMealType);
+  const { totals, pieData, activeItems, warnings } = getMealData(currentMealType);
   const isMainMeal = ['breakfast', 'lunch', 'dinner'].includes(currentMealType);
 
   // If no active meals, show restore interface
@@ -334,18 +335,22 @@ const MealSwipeInterface = ({
             time={currentMeal.time}
             setTime={(newTime) => onTimeChange(currentMealType, newTime)}
             items={activeItems}
-            allItems={currentMeal.items}
+            setItems={(newItems) => {
+              // Handle setItems if needed - this is a placeholder
+              console.log('setItems called with:', newItems);
+            }}
             totals={totals}
+            pieData={pieData}
+            warnings={warnings}
+            userProfile={userProfile}
+            calorieData={calorieData}
+            allMeals={getAllMealsData()}
             onOpenServingModal={onOpenServingModal}
             onOpenFoodModal={onOpenFoodModal}
             onUpdateFoodItem={onUpdateFoodItem}
             onAddFoodItem={onAddFoodItem}
             onRemoveFoodItem={onRemoveFoodItem}
-            onRemoveFood={onRemoveFood}
-            onRestoreFood={onRestoreFood}
-            removedFoods={removedFoods}
             isMobile={isMobile}
-            hideTitle={true}
           />
         </div>
       </div>
@@ -421,8 +426,7 @@ const MealSwipeInterface = ({
       )}
 
       <div className="mt-4 text-center text-xs text-gray-500">
-        👈 Swipe left/right to navigate meals 👉<br/>
-        🍎 Strong swipe foods up/down to remove/restore
+        👈 Swipe left/right to navigate meals 👉
       </div>
     </div>
   );
