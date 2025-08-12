@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Scale, Coffee, Hand } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import EnhancedMealTracker from './EnhancedMealTracker.jsx';
+import MealTracker from './MealTracker.jsx';
 import { FoodDatabase, servingSizeConversions, getServingInfo, getAllCategories, getFoodsInCategory } from './FoodDatabase.js';
 import { calculateTotals, preparePieData, calculateTDEE } from './Utils.js';
 import { MealMessages } from './MealMessages/index.js';
@@ -329,7 +329,7 @@ const MealSwipeInterface = ({
         onTouchEnd={handleTouchEnd}
       >
         <div className={`transition-all duration-300 ${isTransitioning ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}`}>
-          <EnhancedMealTracker
+          <MealTracker
             mealType={currentMealType}
             time={currentMeal.time}
             setTime={(newTime) => onTimeChange(currentMealType, newTime)}
