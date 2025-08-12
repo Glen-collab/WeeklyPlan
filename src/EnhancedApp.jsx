@@ -23,6 +23,17 @@ const defaultUserProfile = {
   gender: ''
 };
 
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+const createFoodItem = () => ({
+  id: generateId(),
+  category: '',
+  food: '',
+  serving: 1,
+  displayServing: '1',
+  displayUnit: 'servings'
+});
+
 // Simple Static Meal Interface (no swipe confusion) - for main app view
 const SimpleMealInterface = ({ 
   meals, 
@@ -162,271 +173,6 @@ const SimpleMealInterface = ({
         >
           📱 Open Swipe Interface for detailed editing
         </button>
-      </div>
-    </div>
-  );
-};
-
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
-const createFoodItem = () => ({
-  id: generateId(),
-  category: '',
-  food: '',
-  serving: 1,
-  displayServing: '1',
-  displayUnit: 'servings'
-});
-
-// Modal Meal Swipe Interface Component (fixed to work with regular MealTracker)
-const MealSwipeInterface = ({ 
-  meals, 
-  onTimeChange, 
-  onAddFoodItem, 
-  onRemoveFoodItem, 
-  onUpdateFoodItem, 
-  onOpenServingModal, 
-  onOpenFoodModal, 
-  userProfile, 
-  calorieData, 
-  openMealIdeas, 
-  isMobile,
-  getAllMealsData,
-  removedFoods,
-  onRemoveFood,
-  onRestoreFood,
-  removedMeals,
-  onRemoveMeal,
-  onRestoreMeal
-}) => {
-  const [currentMealIndex, setCurrentMealIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
-  const allMealTypes = ['breakfast', 'firstSnack', 'secondSnack', 'lunch', 'midAfternoon', 'dinner', 'lateSnack', 'postWorkout'];
-  const mealLabels = {
-    breakfast: 'Breakfast',
-    firstSnack: 'Morning Snack', 
-    secondSnack: 'Mid-Morning Snack',
-    lunch: 'Lunch',
-    midAfternoon: 'Afternoon Snack',
-    dinner: 'Dinner',
-    lateSnack: 'Evening Snack',
-    postWorkout: 'Post-Workout'
-  };
-
-  // Filter out removed meals
-  const activeMealTypes = allMealTypes.filter(mealType => !removedMeals.has(mealType));
-  
-  // Ensure current index is valid for active meals
-  const validCurrentIndex = Math.min(currentMealIndex, activeMealTypes.length - 1);
-  const currentMealType = activeMealTypes[validCurrentIndex] || activeMealTypes[0];
-  const currentMeal = meals[currentMealType];
-
-  // Simple touch handlers for meal navigation only
-  const handleTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e) => {
-    setTouchEnd(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-
-    if (isLeftSwipe && validCurrentIndex < activeMealTypes.length - 1) {
-      navigateToMeal(validCurrentIndex + 1);
-    }
-    if (isRightSwipe && validCurrentIndex > 0) {
-      navigateToMeal(validCurrentIndex - 1);
-    }
-  };
-
-  const navigateToMeal = (newIndex) => {
-    if (isTransitioning) return;
-    
-    setIsTransitioning(true);
-    setCurrentMealIndex(newIndex);
-    
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 300);
-  };
-
-  const getMealData = (mealType) => {
-    const meal = meals[mealType];
-    const activeItems = meal.items.filter(item => 
-      !removedFoods.has(`${mealType}-${item.id}`)
-    );
-    const totals = calculateTotals(activeItems);
-    const pieData = preparePieData(totals);
-    const warnings = getServingWarnings(activeItems, mealType, userProfile);
-    return { totals, pieData, activeItems, warnings };
-  };
-
-  const { totals, pieData, activeItems, warnings } = getMealData(currentMealType);
-  const isMainMeal = ['breakfast', 'lunch', 'dinner'].includes(currentMealType);
-
-  // If no active meals, show restore interface
-  if (activeMealTypes.length === 0) {
-    return (
-      <div className="bg-white rounded-lg p-6">
-        <div className="text-center py-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">🍽️ No Active Meals</h2>
-          <p className="text-gray-600 mb-6">You've removed all meals. Restore some to continue tracking!</p>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {allMealTypes.map(mealType => (
-              <button
-                key={mealType}
-                onClick={() => onRestoreMeal(mealType)}
-                className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-left"
-              >
-                <span className="font-medium">🔄 {mealLabels[mealType]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-gray-800">
-            🍽️ {mealLabels[currentMealType]}
-          </h2>
-          <span className="text-sm text-gray-500">
-            ({validCurrentIndex + 1} of {activeMealTypes.length})
-          </span>
-        </div>
-        
-        {isMainMeal && (
-          <button
-            onClick={() => openMealIdeas(currentMealType)}
-            className="px-6 py-2 text-sm bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-md font-medium transition-all duration-300 hover:from-green-600 hover:to-teal-600 flex items-center gap-2 transform hover:scale-105 shadow-lg"
-          >
-            <span>💡</span>
-            Meal Ideas
-          </button>
-        )}
-      </div>
-
-      {/* Swipeable content area - SIMPLE horizontal swipe only */}
-      <div 
-        className="relative"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div className={`transition-all duration-300 ${isTransitioning ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}`}>
-          <MealTracker
-            mealType={currentMealType}
-            time={currentMeal.time}
-            setTime={(newTime) => onTimeChange(currentMealType, newTime)}
-            items={activeItems}
-            setItems={(newItems) => {
-              // Handle setItems if needed - this is a placeholder
-              console.log('setItems called with:', newItems);
-            }}
-            totals={totals}
-            pieData={pieData}
-            warnings={warnings}
-            userProfile={userProfile}
-            calorieData={calorieData}
-            allMeals={getAllMealsData()}
-            onOpenServingModal={onOpenServingModal}
-            onOpenFoodModal={onOpenFoodModal}
-            onUpdateFoodItem={onUpdateFoodItem}
-            onAddFoodItem={onAddFoodItem}
-            onRemoveFoodItem={onRemoveFoodItem}
-            isMobile={isMobile}
-          />
-        </div>
-      </div>
-
-      {/* Navigation footer */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t">
-        <button
-          onClick={() => navigateToMeal(Math.max(0, validCurrentIndex - 1))}
-          disabled={validCurrentIndex === 0 || isTransitioning}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
-            validCurrentIndex === 0 || isTransitioning
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-        >
-          ← Previous
-        </button>
-        
-        <div className="flex space-x-2">
-          {activeMealTypes.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => !isTransitioning && navigateToMeal(index)}
-              disabled={isTransitioning}
-              className={`w-3 h-3 rounded-full transition-colors ${
-                index === validCurrentIndex ? 'bg-blue-500' : 'bg-gray-300'
-              } ${isTransitioning ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-            />
-          ))}
-        </div>
-        
-        <button
-          onClick={() => navigateToMeal(Math.min(activeMealTypes.length - 1, validCurrentIndex + 1))}
-          disabled={validCurrentIndex === activeMealTypes.length - 1 || isTransitioning}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
-            validCurrentIndex === activeMealTypes.length - 1 || isTransitioning
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-        >
-          Next →
-        </button>
-      </div>
-
-      {/* Meal removal button */}
-      <div className="mt-4 text-center">
-        <button
-          onClick={() => onRemoveMeal(currentMealType)}
-          className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
-        >
-          🗑️ Remove This Meal Entirely
-        </button>
-      </div>
-
-      {/* Removed meals indicator */}
-      {removedMeals.size > 0 && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-red-700">
-              🗑️ {removedMeals.size} meal(s) removed
-            </span>
-            <button
-              onClick={() => {
-                const mealToRestore = Array.from(removedMeals)[0];
-                onRestoreMeal(mealToRestore);
-              }}
-              className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded transition-colors"
-            >
-              Restore Latest
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 text-center text-xs text-gray-500">
-        👈 Swipe left/right to navigate meals 👉
       </div>
     </div>
   );
@@ -1876,7 +1622,7 @@ const NutritionApp = () => {
         isMobile={isMobile}
       />
 
-      {/* Meal Swipe Modal - Full Screen Focused Interface */}
+      {/* Meal Swipe Modal - Simple message since we removed the complex interface */}
       {showMealSwipeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4">
           <div className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden">
@@ -1887,27 +1633,18 @@ const NutritionApp = () => {
               <X size={20} />
             </button>
             
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
-              <MealSwipeInterface 
-                meals={meals}
-                onTimeChange={handleTimeChange}
-                onAddFoodItem={handleAddFoodItem}
-                onRemoveFoodItem={handleRemoveFoodItem}
-                onUpdateFoodItem={handleUpdateFoodItem}
-                onOpenServingModal={handleOpenServingModal}
-                onOpenFoodModal={handleOpenFoodModal}
-                userProfile={userProfile}
-                calorieData={calorieData}
-                openMealIdeas={openMealIdeas}
-                isMobile={isMobile}
-                getAllMealsData={getAllMealsData}
-                removedFoods={removedFoods}
-                onRemoveFood={handleRemoveFood}
-                onRestoreFood={handleRestoreFood}
-                removedMeals={removedMeals}
-                onRemoveMeal={handleRemoveMeal}
-                onRestoreMeal={handleRestoreMeal}
-              />
+            <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto p-8 text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">🍽️ Swipe Interface</h2>
+              <p className="text-gray-600 mb-6">
+                The enhanced swipe interface has been temporarily removed to simplify the app. 
+                You can use the main meal interface above for all meal tracking!
+              </p>
+              <button
+                onClick={closeMealSwipeModal}
+                className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition-colors font-medium"
+              >
+                Back to Meal Tracker
+              </button>
             </div>
           </div>
         </div>
